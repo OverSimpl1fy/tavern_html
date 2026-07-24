@@ -17656,11 +17656,8 @@
           children: [
             (0, i.jsxs)("button", {
               className: Ra,
-              onClick: async () => {
-                (await createChatMessages([
-                  { role: "user", message: "打开FP商店" },
-                ]),
-                  await triggerSlash("/trigger"));
+              onClick: () => {
+                toastr.info("请在对话中输入「打开FP商店」来浏览商店", "FP商店", { timeOut: 3000 });
               },
               disabled: !1,
               title: "FP商店",
