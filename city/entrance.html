@@ -4,7 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>临空市 · 角色创建</title>
+<!-- Vue 加载：多 CDN 兜底（移动端/网络不佳时仍可用） -->
 <script src="https://testingcf.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<script>
+  if (typeof Vue === 'undefined') { document.write('<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"><\/script>'); }
+  if (typeof Vue === 'undefined') { document.write('<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>'); }
+  if (typeof Vue === 'undefined') { document.write('<script src="https://cdn.staticfile.org/vue/3.4.27/vue.global.prod.min.js"><\/script>'); }
+</script>
 <style>
   :root {
     --lk-bg: #150a2b; --lk-bg2: #1d0f3d; --lk-card: #241244; --lk-line: #4a2a7a;
@@ -12,11 +18,14 @@
     --lk-star: #ffffff; --lk-star2: #d8a8ff;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { background: var(--lk-bg); font-family: "Noto Sans SC","Source Han Sans SC","Microsoft YaHei",sans-serif; color: var(--lk-text); font-size: 14px; min-height: 100vh; }
-  /* 星空背景层 */
-  body::before {
-    content: '';
-    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  html { min-height: 100%; }
+  body { background: var(--lk-bg); font-family: "Noto Sans SC","Source Han Sans SC","Microsoft YaHei",sans-serif; color: var(--lk-text); font-size: 14px; min-height: 100vh; position: relative; overflow-x: hidden; }
+  /* 星空背景层：用普通 div（避免移动端 position:fixed + z-index:-1 渲染异常） */
+  .starfield, .starfield-twi {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    min-height: 100vh; pointer-events: none; z-index: 0;
+  }
+  .starfield {
     background:
       radial-gradient(1px 1px at 12% 18%, #fff, transparent),
       radial-gradient(1px 1px at 25% 65%, #fff, transparent),
@@ -39,9 +48,7 @@
       linear-gradient(180deg, #1a0d33 0%, #241147 45%, #160a2e 100%);
   }
   /* 闪烁星层 */
-  body::after {
-    content: '';
-    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  .starfield-twi {
     background:
       radial-gradient(1.5px 1.5px at 20% 25%, #fff, transparent),
       radial-gradient(2px 2px at 48% 68%, #c9a0ff, transparent),
@@ -52,7 +59,9 @@
     animation: twinkle 4s ease-in-out infinite;
   }
   @keyframes twinkle { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.85; } }
-  #app { max-width: 900px; margin: 0 auto; padding: 18px 20px 60px; position: relative; }
+  #app { max-width: 900px; margin: 0 auto; padding: 18px 20px 60px; position: relative; z-index: 1; min-height: 100vh; }
+  /* Vue 加载失败的兜底提示 */
+  #vue-fallback { display: none; }
   .head {
     display: flex; flex-direction: column; gap: 6px;
     padding: 16px 20px; margin-bottom: 6px;
@@ -162,7 +171,10 @@
 </style>
 </head>
 <body>
+<div class="starfield" aria-hidden="true"></div>
+<div class="starfield-twi" aria-hidden="true"></div>
 <div id="app">
+  <div id="vue-fallback">加载失败（网络/脚本问题）——请检查网络后刷新，或改用桌面端。</div>
   <div class="head">
     <h1>✧ 临空市 · 角色创建 ✧</h1>
     <p>人类与魔族战争最前线 · 堕落与守护的故事即将开始</p>
@@ -334,6 +346,14 @@
 </div>
 
 <script>
+  // 容错：Vue 未加载则显示兜底提示（避免移动端空白/小方块）
+  function vueFatal() {
+    var fb = document.getElementById('vue-fallback');
+    var app = document.getElementById('app');
+    if (fb) fb.style.display = 'block';
+    if (app) app.style.display = 'none';
+  }
+  if (typeof Vue === 'undefined') { vueFatal(); throw new Error('Vue 未加载'); }
   const { createApp } = Vue;
   createApp({
     data() {
@@ -548,6 +568,8 @@ ${startLine}${eventLine}
       this.selectStartEvent('临光战队新兵');
     },
   }).mount('#app');
+  var fb = document.getElementById('vue-fallback');
+  if (fb) fb.style.display = 'none';
 </script>
 </body>
 </html>
