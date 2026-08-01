@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>临空市 · 守护者档案</title>
+<!-- Vue 主加载（多 CDN 兜底由底部异步加载器处理） -->
+<script src="https://testingcf.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<style>
+  :root {
+    --lk-bg: #150a2b;
+    --lk-bg2: #1d0f3d;
+    --lk-card: #241244;
+    --lk-line: #4a2a7a;
+    --lk-text: #f0e6ff;
+    --lk-dim: #a88cd6;
+    --lk-accent: #9d6bff;
+    --lk-accent2: #7bd0a0;
+    --lk-gold: #e8c87a;
+    --lk-good: #4fd68a;
+    --lk-warn: #e8b04a;
+    --lk-bad: #e0707a;
+    --lk-deep: #c04860;
+    --lk-star: #ffffff;
+    --lk-star2: #d8a8ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { min-height: 100%; }
+  html, body {
+    background: var(--lk-bg);
+    font-family: "Noto Sans SC","Source Han Sans SC","Microsoft YaHei",sans-serif;
+    color: var(--lk-text);
+    font-size: 14px;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+  /* ── 星空背景层：普通 div（避免移动端 position:fixed + z-index:-1 渲染异常） ── */
+  .starfield, .starfield-twi {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    min-height: 100vh; pointer-events: none; z-index: 0;
+  }
+  .starfield {
+    background:
+      radial-gradient(1px 1px at 12% 18%, #fff, transparent),
+      radial-gradient(1px 1px at 25% 65%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 38% 32%, #e8d0ff, transparent),
+      radial-gradient(1px 1px at 52% 78%, #fff, transparent),
+      radial-gradient(1px 1px at 64% 15%, #fff, transparent),
+      radial-gradient(2px 2px at 76% 48%, #d8a8ff, transparent),
+      radial-gradient(1px 1px at 88% 70%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 94% 25%, #e8d0ff, transparent),
+      radial-gradient(1px 1px at 8% 88%, #fff, transparent),
+      radial-gradient(1px 1px at 45% 8%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 70% 90%, #d8a8ff, transparent),
+      radial-gradient(1px 1px at 30% 45%, #fff, transparent),
+      radial-gradient(1px 1px at 55% 55%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 85% 5%, #fff, transparent),
+      radial-gradient(1px 1px at 5% 40%, #e8d0ff, transparent),
+      radial-gradient(1px 1px at 33% 85%, #fff, transparent),
+      radial-gradient(2px 2px at 60% 35%, #fff, transparent),
+      radial-gradient(1px 1px at 90% 60%, #fff, transparent),
+      linear-gradient(180deg, #1a0d33 0%, #241147 45%, #160a2e 100%);
+  }
+  /* 闪烁星层 */
+  .starfield-twi {
+    background:
+      radial-gradient(1.5px 1.5px at 20% 25%, #fff, transparent),
+      radial-gradient(2px 2px at 48% 68%, #c9a0ff, transparent),
+      radial-gradient(1.5px 1.5px at 72% 30%, #fff, transparent),
+      radial-gradient(2px 2px at 90% 75%, #ffd8ff, transparent),
+      radial-gradient(1px 1px at 35% 92%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 80% 12%, #d8a8ff, transparent);
+    animation: twinkle 4s ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 0.85; }
+  }
+  /* 星屑漂浮 */
+  @keyframes floatStar {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.9; }
+    90% { opacity: 0.7; }
+    100% { transform: translateY(-80px) rotate(180deg); opacity: 0; }
+  }
+
+  #app { max-width: 860px; margin: 0 auto; padding: 16px 16px 40px; position: relative; z-index: 1; min-height: 100vh; }
+  /* Vue 加载失败的兜底提示 */
+  #vue-fallback {
+    display: none;
+    max-width: 600px; margin: 40px auto; padding: 20px;
+    background: linear-gradient(160deg, #2a1750, #1f0f3d); color: #e0b0ff;
+    border: 1px solid rgba(157,107,255,0.4); border-radius: 12px;
+    text-align: center; font-size: 14px; line-height: 1.8;
+    position: relative; z-index: 1;
+  }
+
+  .head {
+    display: flex; align-items: center; gap: 12px; padding: 14px 18px;
+    border: 1px solid rgba(157, 107, 255, 0.35);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(157,107,255,0.14), rgba(214,107,255,0.06), rgba(30,15,61,0.6));
+    box-shadow: 0 0 24px rgba(157,107,255,0.25), inset 0 0 30px rgba(157,107,255,0.06);
+    position: relative; overflow: hidden;
+  }
+  .head::before {
+    content: '✦ ✧ ✦ ✧ ✦ ✧ ✦';
+    position: absolute; top: 4px; left: 0; right: 0; text-align: center;
+    font-size: 8px; color: rgba(216,168,255,0.5); letter-spacing: 8px;
+    animation: twinkle 3s ease-in-out infinite;
+  }
+  .head h1 {
+    font-size: 19px; letter-spacing: 0.14em; color: #d8b0ff;
+    text-shadow: 0 0 12px rgba(157,107,255,0.8);
+  }
+  .head .sub { color: var(--lk-dim); font-size: 12px; }
+  .head .refresh {
+    margin-left: auto; cursor: pointer; color: var(--lk-dim);
+    border: 1px solid var(--lk-line); background: var(--lk-bg2);
+    border-radius: 6px; padding: 4px 12px; font-size: 12px;
+  }
+  .head .refresh:hover { color: #e8d0ff; border-color: var(--lk-accent); box-shadow: 0 0 8px rgba(157,107,255,0.4); }
+
+  .tabs { display: flex; gap: 6px; padding: 12px 0; flex-wrap: wrap; }
+  .tabs button {
+    background: linear-gradient(180deg, var(--lk-bg2), #1a0e36);
+    color: var(--lk-dim); border: 1px solid var(--lk-line);
+    border-radius: 8px; padding: 6px 15px; cursor: pointer; font-size: 13px;
+    position: relative;
+  }
+  .tabs button.active {
+    background: linear-gradient(135deg, #7c3aed, #a855f7, #d66bff);
+    color: #fff; border-color: #b57bff; font-weight: 600;
+    box-shadow: 0 0 14px rgba(168,85,247,0.55);
+    text-shadow: 0 0 6px rgba(255,255,255,0.5);
+  }
+  .tabs button.active::after {
+    content: '✦'; position: absolute; top: -4px; right: -2px;
+    font-size: 9px; color: #ffd8ff; text-shadow: 0 0 6px #fff;
+  }
+
+  .card {
+    background: linear-gradient(160deg, #2a1750, #1f0f3d 60%, #180b2e);
+    border: 1px solid rgba(122, 74, 200, 0.4);
+    border-radius: 12px; padding: 14px 16px; margin-bottom: 12px;
+    box-shadow: 0 0 18px rgba(157,107,255,0.12), 0 4px 20px rgba(0,0,0,0.4);
+    position: relative;
+  }
+  .card::before {
+    content: '✦'; position: absolute; top: 8px; right: 14px;
+    color: rgba(216,168,255,0.35); font-size: 12px;
+  }
+  .card h3 {
+    font-size: 13px; color: #b78bff; letter-spacing: 0.1em; margin-bottom: 9px;
+    text-shadow: 0 0 8px rgba(157,107,255,0.5);
+  }
+  .card h3::before { content: '✧ '; color: rgba(216,168,255,0.6); }
+  .empty { color: var(--lk-dim); font-size: 12px; padding: 8px 0; text-align: center; }
+
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 13px; }
+  .kv .k { color: #a88cd6; white-space: nowrap; }
+  .kv .v { color: var(--lk-text); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    background: rgba(122,74,200,0.18); border: 1px solid rgba(157,107,255,0.35);
+    border-radius: 10px; padding: 1px 9px; font-size: 12px; color: #cbb0ff;
+  }
+
+  .track { margin: 8px 0; }
+  .track .row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+  .track .lbl { width: 66px; font-size: 13px; color: var(--lk-dim); flex-shrink: 0; }
+  .track .val { width: 46px; font-size: 12px; text-align: right; color: var(--lk-text); flex-shrink: 0; }
+  .bar { flex: 1; height: 10px; background: #120a24; border-radius: 6px; overflow: hidden; border: 1px solid rgba(157,107,255,0.3); }
+  .bar i { display: block; height: 100%; border-radius: 5px; transition: width 0.5s; box-shadow: 0 0 8px currentColor; }
+  .subtrack { margin-left: 74px; font-size: 12px; color: var(--lk-dim); }
+
+  .attr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .attr {
+    background: linear-gradient(160deg, #1e1140, #170b2e);
+    border: 1px solid rgba(157,107,255,0.3); border-radius: 8px; padding: 7px 9px;
+  }
+  .attr .nm { font-size: 12px; color: var(--lk-dim); }
+  .attr .sc { font-size: 16px; font-weight: 700; color: #e8d0ff; }
+  .attr .mod { font-size: 11px; color: var(--lk-gold); margin-left: 4px; }
+
+  /* 堕落节点 —— 仅显示已激活 */
+  .node {
+    border: 1px solid rgba(157,107,255,0.35);
+    border-radius: 8px; padding: 7px 10px; margin: 6px 0;
+    background: linear-gradient(160deg, #271550, #1c0f38);
+    box-shadow: 0 0 10px rgba(157,107,255,0.1);
+  }
+  .node .h { display: flex; align-items: center; gap: 7px; }
+  .node .h b { color: #e8d0ff; font-size: 13px; }
+  .node .h .t { color: var(--lk-dim); font-size: 12px; }
+  .node .badge { font-size: 11px; padding: 0 7px; border-radius: 8px; }
+  .node .badge.on { background: linear-gradient(135deg,#7c3aed,#d66bff); color: #fff; text-shadow: 0 0 4px rgba(255,255,255,0.6); }
+  .node .badge.off { background: rgba(122,74,200,0.2); color: var(--lk-dim); border: 1px solid var(--lk-line); }
+  .node .ev { font-size: 12px; color: var(--lk-dim); margin-top: 3px; }
+  .node .ev::before { content: '✦ '; color: rgba(216,168,255,0.5); }
+
+  .rel { display: flex; gap: 10px; align-items: flex-start; }
+  .rel .nm { font-size: 14px; font-weight: 600; color: #e8d0ff; }
+  .rel .meta { font-size: 12px; color: var(--lk-dim); margin-top: 1px; }
+  .rel .fav { font-size: 12px; color: var(--lk-gold); margin-left: auto; white-space: nowrap; }
+  .rel .heart { font-size: 12px; color: var(--lk-bad); margin-top: 1px; }
+
+  .news-cat { margin-bottom: 8px; }
+  .news-cat .cat { font-size: 12px; color: #b78bff; margin-bottom: 3px; }
+  .news-cat .line { font-size: 12px; color: var(--lk-dim); line-height: 1.7; margin-bottom: 4px; }
+
+  .stat-line { display: flex; flex-wrap: wrap; gap: 6px; }
+  .stat-pill {
+    font-size: 12px; padding: 2px 9px; border-radius: 10px;
+    background: rgba(122,74,200,0.16); border: 1px solid rgba(157,107,255,0.3); color: var(--lk-dim);
+  }
+  .stat-pill b { color: var(--lk-text); font-weight: 500; }
+  .stat-pill.hot b { color: var(--lk-bad); }
+
+  .intel-item { border-bottom: 1px dashed rgba(157,107,255,0.25); padding: 5px 0; font-size: 12px; color: var(--lk-dim); line-height: 1.6; }
+  .intel-item b { color: #cbb0ff; }
+</style>
+</head>
+<body>
+<div class="starfield" aria-hidden="true"></div>
+<div class="starfield-twi" aria-hidden="true"></div>
+<div id="vue-fallback">✧ 加载失败（Vue 库加载失败/脚本错误）——请检查网络后刷新；仍无法解决请改用桌面端。</div>
+<div id="app">
+  <div class="head">
+    <h1>✧ 临空市 · 守护者档案 ✧</h1>
+    <span class="sub">人类与魔族战争前线 · 堕落追踪</span>
+    <button class="refresh" @click="refresh()">↻ 刷新</button>
+  </div>
+
+  <nav class="tabs">
+    <button v-for="t in tabs" :key="t.id" :class="{active: tab===t.id}" @click="tab=t.id">{{ t.label }}</button>
+  </nav>
+
+  <!-- ══════ 主角 ══════ -->
+  <template v-if="tab==='profile'">
+    <div class="card">
+      <h3>身份档案</h3>
+      <div class="kv">
+        <span class="k">姓名</span><span class="v"><b>{{ p.姓名 || '未设定' }}</b> <span v-if="p.昵称">（{{ p.昵称 }}）</span></span>
+        <span class="k">年龄 / 性别</span><span class="v">{{ p.年龄 || '?' }} · {{ p.性别 || '女性' }}</span>
+        <span class="k">种族</span><span class="v">{{ p.种族 || '人类' }}</span>
+        <span class="k">所属组织</span><span class="v">{{ p.所属组织 || '无' }}</span>
+        <span class="k">身份 / 职位</span><span class="v">{{ (p.身份 || []).join('、') || '—' }} <em style="color:var(--lk-dim)">（{{ p.职位 || '见习' }}）</em></span>
+        <span class="k">资金</span><span class="v">{{ p.资金 || '普通' }}</span>
+      </div>
+      <div class="chips" v-if="(p.熟练项||[]).length" style="margin-top:8px">
+        <span class="chip" v-for="s in p.熟练项" :key="s">{{ s }}</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>六维属性（DND）</h3>
+      <div class="attr-grid">
+        <div class="attr" v-for="a in attrList" :key="a">
+          <div class="nm">{{ a }}</div>
+          <div><span class="sc">{{ (p.属性||{})[a] ?? 8 }}</span><span class="mod">mod {{ mod((p.属性||{})[a] ?? 8) }}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>状态</h3>
+      <div class="stat-line">
+        <span class="stat-pill">体力 <b>{{ p.状态?.体力 || '充沛' }}</b></span>
+        <span class="stat-pill">魔力 <b>{{ p.状态?.魔力 || '充盈' }}</b></span>
+        <span class="stat-pill">清醒 <b>{{ p.状态?.清醒 || '清醒' }}</b></span>
+        <span class="stat-pill" :class="{hot: ['发情','失神'].includes(p.状态?.发情)}">发情 <b>{{ p.状态?.发情 || '冷静' }}</b></span>
+        <span class="stat-pill" :class="{hot: ['重伤','濒危'].includes(p.状态?.伤痛)}">伤痛 <b>{{ p.状态?.伤痛 || '无' }}</b></span>
+      </div>
+      <div class="chips" v-if="Object.keys(p.状态?.异常||{}).length" style="margin-top:7px">
+        <span class="chip" v-for="(v,k) in p.状态?.异常" :key="k">{{ k }}：{{ v.效果 }} <em style="opacity:.6">（{{ v.剩余 }}）</em></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>魔力</h3>
+      <div class="kv">
+        <span class="k">类型</span><span class="v">{{ p.魔力?.类型 || '无' }}</span>
+        <span class="k">转化</span><span class="v"><b :style="{color: convColor(p.魔力?.转化)}">{{ p.魔力?.转化 || '无' }}</b></span>
+      </div>
+      <div class="track">
+        <div class="row"><span class="lbl">觉醒度</span><div class="bar"><i :style="{width: pct(p.魔力?.觉醒度), background: barColor(p.魔力?.觉醒度)}"></i></div><span class="val">{{ p.魔力?.觉醒度 ?? 0 }}</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>改造</h3>
+      <div class="track">
+        <div class="row"><span class="lbl">改造度</span><div class="bar"><i :style="{width: pct(p.改造?.程度), background: barColor(p.改造?.程度)}"></i></div><span class="val">{{ p.改造?.程度 ?? 0 }}</span></div>
+      </div>
+      <div v-if="Object.keys(p.改造?.列表||{}).length" class="chips" style="margin-top:7px">
+        <span class="chip" v-for="(v,k) in p.改造?.列表" :key="k">{{ k }}：{{ v.类型 }} <em style="opacity:.6">（{{ v.位置 }}）</em></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>持有物</h3>
+      <div v-if="Object.keys(p.持有物||{}).length" class="chips">
+        <span class="chip" v-for="(v,k) in p.持有物" :key="k">{{ k }} ×{{ v.数量 || 1 }}</span>
+      </div>
+      <div v-else class="empty">暂无持有物</div>
+    </div>
+  </template>
+
+  <!-- ══════ 堕落档案 ══════ -->
+  <template v-if="tab==='corruption'">
+    <div class="card">
+      <h3>三轨堕落</h3>
+      <div class="track" v-for="(c) in corruptionTracks" :key="c.key">
+        <div class="row">
+          <span class="lbl">{{ c.name }}</span>
+          <div class="bar"><i :style="{width: pct(arch[c.key]), background: barColor(arch[c.key])}"></i></div>
+          <span class="val">{{ arch[c.key] ?? 0 }}/100</span>
+        </div>
+        <div class="subtrack">{{ c.desc }}</div>
+      </div>
+      <div class="track" style="margin-top:10px">
+        <div class="row">
+          <span class="lbl">魔性侵蚀</span>
+          <div class="bar"><i :style="{width: pct(p.魔性侵蚀), background: eroColor(p.魔性侵蚀)}"></i></div>
+          <span class="val">{{ p.魔性侵蚀 ?? 0 }}/100</span>
+        </div>
+        <div class="subtrack">淫魔力污染——三轨的共同燃料</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>魔力转化</h3>
+      <div class="kv">
+        <span class="k">当前转化</span><span class="v"><b :style="{color: convColor(p.魔力?.转化)}">{{ p.魔力?.转化 || '无' }}</b></span>
+        <span class="k">说明</span><span class="v" style="font-size:12px;color:var(--lk-dim)">圣光→圣邪光 / 灵气→堕灵气 / 魔导→淫魔导（恶堕/淫化≥40 自动触发）</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>魔化表现</h3>
+      <div v-if="arch.魔化表现" style="font-size:13px;line-height:1.7">{{ arch.魔化表现 }}</div>
+      <div v-else class="empty">身体尚未出现非人特征</div>
+    </div>
+
+    <div class="card">
+      <h3>当前认知</h3>
+      <pre v-if="arch.当前认知" style="font-size:12px;color:var(--lk-dim);white-space:pre-wrap;line-height:1.7;font-family:inherit">{{ arch.当前认知 }}</pre>
+      <div v-else class="empty">尚未记录心态认知</div>
+    </div>
+
+    <!-- 堕落节点 —— 仅显示已激活 -->
+    <div class="card" v-for="(c) in corruptionTracks" :key="c.key+'n'">
+      <h3>{{ c.name }} · 节点</h3>
+      <div v-if="hasActivatedNode(c.key)">
+        <div class="node" v-for="(nd, name) in arch[c.key+'节点']" :key="name" v-if="nd.是否激活">
+          <div class="h">
+            <b>✦ {{ nd.名称 || name }}</b>
+            <span class="t">阈值 {{ nd.阈值 }}</span>
+            <span class="badge on">已激活</span>
+          </div>
+          <div class="ev" v-if="nd.节点事件">事件：{{ nd.节点事件 }}</div>
+          <div class="ev" v-if="nd.心态变化">心态：{{ nd.心态变化 }}</div>
+        </div>
+      </div>
+      <div v-else class="empty">尚未激活任何节点</div>
+    </div>
+
+    <div class="card">
+      <h3>欲望 xp</h3>
+      <div v-if="Object.keys(arch.欲望xp||{}).length">
+        <div class="node" v-for="(xp, name) in arch.欲望xp" :key="name">
+          <div class="h"><b>{{ xp.名字 || name }}</b><span class="t">开发程度：{{ xp.开发程度 || '未开发' }}</span></div>
+          <div class="ev" v-if="xp.描述">{{ xp.描述 }}</div>
+        </div>
+      </div>
+      <div v-else class="empty">尚未开发性癖</div>
+    </div>
+
+    <div class="card">
+      <h3>淫纹印记 / 特殊项目</h3>
+      <div v-if="Object.keys({...arch.淫纹印记, ...arch.特殊项目}||{}).length">
+        <div class="node" v-for="(mk, name) in {...arch.淫纹印记, ...arch.特殊项目}" :key="name">
+          <div class="h"><b>{{ mk.名字 || name }}</b><span class="t">{{ mk.类型 }}</span><span class="t">{{ mk.状态 }}</span></div>
+          <div class="ev" v-if="mk.描述">{{ mk.描述 }}</div>
+        </div>
+      </div>
+      <div v-else class="empty">尚无印记或特殊项目</div>
+    </div>
+  </template>
+
+  <!-- ══════ 关系 ══════ -->
+  <template v-if="tab==='relations'">
+    <div v-if="Object.keys(rel||{}).length">
+      <div class="card" v-for="(r, name) in rel" :key="name">
+        <div class="rel">
+          <div>
+            <div class="nm">✦ {{ r.姓名 || name }}</div>
+            <div class="meta">{{ r.种族 || '?' }} · {{ r.所属组织 || '无' }} · {{ (r.身份||[]).join('、') || '—' }}</div>
+            <div class="meta" v-if="r.性格">{{ r.性格 }}</div>
+          </div>
+          <div class="fav">
+            <div>好感度 <b :style="{color: favColor(r.好感度)}">{{ r.好感度 ?? 0 }}</b></div>
+            <div class="heart" v-if="r.关系标签?.length">{{ r.关系标签.join('、') }}</div>
+          </div>
+        </div>
+        <div class="track" style="margin-top:7px">
+          <div class="row" v-for="(c) in corruptionTracks" :key="c.key">
+            <span class="lbl" style="width:44px">{{ c.name.slice(0,2) }}</span>
+            <div class="bar"><i :style="{width: pct(r[c.key]), background: barColor(r[c.key])}"></i></div>
+            <span class="val">{{ r[c.key] ?? 0 }}</span>
+          </div>
+        </div>
+        <div class="subtrack" v-if="r.当前认知" style="font-size:12px;color:var(--lk-dim)">{{ r.当前认知 }}</div>
+      </div>
+    </div>
+    <div v-else class="card"><div class="empty">暂无关系角色</div></div>
+  </template>
+
+  <!-- ══════ 任务 ══════ -->
+  <template v-if="tab==='quests'">
+    <div v-if="Object.keys(s.任务列表||{}).length">
+      <div class="card" v-for="(q, name) in s.任务列表" :key="name">
+        <div class="kv">
+          <span class="k">任务</span><span class="v"><b>{{ name }}</b> <span class="chip" style="margin-left:6px">{{ q.关注度 || '中' }}</span></span>
+          <span class="k">状态</span><span class="v">{{ q.状态 || '进行中' }}</span>
+          <span class="k">进展</span><span class="v">{{ q.进展 || '—' }}</span>
+          <span class="k">详情</span><span class="v">{{ q.详情 || '—' }}</span>
+          <span class="k">奖励</span><span class="v">{{ q.奖励 || '—' }}</span>
+        </div>
+      </div>
+    </div>
+    <div v-else class="card"><div class="empty">暂无任务</div></div>
+  </template>
+
+  <!-- ══════ 情报 ══════ -->
+  <template v-if="tab==='intel'">
+    <div class="card">
+      <div v-if="Object.keys(s.信息||{}).length">
+        <div class="intel-item" v-for="(inf, name) in s.信息" :key="name">
+          <b>✦ {{ name }}</b>
+          <template v-if="typeof inf === 'string'">：{{ inf }}</template>
+          <template v-else>：{{ inf.内容 || '' }} <em v-if="inf.来源" style="opacity:.7">（来源：{{ inf.来源 }}）</em></template>
+        </div>
+      </div>
+      <div v-else class="empty">暂无情报</div>
+    </div>
+  </template>
+
+  <!-- ══════ 新闻 ══════ -->
+  <template v-if="tab==='news'">
+    <div class="card" v-for="(catObj, catName) in s.新闻||{}" :key="catName">
+      <h3>{{ catName }}</h3>
+      <div class="news-cat" v-for="(content, k) in catObj" :key="k">
+        <div class="cat">✧ {{ k }}</div>
+        <div class="line">{{ content || '—' }}</div>
+      </div>
+    </div>
+  </template>
+</div>
+
+<script>
+  // 容错：Vue 未加载则显示兜底提示（避免移动端空白/小方块）
+  var vueFailed = false;
+  function vueFatal() {
+    vueFailed = true;
+    var fb = document.getElementById('vue-fallback');
+    var app = document.getElementById('app');
+    if (fb) fb.style.display = 'block';
+    if (app) app.style.display = 'none';
+  }
+  function initApp() {
+    if (vueFailed || typeof Vue === 'undefined') { vueFatal(); return; }
+    const { createApp } = Vue;
+    try {
+  createApp({
+    data() {
+      return {
+        tab: 'profile',
+        stat: {},
+        tabs: [
+          { id: 'profile', label: '主角' },
+          { id: 'corruption', label: '堕落档案' },
+          { id: 'relations', label: '关系' },
+          { id: 'quests', label: '任务' },
+          { id: 'intel', label: '情报' },
+          { id: 'news', label: '新闻' },
+        ],
+        attrList: ['力量', '敏捷', '体质', '智力', '感知', '魅力'],
+        corruptionTracks: [
+          { key: '魔化度', name: '魔化', desc: '身体非人化 · 由淫魔力污染驱动' },
+          { key: '恶堕度', name: '恶堕', desc: '心灵腐化 · 接受背叛与魔族思想' },
+          { key: '淫化度', name: '淫化', desc: '欲望沉沦 · 接受性欲与魔素快感' },
+        ],
+      };
+    },
+    computed: {
+      s() { return this.stat || {}; },
+      p() { return this.s.主角 || {}; },
+      arch() { return this.p.堕落档案 || {}; },
+      rel() { return this.s.关系列表 || {}; },
+    },
+    methods: {
+      refresh() {
+        try {
+          const v = getVariables({ type: 'message', message_id: getCurrentMessageId() });
+          this.stat = (v && v.stat_data) || {};
+        } catch (e) {
+          console.error('[临空市状态] 读取失败', e);
+        }
+      },
+      hasActivatedNode(key) {
+        const nodes = this.arch[key + '节点'] || {};
+        return Object.values(nodes).some(n => n && n.是否激活 === true);
+      },
+      pct(v) { v = Number(v) || 0; return Math.max(0, Math.min(100, v)) + '%'; },
+      mod(v) { v = Number(v) || 0; const m = Math.floor((v - 10) / 2); return m >= 0 ? '+' + m : '' + m; },
+      barColor(v) {
+        v = Number(v) || 0;
+        if (v <= 25) return 'var(--lk-good)';
+        if (v <= 60) return 'var(--lk-warn)';
+        if (v <= 90) return 'var(--lk-bad)';
+        return 'var(--lk-deep)';
+      },
+      eroColor(v) {
+        v = Number(v) || 0;
+        if (v <= 30) return 'var(--lk-accent2)';
+        if (v <= 60) return 'var(--lk-accent)';
+        if (v <= 80) return 'var(--lk-bad)';
+        return 'var(--lk-deep)';
+      },
+      favColor(v) {
+        v = Number(v) || 0;
+        if (v < 0) return 'var(--lk-bad)';
+        if (v >= 60) return 'var(--lk-gold)';
+        return 'var(--lk-accent2)';
+      },
+      convColor(v) {
+        if (!v || v === '无') return 'var(--lk-dim)';
+        return 'var(--lk-bad)';
+      },
+    },
+    mounted() {
+      this.refresh();
+      if (typeof waitGlobalInitialized === 'function' && typeof eventOn === 'function') {
+        try {
+          eventOn(tavern_events.GENERATION_AFTER_COMMANDS, this.refresh);
+          eventOn(tavern_events.MESSAGE_SENT, this.refresh);
+        } catch (e) { /* 事件订阅失败不阻塞 */ }
+      }
+      setInterval(() => this.refresh(), 15000);
+    },
+      }).mount('#app');
+      var fb = document.getElementById('vue-fallback');
+      if (fb) fb.style.display = 'none';
+    } catch (e) {
+      console.error('[临空市] 挂载失败', e);
+      vueFatal();
+    }
+  }
+  // ── 动态加载 Vue：多 CDN 逐级尝试（iframe 内可用，优于 document.write） ──
+  (function loadVue() {
+    if (typeof Vue !== 'undefined') { initApp(); return; }
+    var cdns = [
+      'https://testingcf.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js',
+      'https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js',
+      'https://unpkg.com/vue@3/dist/vue.global.prod.js',
+      'https://cdn.staticfile.org/vue/3.4.27/vue.global.prod.min.js'
+    ];
+    var i = 0;
+    function next() {
+      if (i >= cdns.length) { vueFatal(); return; }
+      var s = document.createElement('script');
+      s.src = cdns[i++];
+      s.onload = function () { initApp(); };
+      s.onerror = function () { next(); };
+      document.head.appendChild(s);
+    }
+    next();
+  })();
+</script>
+</body>
+</html>
