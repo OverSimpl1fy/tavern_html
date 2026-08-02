@@ -21033,20 +21033,21 @@
                               }),
                             ],
                           }),
-                          (x.熟练项?.length || 0) > 0 &&
-                            (0, i.jsxs)("div", {
-                              className: Cu,
-                              children: [
-                                (0, i.jsx)("span", {
-                                  className: ku,
-                                  children: "熟练项",
-                                }),
-                                (0, i.jsx)("span", {
-                                  className: Nu,
-                                  children: x.熟练项.join("、"),
-                                }),
-                              ],
-                            }),
+                          (0, i.jsxs)("div", {
+                            className: Cu,
+                            children: [
+                              (0, i.jsx)("span", {
+                                className: ku,
+                                children: "熟练项",
+                              }),
+                              (0, i.jsx)("span", {
+                                className: Nu,
+                                children: (x.熟练项?.length || 0) > 0
+                                  ? x.熟练项.join("、")
+                                  : "无",
+                              }),
+                            ],
+                          }),
                           (0, i.jsx)("div", {
                             className: Cu,
                             children: [
