@@ -369,7 +369,9 @@
               if ("pointbuy" === e.value.attrMethod) {
                 const cur = e.value.buyScores[t] || 8;
                 if (cur >= 15) return;
-                const next = PB_COST[cur + 1] || 99;
+                // DND 递增成本：14→15 需 2 点、12→13 需 1 点
+                const next =
+                  (PB_COST[cur + 1] || 99) - (PB_COST[cur] || 0);
                 if (d.value >= next) e.value.buyScores[t] = cur + 1;
               }
             },
@@ -10779,7 +10781,33 @@
                                             (s, i) =>
                                               (0, c.createElementVNode)(
                                                 "option",
-                                                { key: i, value: String(s) },
+                                                {
+                                                  key: i,
+                                                  value: String(s),
+                                                  disabled: ((c2) => {
+                                                    if (
+                                                      (0, c.unref)(l)
+                                                        .attrAssign[e] ===
+                                                      String(s)
+                                                    )
+                                                      return void 0;
+                                                    const total = (0, c.unref)(l)
+                                                      .rolledScores.filter(
+                                                        (x) =>
+                                                          String(x) ===
+                                                          String(s),
+                                                      ).length;
+                                                    const used = Object.values(
+                                                      (0, c.unref)(l)
+                                                        .attrAssign || {},
+                                                    ).filter(
+                                                      (x) =>
+                                                        String(x) ===
+                                                        String(s),
+                                                    ).length;
+                                                    return used >= total;
+                                                  })(),
+                                                },
                                                 (0, c.toDisplayString)(s),
                                                 1,
                                               ),
@@ -10805,10 +10833,13 @@
                                         max: 15,
                                         "disable-increment":
                                           (0, c.unref)(t).remainingBP <
-                                            (PB_COST[
+                                            ((PB_COST[
                                               ((0, c.unref)(l).buyScores[e] || 8) +
                                                 1
-                                            ] || 99) ||
+                                            ] || 99) -
+                                              (PB_COST[
+                                                (0, c.unref)(l).buyScores[e] || 8
+                                              ] || 0)) ||
                                           (0, c.unref)(l).buyScores[e] >= 15,
                                         onIncrement: (t) => (0, c.unref)(o)(e),
                                         onDecrement: (t) => (0, c.unref)(n)(e),

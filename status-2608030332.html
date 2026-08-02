@@ -12745,19 +12745,7 @@
           魅力: z.coerce.number().prefault(0),
           精神: z.coerce.number().prefault(0),
         })
-        .prefault({})
-        .transform((e) => ({
-          力量: _.clamp(e["力量"] || 0, 0, 20),
-          敏捷: _.clamp(e["敏捷"] || 0, 0, 20),
-          体质: _.clamp(e["体质"] || 0, 0, 20),
-          智力: _.clamp(e["智力"] || 0, 0, 20),
-          感知: _.clamp(e["感知"] || e["精神"] || 0, 0, 20),
-          魅力: _.clamp(
-            e["魅力"] || Math.max(0, Math.floor((e["精神"] || 0) / 2)),
-            0,
-            20,
-          ),
-        })),
+        .prefault({}),
       C = z
         .object({
           是否开启: z.boolean().prefault(!1),
@@ -20804,6 +20792,18 @@
           [h, g] = (0, u.useState)(!1),
           [y, v] = (0, u.useState)(!1),
           x = e.主角,
+          attrList = (0, u.useMemo)(() => {
+            const b = x.属性 || {},
+              out = {};
+            ["力量", "敏捷", "体质", "智力", "感知", "魅力"].forEach((k) => {
+              if (b[k] != null) out[k] = b[k];
+              else if (k === "感知") out[k] = b["精神"] != null ? b["精神"] : 0;
+              else if (k === "魅力")
+                out[k] = b["精神"] != null ? Math.floor(Number(b["精神"]) / 2) : 0;
+              else out[k] = 0;
+            });
+            return out;
+          }, [x.属性]),
           w = (0, u.useMemo)(() => Se(), []);
         (0, u.useEffect)(() => {
           let e = !1;
@@ -20933,7 +20933,7 @@
                       (0, i.jsxs)("div", {
                         className: xu,
                         children: [
-                          _.map(x.属性, (e, n) =>
+                          _.map(attrList, (e, n) =>
                             (0, i.jsxs)(
                               "div",
                               {
@@ -21057,7 +21057,7 @@
                               (0, i.jsx)("span", {
                                 className: Nu,
                                 children: (() => {
-                                  const wis = x.属性?.感知 ?? 8;
+                                  const wis = attrList["感知"] ?? 8;
                                   const wisMod = Math.floor((wis - 10) / 2);
                                   const pb = Math.min(
                                     8,
