@@ -87,6 +87,21 @@
     <p>人类与魔族战争最前线 · 堕落与守护的故事即将开始</p>
   </div>
 
+  <!-- 快速导入：预设管理工具栏 -->
+  <div class="card" style="padding:10px 15px;margin-bottom:10px">
+    <div class="row" style="margin-bottom:6px">
+      <b style="color:#b78bff;font-size:13px">✦ 快速导入</b>
+      <span class="chip" onclick="savePreset()">💾 保存为预设</span>
+      <span class="chip" onclick="exportPresets()">📤 导出全部预设</span>
+      <span class="chip" onclick="document.getElementById('import-file').click()">📂 导入预设文件</span>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importPresets(this)">
+    </div>
+    <div class="row">
+      <select id="preset-select" style="flex:1" onchange="loadPreset(this.value)"></select>
+      <span class="chip" id="preset-count" style="color:#a88cd6">0 个预设</span>
+    </div>
+  </div>
+
   <nav class="tabs" id="tabs">
     <button data-step="0">① 基础信息</button>
     <button data-step="1">② 组织身份</button>
@@ -94,6 +109,7 @@
     <button data-step="3">④ 属性熟练</button>
     <button data-step="4">⑤ 起始事件</button>
     <button data-step="5">⑥ 开局背景</button>
+    <button data-step="6">⑦ 最终确认</button>
   </nav>
 
   <!-- 0 基础信息 -->
@@ -125,6 +141,7 @@
   <!-- 2 起始地点 -->
   <div class="card step" data-step="2">
     <h3>起始地点</h3>
+    <p class="pg" id="loc-current" style="margin-bottom:8px"></p>
     <div class="opt-grid" id="loc-grid"></div>
   </div>
 
@@ -162,6 +179,17 @@
     </div>
     <p class="hint" style="margin-top:8px">被动察觉 = 10 + 感知修正 + (侦察类熟练时 +熟练加成)。魔族隐匿检定 &lt; 此 DC 时露出破绽（气味/瞳孔/体态/魔力波动），≥ 则不被察觉。</p>
   </div>
+  <div class="card step" data-step="3">
+    <h3>初始堕落（自定义起点）</h3>
+    <p class="hint" style="margin-bottom:8px">设定开局时的三轨堕落与魔性侵蚀。魔族种族默认 魔化100/侵蚀100（可调整）——它们本就已是魔族之躯。</p>
+    <div class="row" id="cor-start">
+      <div class="field"><label>魔化度</label><input type="number" id="cs-mahua" min="0" max="100" value="0" style="width:70px"></div>
+      <div class="field"><label>恶堕度</label><input type="number" id="cs-eduo" min="0" max="100" value="0" style="width:70px"></div>
+      <div class="field"><label>淫化度</label><input type="number" id="cs-yinhua" min="0" max="100" value="0" style="width:70px"></div>
+      <div class="field"><label>魔性侵蚀</label><input type="number" id="cs-erosion" min="0" max="100" value="0" style="width:70px"></div>
+    </div>
+    <p class="warn" id="cs-demon-hint"></p>
+  </div>
 
   <!-- 4 起始事件 -->
   <div class="card step" data-step="4">
@@ -184,9 +212,25 @@
     </div>
   </div>
 
+  <!-- 6 最终确认 -->
+  <div class="card step" data-step="6">
+    <h3>最终确认</h3>
+    <div class="kv" id="cf-summary" style="font-size:13px"></div>
+    <div class="card" style="margin-top:10px;background:rgba(18,10,36,0.6)">
+      <h3>即将生成的开局提示词</h3>
+      <pre id="cf-prompt" style="font-size:12px;color:#a88cd6;white-space:pre-wrap;line-height:1.7;font-family:inherit"></pre>
+    </div>
+    <div class="foot" style="margin-top:10px">
+      <button class="mini-btn" onclick="goStep(5)">◀ 上一步</button>
+      <button class="btn-main" onclick="generate()">✧ 确认并开始临空市之旅</button>
+      <span class="hint" id="gen-hint">请先设定姓名</span>
+    </div>
+  </div>
+
   <div class="foot">
-    <button class="btn-main" onclick="generate()">✧ 开始临空市之旅</button>
-    <span class="hint" id="gen-hint">请先设定姓名</span>
+    <button class="mini-btn" id="btn-prev" onclick="goStep(S.step - 1)">◀ 上一步</button>
+    <span style="flex:1"></span>
+    <button class="btn-main" id="btn-next" onclick="nextStep()">下一步 ✧</button>
   </div>
 </div>
 
@@ -215,12 +259,33 @@
     { n: '无', d: '自由市民，不隶属任何组织', ids: ['自由市民'] }
   ];
   var LOCS = [
-    { n: '白塔区', d: '行政指挥中枢，秩序森严。' },
-    { n: '学园区', d: '学院与科研设施，青春摇篮。' },
-    { n: '工业区', d: '兵工厂与物流枢纽，黑市温床。' },
-    { n: '生活区', d: '住宅与商业区，烟火气最浓。' },
-    { n: '林缘区', d: '城市与远郊的缓冲带。' },
-    { n: '远郊', d: '西北山林湖泊，监控盲区。' }
+    { n: '白塔区', d: '行政指挥中枢，秩序森严。', subs: [
+      { n: '市防指挥部' }, { n: '魔力登记局' },
+      { n: '中央研究所', subs: [{ n: '黑色改造实验室（黑区）' }, { n: '圣光抑制器研发部' }] },
+      { n: '市政广场' }, { n: '涤罪教团圣堂' }
+    ]},
+    { n: '学园区', d: '学院与科研设施，青春摇篮。', subs: [
+      { n: '临空学院', subs: [{ n: '图书馆' }, { n: '训练场' }, { n: '试验塔' }] },
+      { n: '圣光神学院' }, { n: '樱狐神道院' }, { n: '魔导专科学校' }, { n: '学生宿舍区' }
+    ]},
+    { n: '工业区', d: '兵工厂与物流枢纽，黑市温床。', subs: [
+      { n: '兵工厂' }, { n: '机械师行会' }, { n: '魔导能源厂' }, { n: '物流枢纽' },
+      { n: '地下黑市', subs: [{ n: '改造医所' }, { n: '魔素道具铺' }, { n: '暗巷交易点' }] }
+    ]},
+    { n: '生活区', d: '住宅与商业区，烟火气最浓。', subs: [
+      { n: '中央市集' }, { n: '住宅街区' }, { n: '姐妹互助会教堂' },
+      { n: '欢乐街', subs: [{ n: '星屑剧场' }, { n: '夜莺酒馆' }, { n: '芳草按摩店' }, { n: '街角糖果屋' }] }
+    ]},
+    { n: '林缘区', d: '城市与远郊的缓冲带。', subs: [
+      { n: '城市公园' }, { n: '瞭望塔' }, { n: '生态农场' }, { n: '郊外小祠' }
+    ]},
+    { n: '远郊', d: '西北山林湖泊，监控盲区。', subs: [
+      { n: '樱狐神社', subs: [{ n: '神社主殿' }, { n: '神社背后-竹林' }, { n: '雾凇湖畔鸟居' }] },
+      { n: '雾凇湖', subs: [{ n: '湖畔旧屋' }, { n: '湖心岛' }] },
+      { n: '废弃矿场', subs: [{ n: '矿道深处' }, { n: '蛛魔巢穴' }] },
+      { n: '魔族大本营', subs: [{ n: '裂隙节点' }, { n: '女王亲卫前哨' }, { n: '魔素提炼场' }, { n: '转化营' }] },
+      { n: '山间隧道' }
+    ]}
   ];
   var SKILLS = ['察觉', '洞察', '调查', '侦察', '潜行', '说服', '威吓', '欺瞒', '表演', '医药', '奥术', '运动', '生存', '诱惑', '调教', '驾驶', '魔力感知'];
   var RECON = ['察觉', '侦察', '洞察', '魔力感知'];
@@ -248,13 +313,14 @@
     step: 0,
     name: '', age: 18, gender: '女性', race: '人类',
     org: '无', identity: '', rank: '见习',
-    location: '生活区',
+    loc: ['生活区'],
     attrs: { 力量: 8, 敏捷: 8, 体质: 8, 智力: 8, 感知: 8, 魅力: 8 },
     prof: [],
     magic: '无',
     attrMethod: 'pointbuy',
     rolledScores: [15, 13, 12, 11, 10, 8],
     attrAssign: {},
+    startCorruption: { 魔化度: 0, 恶堕度: 0, 淫化度: 0, 魔性侵蚀: 0 },
     startEvent: '临光战队新兵', customStart: '',
     bg: '新兵报到', customBg: ''
   };
@@ -274,6 +340,60 @@
     document.querySelectorAll('.step').forEach(function (c) {
       c.classList.toggle('hidden', Number(c.getAttribute('data-step')) !== S.step);
     });
+    var prev = $('btn-prev'), next = $('btn-next');
+    if (prev) prev.style.display = S.step <= 0 ? 'none' : '';
+    if (next) next.style.display = S.step >= 6 ? 'none' : '';
+    if (S.step === 6) renderSummary();
+  }
+  function goStep(n) { S.step = Math.max(0, Math.min(6, n)); renderTabs(); }
+  function nextStep() { if (S.step < 6) goStep(S.step + 1); }
+
+  /* 最终确认摘要 */
+  function reconLineStr() {
+    var recon = S.prof.filter(function (s) { return RECON.indexOf(s) >= 0; });
+    var wis = modNum(S.attrs['感知']);
+    var bonus = RANK_BONUS[S.rank] || 2;
+    return '被动察觉 DC ' + (10 + wis + (recon.length ? bonus : 0)) + '（感知修正' + mod(S.attrs['感知']) + (recon.length ? ' + 熟练' + bonus : ' + 无侦察熟练') + '）· 主动侦察 d20 ' + (wis + (recon.length ? bonus : 0) >= 0 ? '+' : '') + (wis + (recon.length ? bonus : 0));
+  }
+  function renderSummary() {
+    var attrsStr = ATTRS.map(function (a) { return a + ' ' + S.attrs[a] + '(mod' + mod(S.attrs[a]) + ')'; }).join('、');
+    var se = STARTS.find(function (x) { return x.n === S.startEvent; });
+    var recon = S.prof.filter(function (s) { return RECON.indexOf(s) >= 0; });
+    $('cf-summary').innerHTML =
+      '<span class="k">姓名</span><span class="v"><b>' + esc(S.name || '未设定') + '</b></span>' +
+      '<span class="k">年龄 / 性别</span><span class="v">' + S.age + ' · ' + esc(S.gender) + '</span>' +
+      '<span class="k">种族</span><span class="v">' + esc(S.race) + '</span>' +
+      '<span class="k">组织 / 身份</span><span class="v">' + esc(S.org) + ' · ' + esc(S.identity || '—') + '（' + esc(S.rank) + '）</span>' +
+      '<span class="k">起始地点</span><span class="v">临空市-' + esc(S.loc.join('-')) + '</span>' +
+      '<span class="k">属性</span><span class="v">' + esc(attrsStr) + '</span>' +
+      '<span class="k">熟练项</span><span class="v">' + esc(S.prof.join('、') || '无') + '</span>' +
+      '<span class="k">侦察能力</span><span class="v">' + esc(reconLineStr()) + '</span>' +
+      '<span class="k">初始魔力</span><span class="v">' + esc(S.magic) + '</span>' +
+      '<span class="k">初始堕落</span><span class="v">魔化' + S.startCorruption.魔化度 + ' · 恶堕' + S.startCorruption.恶堕度 + ' · 淫化' + S.startCorruption.淫化度 + ' · 侵蚀' + S.startCorruption.魔性侵蚀 + '</span>' +
+      '<span class="k">起始事件</span><span class="v">' + (se ? se.t + ' ' + esc(se.n) : '自定义开场') + '</span>' +
+      '<span class="k">开局背景</span><span class="v">' + esc(bgDesc()) + '</span>';
+    $('cf-prompt').textContent = buildPrompt();
+    $('gen-hint').textContent = S.name ? '确认后发送给 AI 并开场' : '请先设定姓名';
+  }
+  function isDemonRace(r) { return ['魅魔', '吸血鬼', '史莱姆娘', '妖狐', '蛛魔', '虫娘', '花娘'].indexOf(r) >= 0; }
+  function pickRace(r) {
+    S.race = r;
+    if (isDemonRace(r)) {
+      // 魔族默认淫魔力 + 初始堕落：魔化100（魔躯）、侵蚀100（魔素亲和），可调整
+      S.magic = '淫魔力';
+      if (S.startCorruption.魔化度 < 80) S.startCorruption.魔化度 = 100;
+      if (S.startCorruption.魔性侵蚀 < 80) S.startCorruption.魔性侵蚀 = 100;
+    }
+    renderRaces(); renderRaceWarn(); renderCorStart();
+  }
+  function renderCorStart() {
+    $('cs-mahua').value = S.startCorruption.魔化度;
+    $('cs-eduo').value = S.startCorruption.恶堕度;
+    $('cs-yinhua').value = S.startCorruption.淫化度;
+    $('cs-erosion').value = S.startCorruption.魔性侵蚀;
+    $('cs-demon-hint').textContent = isDemonRace(S.race)
+      ? '⚠ 魔族角色：默认魔化100/侵蚀100（已魔之躯），可按需下调。'
+      : '';
   }
   function renderRaces() {
     var grid = $('race-grid'); grid.innerHTML = '';
@@ -281,7 +401,7 @@
       var d = document.createElement('div');
       d.className = 'opt' + (S.race === r.n ? ' active' : '');
       d.innerHTML = '<div class="nm">' + esc(r.n) + '</div><div class="desc">' + esc(r.d) + '</div>';
-      d.onclick = function () { S.race = r.n; if (r.n !== '人类') S.magic = '淫魔力'; renderRaces(); renderRaceWarn(); };
+      d.onclick = function () { pickRace(r.n); };
       grid.appendChild(d);
     });
   }
@@ -315,15 +435,52 @@
     if (o && o.ids && o.ids.indexOf(S.identity) < 0) S.identity = o.ids[0];
     sel.value = S.identity;
   }
+  // 按 S.loc 路径在 LOCS 树中定位当前节点（虚拟根 = LOCS）
+  function locNode(path) {
+    var node = { subs: LOCS };
+    for (var i = 0; i < path.length; i++) {
+      var next = null;
+      (node.subs || []).forEach(function (s) { if (s.n === path[i]) next = s; });
+      if (!next) return null;
+      node = next;
+    }
+    return node;
+  }
   function renderLocs() {
     var grid = $('loc-grid'); grid.innerHTML = '';
-    LOCS.forEach(function (l) {
-      var d = document.createElement('div');
-      d.className = 'opt' + (S.location === l.n ? ' active' : '');
-      d.innerHTML = '<div class="nm">' + esc(l.n) + '</div><div class="desc">' + esc(l.d) + '</div>';
-      d.onclick = function () { S.location = l.n; renderLocs(); };
-      grid.appendChild(d);
-    });
+    var cur = locNode(S.loc);
+    // 返回上级
+    if (S.loc.length > 0) {
+      var back = document.createElement('div');
+      back.className = 'opt';
+      back.innerHTML = '<div class="nm" style="color:#a88cd6">← 返回上级</div>';
+      back.onclick = function () { S.loc = S.loc.slice(0, -1); renderLocs(); };
+      grid.appendChild(back);
+    }
+    var subs = (cur && cur.subs) ? cur.subs : null;
+    if (subs && subs.length) {
+      subs.forEach(function (s) {
+        var d = document.createElement('div');
+        d.className = 'opt';
+        d.innerHTML = '<div class="nm">' + esc(s.n) + '</div>' + (s.d ? '<div class="desc">' + esc(s.d) + '</div>' : '');
+        d.onclick = function () { S.loc = S.loc.concat([s.n]); renderLocs(); };
+        grid.appendChild(d);
+      });
+      // 中间层可就选这里（无需强制钻到叶子）
+      if (S.loc.length > 0) {
+        var done = document.createElement('div');
+        done.className = 'opt active';
+        done.innerHTML = '<div class="nm">✔ 就选这里：' + esc(S.loc.join('-')) + '</div>';
+        grid.appendChild(done);
+      }
+    } else if (S.loc.length > 0) {
+      var leaf = document.createElement('div');
+      leaf.className = 'opt active';
+      leaf.innerHTML = '<div class="nm">✔ 已确认：' + esc(S.loc.join('-')) + '</div>';
+      grid.appendChild(leaf);
+    }
+    var curLabel = $('loc-current');
+    if (curLabel) curLabel.textContent = '当前选择：临空市-' + S.loc.join('-');
   }
   function renderAttrs() {
     var rollMode = S.attrMethod === 'roll';
@@ -416,9 +573,10 @@
   function selectStart(n) {
     S.startEvent = n;
     var se = STARTS.find(function (x) { return x.n === n; });
+    // 解耦：起始事件不限定种族、不更改玩家已设定的种族/魔力——仅设定组织/身份/地点语境
     if (se && se.org) {
-      S.race = se.race; S.org = se.org; S.identity = se.id; S.magic = se.magic; S.location = se.loc;
-      renderRaces(); renderRaceWarn(); renderOrgs(); renderLocs();
+      S.org = se.org; S.identity = se.id; S.loc = [se.loc];
+      renderOrgs(); renderLocs();
     }
     renderStarts();
   }
@@ -466,6 +624,95 @@
     if (S.bg === '自定义开局') return S.customBg || '（自定义背景）';
     return b ? b.desc : '';
   }
+
+  /* ══════════ 快速导入：预设管理 ══════════ */
+  var PRESET_KEY = 'lk_city_presets';
+  function getPresets() {
+    try { var raw = localStorage.getItem(PRESET_KEY); var a = raw ? JSON.parse(raw) : []; return Array.isArray(a) ? a : []; }
+    catch (e) { return []; }
+  }
+  function setPresets(list) {
+    try { localStorage.setItem(PRESET_KEY, JSON.stringify(list)); } catch (e) {}
+  }
+  function captureState() {
+    return { name: S.name, age: S.age, gender: S.gender, race: S.race, org: S.org, identity: S.identity, rank: S.rank,
+      loc: S.loc.slice(), attrs: JSON.parse(JSON.stringify(S.attrs)), prof: S.prof.slice(), magic: S.magic,
+      startCorruption: JSON.parse(JSON.stringify(S.startCorruption)),
+      attrMethod: S.attrMethod, rolledScores: S.rolledScores.slice(), attrAssign: JSON.parse(JSON.stringify(S.attrAssign)),
+      startEvent: S.startEvent, customStart: S.customStart, bg: S.bg, customBg: S.customBg };
+  }
+  function applyState(d) {
+    if (!d) return;
+    S.name = d.name || ''; S.age = d.age || 18; S.gender = d.gender || '女性'; S.race = d.race || '人类';
+    S.org = d.org || '无'; S.identity = d.identity || ''; S.rank = d.rank || '见习';
+    S.loc = Array.isArray(d.loc) && d.loc.length ? d.loc.slice() : (d.location ? [d.location] : ['生活区']);
+    if (d.attrs) ATTRS.forEach(function (a) { if (d.attrs[a] != null) S.attrs[a] = Number(d.attrs[a]) || 8; });
+    S.prof = (d.prof || []).slice(); S.magic = d.magic || '无';
+    if (d.attrMethod) S.attrMethod = d.attrMethod;
+    if (d.rolledScores) S.rolledScores = d.rolledScores.slice();
+    if (d.attrAssign) S.attrAssign = JSON.parse(JSON.stringify(d.attrAssign));
+    S.startEvent = d.startEvent || '临光战队新兵'; S.customStart = d.customStart || '';
+    S.bg = d.bg || '新兵报到'; S.customBg = d.customBg || '';
+    if (d.startCorruption) S.startCorruption = JSON.parse(JSON.stringify(d.startCorruption));
+    $('in-name').value = S.name; $('in-age').value = S.age; $('in-gender').value = S.gender; $('in-rank').value = S.rank;
+    $('in-identity').value = S.identity; $('in-custom-start').value = S.customStart; $('in-custom-bg').value = S.customBg;
+  }
+  function renderPresetSelect() {
+    var list = getPresets();
+    var sel = $('preset-select'); sel.innerHTML = '<option value="">— 选择已保存的预设快速载入 —</option>';
+    list.forEach(function (p) {
+      var op = document.createElement('option'); op.value = p.name; op.textContent = p.name + '（' + (p.data && p.data.name || '未命名') + '）'; sel.appendChild(op);
+    });
+    $('preset-count').textContent = list.length + ' 个预设';
+  }
+  function savePreset() {
+    var name = prompt('为此预设命名：', S.name ? S.name + '·临空市' : '临空市预设');
+    if (!name) return;
+    var list = getPresets();
+    list = list.filter(function (p) { return p.name !== name; });
+    list.push({ name: name, data: captureState(), ts: new Date().toISOString() });
+    setPresets(list); renderPresetSelect();
+    if (typeof toastr !== 'undefined') toastr.success('预设已保存：' + name);
+  }
+  function loadPreset(name) {
+    if (!name) return;
+    var list = getPresets();
+    var p = list.find(function (x) { return x.name === name; });
+    if (!p) return;
+    applyState(p.data);
+    renderTabs(); renderRaces(); renderRaceWarn(); renderOrgs(); renderLocs(); renderAttrs(); renderSkills(); renderStarts(); renderBgs();
+    if (typeof toastr !== 'undefined') toastr.success('已载入预设：' + name);
+  }
+  function exportPresets() {
+    var list = getPresets();
+    if (!list.length) { alert('暂无已保存的预设'); return; }
+    var blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = '临空市预设.json'; a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  function importPresets(input) {
+    var file = input.files && input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var parsed = JSON.parse(reader.result);
+        var arr = Array.isArray(parsed) ? parsed : [parsed];
+        var list = getPresets();
+        arr.forEach(function (p) {
+          if (p && p.name && p.data) {
+            list = list.filter(function (x) { return x.name !== p.name; });
+            list.push(p);
+          }
+        });
+        setPresets(list); renderPresetSelect();
+        if (typeof toastr !== 'undefined') toastr.success('导入 ' + arr.length + ' 个预设');
+      } catch (e) { alert('导入失败：文件不是有效的 JSON 格式'); }
+    };
+    reader.readAsText(file);
+    input.value = '';
+  }
   function buildPrompt() {
     var attrs = ATTRS.map(function (a) { return a + ' ' + S.attrs[a] + '（mod ' + mod(S.attrs[a]) + '）'; }).join('，');
     var se = STARTS.find(function (x) { return x.n === S.startEvent; });
@@ -485,15 +732,17 @@
     return '【临空市 · 开局设定】\n' +
       '你是「' + S.name + '」，' + S.age + '岁，性别' + S.gender + '，种族' + S.race + '。\n' +
       '所属组织：' + S.org + (S.identity ? '，身份：' + S.identity : '') + '（职位：' + S.rank + '）。\n' +
-      '起始地点：临空市-' + S.location + '。\n' +
+      '起始地点：临空市-' + S.loc.join('-') + '。\n' +
       '属性（DND六维）：' + attrs + '。\n' +
       '熟练项：' + (S.prof.join('、') || '无') + '。\n' +
       '侦察能力：' + reconLine + '。\n' +
-      '初始魔力：' + S.magic + (S.race !== '人类' ? '（起点魔性侵蚀50、魔化度40，需伪装人类身份）' : '') + '。\n\n' +
+      '初始魔力：' + S.magic + (isDemonRace(S.race) ? '（魔族起点）' : '') + '。\n' +
+      '初始堕落：魔化度' + S.startCorruption.魔化度 + ' / 恶堕度' + S.startCorruption.恶堕度 + ' / 淫化度' + S.startCorruption.淫化度 + ' / 魔性侵蚀' + S.startCorruption.魔性侵蚀 + '。\n\n' +
       startLine + eventLine + '\n\n' +
       '开局背景：' + bgDesc() + '\n\n' +
       '请以临空市的设定展开开场——描述这座城市、你抵达的场景、与你身份相符的初始处境。城市只有女性（含扶她），百合文化普及；你身处人类与魔族战争的最前线，空气中隐约残留着魔素的气息。请在叙事中自然铺陈「守护、欲望与堕落」的张力，等待我的行动。\n' +
-      '（侦察规则：被动察觉 DC ' + (10 + wis + (recon.length ? bonus : 0)) + ' 决定你是否能发现伪装的魔族痕迹——魔族隐匿检定低于此 DC 时露出破绽。侦察类熟练项：察觉/侦察/洞察/魔力感知。）';
+      '（侦察规则：被动察觉 DC ' + (10 + wis + (recon.length ? bonus : 0)) + ' 决定你是否能发现伪装的魔族痕迹——魔族隐匿检定低于此 DC 时露出破绽。侦察类熟练项：察觉/侦察/洞察/魔力感知。）\n' +
+      '（初始堕落：请按上面的初始堕落数值，在开局时于<UpdateVariable>中设置 主角.堕落档案.魔化度=' + S.startCorruption.魔化度 + '、恶堕度=' + S.startCorruption.恶堕度 + '、淫化度=' + S.startCorruption.淫化度 + '、主角.魔性侵蚀=' + S.startCorruption.魔性侵蚀 + '。）';
   }
   async function generate() {
     if (!S.name) { $('gen-hint').textContent = '请先设定姓名'; return; }
@@ -526,6 +775,12 @@
     $('in-identity').addEventListener('change', function () { S.identity = this.value; });
     $('in-custom-start').addEventListener('input', function () { S.customStart = this.value; });
     $('in-custom-bg').addEventListener('input', function () { S.customBg = this.value; });
+    $('cs-mahua').addEventListener('input', function () { S.startCorruption.魔化度 = Math.max(0, Math.min(100, Number(this.value) || 0)); });
+    $('cs-eduo').addEventListener('input', function () { S.startCorruption.恶堕度 = Math.max(0, Math.min(100, Number(this.value) || 0)); });
+    $('cs-yinhua').addEventListener('input', function () { S.startCorruption.淫化度 = Math.max(0, Math.min(100, Number(this.value) || 0)); });
+    $('cs-erosion').addEventListener('input', function () { S.startCorruption.魔性侵蚀 = Math.max(0, Math.min(100, Number(this.value) || 0)); });
+    renderPresetSelect();
+    renderCorStart();
     renderTabs(); renderRaces(); renderRaceWarn(); renderOrgs(); renderLocs(); renderAttrs(); renderSkills(); renderStarts(); renderBgs();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

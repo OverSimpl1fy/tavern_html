@@ -57,7 +57,15 @@
   .kv .k { color: #a88cd6; white-space: nowrap; }
   .kv .v { color: var(--lk-text); }
   .chips { display: flex; flex-wrap: wrap; gap: 5px; }
-  .chip { background: rgba(122,74,200,0.18); border: 1px solid rgba(157,107,255,0.35); border-radius: 10px; padding: 1px 9px; font-size: 12px; color: #cbb0ff; }
+  .chips.scroll { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; padding-bottom: 2px; }
+  .chips.scroll::-webkit-scrollbar { height: 3px; }
+  .chips.scroll::-webkit-scrollbar-thumb { background: rgba(157,107,255,0.4); border-radius: 2px; }
+  .chip { background: rgba(122,74,200,0.18); border: 1px solid rgba(157,107,255,0.35); border-radius: 10px; padding: 1px 9px; font-size: 12px; color: #cbb0ff; flex-shrink: 0; }
+  .rel-tier { display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 8px; margin-left: 6px; vertical-align: middle; }
+  .rel-detail-btn { cursor: pointer; color: #b78bff; font-size: 11px; margin-top: 6px; user-select: none; }
+  .rel-detail { display: none; margin-top: 6px; font-size: 12px; color: var(--lk-dim); line-height: 1.7; border-top: 1px dashed rgba(157,107,255,0.25); padding-top: 6px; }
+  .rel-detail.open { display: block; }
+  .rel-detail .dk { color: #a88cd6; }
   .track { margin: 8px 0; }
   .track .row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
   .track .lbl { width: 66px; font-size: 13px; color: var(--lk-dim); flex-shrink: 0; }
@@ -98,11 +106,10 @@
 <div class="starfield-twi" aria-hidden="true"></div>
 <div id="app">
   <div class="head">
-    <h1>✧ 临空市 · 守护者档案 ✧</h1>
-    <span class="sub">人类与魔族战争前线 · 堕落追踪</span>
+    <h1>✧ 临空市</h1>
     <button class="hbtn save hidden" id="btn-save" onclick="saveEdits()">💾 保存修改</button>
     <button class="hbtn" id="btn-edit" onclick="toggleEdit()">✏️ 编辑</button>
-    <button class="refresh" onclick="refresh()">↻ 刷新</button>
+    <button class="refresh" onclick="refresh()" title="刷新">↻</button>
   </div>
 
   <nav class="tabs">
@@ -179,6 +186,7 @@
   function favColor (v) { v = num(v); if (v < 0) return '#e0707a'; if (v >= 60) return '#e8c87a'; return '#7bd0a0'; }
   function convColor (v) { return (!v || v === '无') ? '#a88cd6' : '#e0707a'; }
   function fmtList (v) { return Array.isArray(v) ? v.join('、') : (v || '—'); }
+  function has (v) { return v !== undefined && v !== null && String(v).trim() !== ''; }
 
   /* ══════════ 收起/编辑 ══════════ */
   var editMode = false;
@@ -306,7 +314,7 @@
       '<span class="k">职位</span><span class="v">' + dOrE('主角.职位', pj.职位 || '见习') + '</span>' +
       '<span class="k">资金</span><span class="v">' + dOrE('主角.资金', pj.资金 || '普通') + '</span>';
     $('pf-identity').innerHTML = idHtml;
-    $('pf-skills').innerHTML = skills.length ? skills.map(function (s) { return '<span class="chip">' + esc(s) + '</span>'; }).join('') : '';
+    $('pf-skills').innerHTML = skills.length ? '<div class="chips scroll">' + skills.map(function (s) { return '<span class="chip">' + esc(s) + '</span>'; }).join('') + '</div>' : '';
 
     var attrs = (pj.属性 || {});
     $('pf-attrs').innerHTML = ATTRS.map(function (a) {
@@ -358,7 +366,7 @@
 
     var items = pj.持有物 || {};
     $('pf-items').innerHTML = Object.keys(items).length
-      ? Object.keys(items).map(function (k) { return '<span class="chip">' + esc(k) + ' ×' + (num(items[k].数量) || 1) + '</span>'; }).join('')
+      ? '<div class="chips scroll">' + Object.keys(items).map(function (k) { return '<span class="chip">' + esc(k) + ' ×' + (num(items[k].数量) || 1) + '</span>'; }).join('') + '</div>'
       : '<div class="empty">暂无持有物</div>';
   }
 
@@ -410,12 +418,41 @@
       : '<div class="empty">尚无印记或特殊项目</div>';
   }
 
+  function relTier (v) {
+    v = num(v);
+    if (v < 0) return { name: '敌对', color: '#e0707a' };
+    if (v <= 20) return { name: '冷淡', color: '#8aa0c0' };
+    if (v <= 50) return { name: '中立', color: '#9d6bff' };
+    if (v <= 80) return { name: '友善', color: '#7bd0a0' };
+    if (v <= 95) return { name: '亲密', color: '#e8c87a' };
+    return { name: '挚爱', color: '#ff6b9d' };
+  }
+  function toggleRelDetail (btn) {
+    var card = btn.parentNode;
+    var detail = card.querySelector('.rel-detail');
+    if (detail) {
+      var open = detail.classList.toggle('open');
+      btn.textContent = open ? '▲ 收起详情' : '▼ 展开详情';
+    }
+  }
+  function relDetailHtml (r) {
+    var parts = [];
+    if (has(r.性格)) parts.push('<div><span class="dk">性格：</span>' + esc(r.性格) + '</div>');
+    if (has(r.喜爱)) parts.push('<div><span class="dk">喜爱：</span>' + esc(r.喜爱) + '</div>');
+    if (has(r.外貌)) parts.push('<div><span class="dk">外貌：</span>' + esc(r.外貌) + '</div>');
+    if (has(r.着装)) parts.push('<div><span class="dk">着装：</span>' + esc(r.着装) + '</div>');
+    if (has(r.心里话)) parts.push('<div><span class="dk">心里话：</span>' + esc(r.心里话) + '</div>');
+    if (has(r.背景故事)) parts.push('<div><span class="dk">背景：</span>' + esc(r.背景故事) + '</div>');
+    if (has(r.当前认知)) parts.push('<div><span class="dk">认知：</span>' + esc(r.当前认知) + '</div>');
+    return parts.join('');
+  }
   function renderRelations () {
     var rel = stat.关系列表 || {};
     var keys = Object.keys(rel);
     if (!keys.length) { $('rel-list').innerHTML = '<div class="card"><div class="empty">暂无关系角色</div></div>'; return; }
     $('rel-list').innerHTML = keys.map(function (name) {
       var r = rel[name] || {};
+      var tier = relTier(r.好感度);
       var tracks;
       if (editMode) {
         tracks = TRACKS.map(function (t) {
@@ -426,13 +463,13 @@
           return '<div class="row" style="width:calc(100% - 50px);margin-left:50px"><span class="lbl" style="width:44px">' + t.name.slice(0, 2) + '</span><div class="bar"><i style="width:' + pct(r[t.key]) + ';background:' + barColor(r[t.key]) + '"></i></div><span class="val">' + num(r[t.key]) + '</span></div>';
         }).join('');
       }
-      return '<div class="card"><div class="rel"><div><div class="nm">✦ ' + esc(r.姓名 || name) + '</div>' +
+      var detail = relDetailHtml(r);
+      return '<div class="card"><div class="rel"><div><div class="nm">✦ ' + esc(r.姓名 || name) + '<span class="rel-tier" style="background:rgba(0,0,0,0.3);color:' + tier.color + ';border:1px solid ' + tier.color + '">' + tier.name + '</span></div>' +
         '<div class="meta">' + esc(r.种族 || '?') + ' · ' + esc(r.所属组织 || '无') + ' · ' + esc(fmtList(r.身份)) + '</div>' +
-        (r.性格 ? '<div class="meta">' + esc(r.性格) + '</div>' : '') + '</div>' +
-        '<div class="fav"><div>好感度 <b style="color:' + favColor(r.好感度) + '">' + (editMode ? editField('关系列表.' + name + '.好感度', r.好感度 || 0, true) : num(r.好感度)) + '</b></div>' +
-        (r.关系标签 && r.关系标签.length ? '<div class="heart">' + esc(r.关系标签.join('、')) + '</div>' : '') + '</div></div>' +
+        (r.关系标签 && r.关系标签.length ? '<div class="heart">' + esc(r.关系标签.join('、')) + '</div>' : '') + '</div>' +
+        '<div class="fav"><div>好感度 <b style="color:' + favColor(r.好感度) + '">' + (editMode ? editField('关系列表.' + name + '.好感度', r.好感度 || 0, true) : num(r.好感度)) + '</b></div></div></div>' +
         '<div class="track" style="margin-top:7px">' + tracks + '</div>' +
-        (r.当前认知 ? '<div class="subtrack" style="font-size:12px;color:#a88cd6">' + esc(r.当前认知) + '</div>' : '') + '</div>';
+        (detail ? '<div class="rel-detail-btn" onclick="toggleRelDetail(this)">▼ 展开详情</div><div class="rel-detail">' + detail + '</div>' : '') + '</div>';
     }).join('');
   }
 
