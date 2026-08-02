@@ -12745,6 +12745,7 @@
           魅力: z.coerce.number().prefault(0),
           精神: z.coerce.number().prefault(0),
         })
+        .prefault({})
         .transform((e) => ({
           力量: _.clamp(e["力量"] || 0, 0, 20),
           敏捷: _.clamp(e["敏捷"] || 0, 0, 20),
@@ -12756,8 +12757,7 @@
             0,
             20,
           ),
-        }))
-        .prefault({}),
+        })),
       C = z
         .object({
           是否开启: z.boolean().prefault(!1),
