@@ -393,6 +393,12 @@
                 感知: 0,
                 魅力: 0,
               };
+              if (typeof toastr !== "undefined")
+                toastr.info(
+                  "roll" === m
+                    ? "🎲 已切换到掷骰制：点击「掷骰」生成6个数字，每个属性选择一个数字分配"
+                    : "✦ 已切换到标准购点：共27点，单项上限15，越往上越贵",
+                );
             },
             rollDice: () => {
               const rd6 = () => Math.floor(Math.random() * 6) + 1;
@@ -10765,52 +10771,65 @@
                               (0, c.createCommentVNode)(" 基础点 stepper (购点/掷骰) "),
                               "roll" === (0, c.unref)(l).attrMethod
                                 ? (0, c.createElementVNode)("div", fi, [
-                                    (0, c.createCommentVNode)(" 掷骰分配按钮 "),
-                                    ((0, c.openBlock)(!0),
-                                    (0, c.createElementBlock)(
-                                      c.Fragment,
-                                      null,
-                                      (0, c.renderList)(
-                                        (0, c.unref)(l).rolledScores,
-                                        (s, i) => {
-                                          const isCur =
-                                              (0, c.unref)(l).attrAssign[e] ===
-                                              String(s),
-                                            used = !isCur && (() => {
-                                              const total = (0, c.unref)(l)
-                                                .rolledScores.filter(
-                                                  (x) =>
-                                                    String(x) === String(s),
-                                                ).length;
-                                              const usedN = Object.values(
-                                                (0, c.unref)(l).attrAssign || {},
-                                              ).filter(
-                                                (x) =>
-                                                  String(x) === String(s),
-                                              ).length;
-                                              return usedN >= total;
-                                            })();
-                                          return (0, c.createElementVNode)(
-                                            "button",
-                                            {
-                                              key: i,
-                                              type: "button",
-                                              class: (0, c.normalizeClass)([
-                                                "roll-pick",
-                                                isCur ? "active" : "",
-                                                used ? "used" : "",
-                                              ]),
-                                              disabled: used,
-                                              onClick: () =>
-                                                (0, c.unref)(um)(e, String(s)),
-                                            },
-                                            (0, c.toDisplayString)(s),
-                                            9,
-                                            ["class"],
-                                          );
-                                        },
-                                      ),
-                                    )),
+                                    (0, c.createCommentVNode)(" 掷骰分配 select "),
+                                    (0, c.createElementVNode)(
+                                      "select",
+                                      {
+                                        class: "base-select",
+                                        value:
+                                          (0, c.unref)(l).attrAssign[e] || "",
+                                        onChange: (ev) =>
+                                          (0, c.unref)(um)(e, ev.target.value),
+                                      },
+                                      [
+                                        (0, c.createElementVNode)(
+                                          "option",
+                                          { value: "" },
+                                          "未分配",
+                                          -1,
+                                        ),
+                                        ((0, c.openBlock)(!0),
+                                        (0, c.createElementBlock)(
+                                          c.Fragment,
+                                          null,
+                                          (0, c.renderList)(
+                                            (0, c.unref)(l).rolledScores,
+                                            (s, i) =>
+                                              (0, c.createElementVNode)(
+                                                "option",
+                                                {
+                                                  key: i,
+                                                  value: String(s),
+                                                  disabled: (() => {
+                                                    const isCur =
+                                                      (0, c.unref)(l)
+                                                        .attrAssign[e] ===
+                                                      String(s);
+                                                    if (isCur) return void 0;
+                                                    const total = (0, c.unref)(l)
+                                                      .rolledScores.filter(
+                                                        (x) =>
+                                                          String(x) ===
+                                                          String(s),
+                                                      ).length;
+                                                    const usedN = Object.values(
+                                                      (0, c.unref)(l)
+                                                        .attrAssign || {},
+                                                    ).filter(
+                                                      (x) =>
+                                                        String(x) ===
+                                                        String(s),
+                                                    ).length;
+                                                    return usedN >= total;
+                                                  })(),
+                                                },
+                                                (0, c.toDisplayString)(s),
+                                                1,
+                                              ),
+                                          ),
+                                        )),
+                                      ],
+                                    ),
                                   ])
                                 : (0, c.createElementVNode)("div", fi, [
                                     a[18] ||
