@@ -255,6 +255,7 @@
           l = (0, c.ref)([]),
           o = (0, c.ref)([]),
           n = (0, c.ref)(null),
+          uiTick = (0, c.ref)(0),
           r = (0, c.computed)(() =>
             _.sum([
               _.get(h.value, e.value.race, 0),
@@ -359,6 +360,7 @@
             remainingAP: p,
             finalAttributes: v,
             passivePerception,
+            uiTick,
             updateCharacterField: (t, a) => {
               e.value[t] = a;
             },
@@ -393,6 +395,7 @@
                 感知: 0,
                 魅力: 0,
               };
+              uiTick.value++;
               if (typeof toastr !== "undefined")
                 toastr.info(
                   "roll" === m
@@ -417,14 +420,17 @@
                 感知: 0,
                 魅力: 0,
               };
+              uiTick.value++;
             },
             assignRolled: (a, v) => {
               e.value.attrAssign[a] = v;
+              uiTick.value++;
             },
             toggleProf: (s) => {
               const i = e.value.prof.indexOf(s);
               if (i >= 0) e.value.prof.splice(i, 1);
               else if (e.value.prof.length < 4) e.value.prof.push(s);
+              uiTick.value++;
             },
             addAttributePoint: (t) => {
               p.value > 0 && e.value.attributePoints[t]++;
@@ -480,6 +486,7 @@
                 destinyPoints: 0,
                 money: 0,
               };
+              uiTick.value++;
             },
             addEquipment: (e) => {
               t.value.push(e);
@@ -10334,7 +10341,7 @@
         __name: "index",
         setup(e) {
           const t = L(),
-            { character: l } = a(t),
+            { character: l, uiTick } = a(t),
             {
               addBasePoint: o,
               removeBasePoint: n,
@@ -10362,7 +10369,7 @@
             });
           return (e, a) => (
             (0, c.openBlock)(),
-            (0, c.createElementBlock)("div", Gs, [
+            (0, c.createElementBlock)("div", { ...Gs, key: (0, c.unref)(uiTick) }, [
               (0, c.createElementVNode)("div", Os, [
                 (0, c.createCommentVNode)(" 第一行：姓名和性别 "),
                 (0, c.createElementVNode)("div", Ks, [
