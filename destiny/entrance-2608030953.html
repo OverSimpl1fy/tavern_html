@@ -10700,6 +10700,13 @@
                         }, "🎲 掷骰"))
                       : (0, c.createCommentVNode)("v-if", !0),
                   ]),
+                  "roll" === (0, c.unref)(l).attrMethod
+                    ? (0, c.createElementVNode)("div", { class: "dnd-roll-pool" }, [
+                        (0, c.createElementVNode)("span", { class: "dnd-roll-label" }, "投掷结果："),
+                        ((0, c.openBlock)(!0),
+                        (0, c.createElementBlock)(c.Fragment, null, (0, c.renderList)((0, c.unref)(l).rolledScores, (s, i) => (0, c.createElementVNode)("span", { key: i, class: "dnd-roll-num" }, (0, c.toDisplayString)(s), 1)))),
+                      ])
+                    : (0, c.createCommentVNode)("v-if", !0),
                   (0, c.createElementVNode)("div", mi, [
                     (0, c.createCommentVNode)(" 表头 "),
                     (0, c.createElementVNode)("div", ui, [
@@ -10758,69 +10765,52 @@
                               (0, c.createCommentVNode)(" 基础点 stepper (购点/掷骰) "),
                               "roll" === (0, c.unref)(l).attrMethod
                                 ? (0, c.createElementVNode)("div", fi, [
-                                    (0, c.createCommentVNode)(" 掷骰分配 select "),
-                                    (0, c.createElementVNode)(
-                                      "select",
-                                      {
-                                        class: "base-select",
-                                        value:
-                                          (0, c.unref)(l).attrAssign[e] || "",
-                                        onChange: (ev) =>
-                                          (0, c.unref)(um)(e, ev.target.value),
-                                      },
+                                    (0, c.createCommentVNode)(" 掷骰分配按钮 "),
+                                    ((0, c.openBlock)(!0),
+                                    (0, c.createElementBlock)(
+                                      c.Fragment,
                                       null,
-                                      8,
-                                      ["value", "onChange"],
-                                      [
-                                        (0, c.createElementVNode)(
-                                          "option",
-                                          { value: "" },
-                                          "未分配",
-                                          -1,
-                                        ),
-                                        ((0, c.openBlock)(!0),
-                                        (0, c.createElementBlock)(
-                                          c.Fragment,
-                                          null,
-                                          (0, c.renderList)(
-                                            (0, c.unref)(l).rolledScores,
-                                            (s, i) =>
-                                              (0, c.createElementVNode)(
-                                                "option",
-                                                {
-                                                  key: i,
-                                                  value: String(s),
-                                                  disabled: ((c2) => {
-                                                    if (
-                                                      (0, c.unref)(l)
-                                                        .attrAssign[e] ===
-                                                      String(s)
-                                                    )
-                                                      return void 0;
-                                                    const total = (0, c.unref)(l)
-                                                      .rolledScores.filter(
-                                                        (x) =>
-                                                          String(x) ===
-                                                          String(s),
-                                                      ).length;
-                                                    const used = Object.values(
-                                                      (0, c.unref)(l)
-                                                        .attrAssign || {},
-                                                    ).filter(
-                                                      (x) =>
-                                                        String(x) ===
-                                                        String(s),
-                                                    ).length;
-                                                    return used >= total;
-                                                  })(),
-                                                },
-                                                (0, c.toDisplayString)(s),
-                                                1,
-                                              ),
-                                          ),
-                                        )),
-                                      ],
-                                    ),
+                                      (0, c.renderList)(
+                                        (0, c.unref)(l).rolledScores,
+                                        (s, i) => {
+                                          const isCur =
+                                              (0, c.unref)(l).attrAssign[e] ===
+                                              String(s),
+                                            used = !isCur && (() => {
+                                              const total = (0, c.unref)(l)
+                                                .rolledScores.filter(
+                                                  (x) =>
+                                                    String(x) === String(s),
+                                                ).length;
+                                              const usedN = Object.values(
+                                                (0, c.unref)(l).attrAssign || {},
+                                              ).filter(
+                                                (x) =>
+                                                  String(x) === String(s),
+                                              ).length;
+                                              return usedN >= total;
+                                            })();
+                                          return (0, c.createElementVNode)(
+                                            "button",
+                                            {
+                                              key: i,
+                                              type: "button",
+                                              class: (0, c.normalizeClass)([
+                                                "roll-pick",
+                                                isCur ? "active" : "",
+                                                used ? "used" : "",
+                                              ]),
+                                              disabled: used,
+                                              onClick: () =>
+                                                (0, c.unref)(um)(e, String(s)),
+                                            },
+                                            (0, c.toDisplayString)(s),
+                                            9,
+                                            ["class"],
+                                          );
+                                        },
+                                      ),
+                                    )),
                                   ])
                                 : (0, c.createElementVNode)("div", fi, [
                                     a[18] ||
@@ -10990,7 +10980,7 @@
                   ]),
                 ]),
                 (0, c.createElementVNode)("div", { style: "margin-top:10px" }, [
-                  (0, c.createElementVNode)("h3", { style: "font-size:13px;margin-bottom:6px" }, "熟练项（选择2~4项，紫色为侦察类）"),
+                  (0, c.createElementVNode)("h3", { style: "font-size:13px;margin-bottom:6px" }, "熟练项（选择2~4项，金色为侦察类）"),
                   (0, c.createElementVNode)("div", { class: "dnd-prof-chips" }, [
                     ((0, c.openBlock)(!0),
                     (0, c.createElementBlock)(
@@ -11011,6 +11001,14 @@
                         }, (0, c.toDisplayString)(s), 9, ["class"]),
                       ),
                     )),
+                  ]),
+                  (0, c.createElementVNode)("div", { class: "dnd-prof-hint" }, [
+                    "已选熟练项：",
+                    (0, c.toDisplayString)(
+                      (0, c.unref)(l).prof.length
+                        ? (0, c.unref)(l).prof.join("、")
+                        : "（尚未选择）",
+                    ),
                   ]),
                   (0, c.createElementVNode)("div", { class: "dnd-recon-card" }, [
                     "侦察能力（DND）：被动察觉 DC ",
@@ -21756,13 +21754,21 @@
     /* DND 六维重构新增 */
     .dnd-mode-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
     .dnd-mode-btn { padding: 4px 12px; border-radius: 6px; border: 1px solid rgba(128,128,128,.4); background: transparent; cursor: pointer; font-size: 13px; color: inherit; }
-    .dnd-mode-btn.active { background: #7c3aed; color: #fff; border-color: #7c3aed; }
-    .base-select { width: 70px; background: rgba(18,10,36,.8); border: 1px solid rgba(157,107,255,.3); color: inherit; border-radius: 6px; padding: 4px 6px; font-size: 13px; }
+    .dnd-mode-btn.active { background: #d4af37; color: #fff; border-color: #d4af37; box-shadow: 0 0 8px rgba(212,175,55,.4); }
+    .base-select { width: 70px; background: rgba(18,10,36,.8); border: 1px solid rgba(212,175,55,.4); color: inherit; border-radius: 6px; padding: 4px 6px; font-size: 13px; }
+    .dnd-roll-pool { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 4px 0 10px; padding: 6px 8px; border: 1px dashed rgba(212,175,55,.45); border-radius: 8px; background: rgba(212,175,55,.06); }
+    .dnd-roll-label { font-size: 12px; color: #b8941f; }
+    .dnd-roll-num { display: inline-block; min-width: 30px; text-align: center; font-size: 14px; font-weight: 700; color: #d4af37; padding: 2px 8px; border: 1px solid rgba(212,175,55,.5); border-radius: 8px; }
+    .roll-pick { width: 30px; height: 28px; border-radius: 6px; border: 1px solid rgba(212,175,55,.45); background: rgba(212,175,55,.1); color: #f0e6c0; cursor: pointer; font-size: 13px; margin: 1px; }
+    .roll-pick.active { background: #d4af37; color: #fff; border-color: #d4af37; font-weight: 700; }
+    .roll-pick.used { opacity: .35; }
+    .roll-pick:disabled { cursor: not-allowed; }
     .dnd-prof-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
     .dnd-prof-chip { background: rgba(122,74,200,.18); border: 1px solid rgba(157,107,255,.35); border-radius: 10px; padding: 2px 10px; font-size: 12px; cursor: pointer; color: inherit; }
-    .dnd-prof-chip.active { border-color: #b57bff; color: #fff; background: rgba(157,107,255,.25); }
-    .dnd-prof-chip.recon { border-color: rgba(214,107,255,.6); color: #e0b0ff; }
-    .dnd-recon-card { margin-top: 10px; padding: 8px 10px; border: 1px solid rgba(157,107,255,.3); border-radius: 8px; background: rgba(18,10,36,.5); font-size: 13px; line-height: 1.7; }
+    .dnd-prof-chip.active { border-color: #d4af37; color: #fff; background: rgba(212,175,55,.28); }
+    .dnd-prof-chip.recon { border-color: rgba(212,175,55,.6); color: #e8d8a0; }
+    .dnd-prof-hint { margin-top: 6px; font-size: 12px; color: #b8941f; }
+    .dnd-recon-card { margin-top: 10px; padding: 8px 10px; border: 1px solid rgba(212,175,55,.35); border-radius: 8px; background: rgba(18,10,36,.5); font-size: 13px; line-height: 1.7; }
     .dnd-recon-card b { color: #e8c87a; }
   </style>
 </head>

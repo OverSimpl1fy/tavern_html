@@ -20793,7 +20793,7 @@
           [y, v] = (0, u.useState)(!1),
           x = e.主角,
           attrList = (0, u.useMemo)(() => {
-            const b = x.属性 || {},
+            const b = x?.属性 || {},
               out = {};
             ["力量", "敏捷", "体质", "智力", "感知", "魅力"].forEach((k) => {
               if (b[k] != null) out[k] = b[k];
@@ -20803,7 +20803,7 @@
               else out[k] = 0;
             });
             return out;
-          }, [x.属性]),
+          }, [x?.属性]),
           w = (0, u.useMemo)(() => Se(), []);
         (0, u.useEffect)(() => {
           let e = !1;
@@ -21042,7 +21042,7 @@
                               }),
                               (0, i.jsx)("span", {
                                 className: Nu,
-                                children: (x.熟练项?.length || 0) > 0
+                                children: (x?.熟练项?.length || 0) > 0
                                   ? x.熟练项.join("、")
                                   : "无",
                               }),
@@ -21062,10 +21062,10 @@
                                   const wisMod = Math.floor((wis - 10) / 2);
                                   const pb = Math.min(
                                     8,
-                                    2 + Math.floor(((x.等级 ?? 1) - 1) / 4),
+                                    2 + Math.floor(((x?.等级 ?? 1) - 1) / 4),
                                   );
                                   const recon = ["察觉", "侦察", "洞察", "魔力感知"].filter(
-                                    (s) => (x.熟练项 || []).includes(s),
+                                    (s) => (x?.熟练项 || []).includes(s),
                                   );
                                   return (
                                     "DC " +
