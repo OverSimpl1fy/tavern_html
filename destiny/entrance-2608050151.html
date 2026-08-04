@@ -1824,7 +1824,7 @@
       return {
         executeJourney: async () => {
           try {
-            (await (async function (e, t, a, l) {
+            (await (async function (e, t, a, l, m) {
               await waitGlobalInitialized("Mvu");
               const o = _.filter(a, (e) => !e.isCustom),
                 n = _.filter(t, (e) => !e.isCustom),
@@ -1960,13 +1960,100 @@
                   ];
                 }),
               );
+              // ==== 自动填入：将全部已设定内容直写 stat_data（开始生成之前）====
+              const fa = _.fromPairs(
+                _.map(x, (a) => [
+                  a,
+                  Math.min(
+                    20,
+                    (e.attrAssign && e.attrAssign[a]
+                      ? Number(e.attrAssign[a])
+                      : (e.buyScores && e.buyScores[a]) || 0) +
+                      w(e.level) +
+                      (e.attributePoints[a] || 0),
+                  ),
+                ]),
+              );
+              const HP_MULT = [130, 520, 1350, 5200, 23500, 116000, 250000],
+                R_MULT = [32, 97, 194, 387, 726, 1160, 2000],
+                TIER_START = [1, 5, 9, 13, 17, 21, 25],
+                tierIdx = TIER_START.filter((s) => s <= e.level).length - 1,
+                grow = 1 + 0.08 * (e.level - TIER_START[tierIdx]),
+                conMod = abilityMod(fa["体质"]),
+                hpMax = Math.round((5.5 + conMod) * HP_MULT[tierIdx] * grow),
+                mpMax = Math.round(
+                  (fa["智力"] + fa["感知"]) * R_MULT[tierIdx] * grow,
+                ),
+                spMax = Math.round(
+                  (fa["力量"] + fa["敏捷"]) * R_MULT[tierIdx] * grow,
+                ),
+                EXP_TABLE = [
+                  0, 120, 360, 720, 1200, 2400, 3840, 5520, 7440, 11940, 16940,
+                  22440, 28440, 38840, 50040, 62040, 74840, 100340, 127340,
+                  155840, 185840, 236240, 289040, 344240, 401840,
+                ],
+                cumExp = EXP_TABLE.slice(0, e.level).reduce((x, y) => x + y, 0),
+                needExp = e.level >= 25 ? "MAX" : EXP_TABLE[e.level];
+              _.set(
+                c,
+                "stat_data.主角.装备",
+                _.fromPairs(
+                  _.chain(m)
+                    .filter((e) => !!e.name)
+                    .map((e) => [
+                      e.name,
+                      {
+                        品质: _.get($e, e.rarity || "", "普通"),
+                        类型: e.type || "",
+                        标签: e.tag || [],
+                        效果: e.effect || {},
+                        描述: e.description || "",
+                        位置: e.position || "",
+                      },
+                    ])
+                    .value(),
+                ),
+              );
+              (_.set(c, "stat_data.主角.姓名", e.name),
+                _.set(
+                  c,
+                  "stat_data.主角.性别",
+                  "自定义" === e.gender ? e.customGender : e.gender,
+                ),
+                _.set(c, "stat_data.主角.年龄", Number(e.age) || 18),
+                _.set(
+                  c,
+                  "stat_data.主角.种族",
+                  "自定义" === e.race ? e.customRace : e.race,
+                ),
+                _.set(c, "stat_data.主角.身份", [
+                  "自定义" === e.identity ? e.customIdentity : e.identity,
+                ]),
+                _.set(c, "stat_data.主角.职业", []),
+                _.set(c, "stat_data.主角.生命层级", S(e.level)),
+                _.set(c, "stat_data.主角.累计经验值", cumExp),
+                _.set(c, "stat_data.主角.升级所需经验", needExp),
+                _.set(c, "stat_data.主角.冒险者等级", "未评级"),
+                _.set(c, "stat_data.主角.状态效果", {}),
+                _.set(c, "stat_data.主角.生命值上限", hpMax),
+                _.set(c, "stat_data.主角.生命值", hpMax),
+                _.set(c, "stat_data.主角.法力值上限", mpMax),
+                _.set(c, "stat_data.主角.法力值", mpMax),
+                _.set(c, "stat_data.主角.体力值上限", spMax),
+                _.set(c, "stat_data.主角.体力值", spMax));
               (_.set(c, "stat_data.关系列表", d),
                 await Mvu.replaceMvuData(c, {
                   type: "message",
                   message_id: "latest",
                 }),
                 console.log("✅ 预设数据已成功写入消息楼层变量"));
-            })(l.value, e.selectedItems, e.selectedSkills, e.selectedPartners),
+            })(
+              l.value,
+              e.selectedItems,
+              e.selectedSkills,
+              e.selectedPartners,
+              e.selectedEquipments,
+            ),
               console.log("✅ 角色数据已写入 MVU 变量"));
             const a = (function (e, t, a, l, o, n, r) {
               const c = [],
