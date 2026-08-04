@@ -12842,6 +12842,7 @@
               xp: z.record(z.string(), z.object({ 名字: z.string().prefault(""), 描述: z.string().prefault(""), 开发程度: z.string().prefault(""), 对堕落的影响: z.string().prefault(""), 对好感度的影响: z.string().prefault("") }).prefault({})).prefault({}),
               特殊项目: z.record(z.string(), z.object({ 名字: z.string().prefault(""), 类型: z.string().prefault(""), 状态: z.string().prefault(""), 描述: z.string().prefault(""), 对堕落的影响: z.string().prefault(""), 对好感度的影响: z.string().prefault("") }).prefault({})).prefault({})
             }).optional().prefault(void 0),
+            奇遇: z.record(z.string(), z.object({ 名称: z.string().prefault(""), 描述: z.string().prefault(""), 效果: z.string().prefault("") }).prefault({})).prefault({}),
         })
         .prefault({})
         .transform((e) => {
@@ -12934,6 +12935,7 @@
                 .transform((e) => _.pickBy(e, (e) => e.数量 > 0)),
               心里话: z.string().prefault(""),
               背景故事: z.string().prefault(""),
+              奇遇: z.record(z.string(), z.object({ 名称: z.string().prefault(""), 描述: z.string().prefault(""), 效果: z.string().prefault("") }).prefault({})).prefault({}),
             })
             .prefault({})
             .transform((e) => {
@@ -17465,6 +17467,64 @@
                                                   ],
                                                 }),
                                               
+                                            ],
+                                          }),
+                                        ],
+                                      },
+                                      r,
+                                    ),
+                                ),
+                              }),
+                        ],
+                      }),
+                      // ===== 奇遇 区域 =====
+                      (0, i.jsxs)("div", {
+                        className: Bc,
+                        children: [
+                          (0, i.jsx)("div", { className: cl, children: "奇遇" }),
+                          _.isEmpty(n.奇遇) && !t
+                            ? (0, i.jsx)(Bn, { className: Rl, text: "暂无奇遇" })
+                            : (0, i.jsx)("div", {
+                                className: Tl,
+                                children: _.map(
+                                  n.奇遇 ?? {},
+                                  (a, r) =>
+                                    (0, i.jsxs)(
+                                      "div",
+                                      {
+                                        className: Lc,
+                                        children: [
+                                          (0, i.jsxs)("div", {
+                                            className: `${Rn.itemTitle} ${Mc}`,
+                                            children: [
+                                              (0, i.jsx)("span", {
+                                                className: `${Rn.itemName} ${Ec}`,
+                                                children: a.名称 || r,
+                                              }),
+                                            ],
+                                          }),
+                                          (0, i.jsxs)("div", {
+                                            className: Rn.itemDetails,
+                                            children: [
+                                              (a.描述 || t) &&
+                                                (0, i.jsxs)("div", {
+                                                  className: Rn.itemBlock,
+                                                  children: [
+                                                    (0, i.jsx)("div", { className: Rn.itemBlockTitle, children: "描述" }),
+                                                    (0, i.jsx)("div", {
+                                                      className: Pc,
+                                                      children: t ? (0, i.jsx)(Zt, { path: `关系列表.${e}.奇遇.${r}.描述`, value: a.描述 ?? "", type: "textarea" }) : a.描述,
+                                                    }),
+                                                  ],
+                                                }),
+                                              (a.效果 || t) &&
+                                                (0, i.jsxs)("div", {
+                                                  className: Rn.itemFieldRow,
+                                                  children: [
+                                                    (0, i.jsx)("span", { className: Dc, children: "效果" }),
+                                                    t ? (0, i.jsx)(Zt, { path: `关系列表.${e}.奇遇.${r}.效果`, value: a.效果 ?? "", type: "text" }) : (0, i.jsx)("span", { className: zc, children: a.效果 }),
+                                                  ],
+                                                }),
                                             ],
                                           }),
                                         ],

@@ -214,6 +214,8 @@
                     : e >= 25
                       ? "第七层级"
                       : "未知层级",
+      TIER_CAP = (lv) =>
+        lv >= 25 ? 30 : lv >= 21 ? 28 : lv >= 17 ? 26 : lv >= 13 ? 24 : lv >= 9 ? 22 : lv >= 5 ? 20 : 18,
       D = {};
     let P = null;
     function F() {
@@ -288,7 +290,7 @@
               _.map(x, (a) => [
                 a,
                 Math.min(
-                  20,
+                  TIER_CAP(e.value.level),
                   (e.value.attrAssign[a]
                     ? Number(e.value.attrAssign[a])
                     : e.value.buyScores[a] || 0) +
@@ -1872,7 +1874,7 @@
                     _.map(x, (a) => [
                       a,
                       Math.min(
-                        20,
+                        TIER_CAP(e.level),
                         (e.attrAssign && e.attrAssign[a]
                           ? Number(e.attrAssign[a])
                           : (e.buyScores && e.buyScores[a]) || 0) +
@@ -1965,7 +1967,7 @@
                 _.map(x, (a) => [
                   a,
                   Math.min(
-                    20,
+                    TIER_CAP(e.level),
                     (e.attrAssign && e.attrAssign[a]
                       ? Number(e.attrAssign[a])
                       : (e.buyScores && e.buyScores[a]) || 0) +
@@ -2035,6 +2037,7 @@
                 _.set(c, "stat_data.主角.升级所需经验", needExp),
                 _.set(c, "stat_data.主角.冒险者等级", "未评级"),
                 _.set(c, "stat_data.主角.状态效果", {}),
+                _.set(c, "stat_data.主角.奇遇", {}),
                 _.set(c, "stat_data.主角.生命值上限", hpMax),
                 _.set(c, "stat_data.主角.生命值", hpMax),
                 _.set(c, "stat_data.主角.法力值上限", mpMax),
@@ -2070,7 +2073,7 @@
                       ? Number(e.attrAssign[t])
                       : (e.buyScores && e.buyScores[t]) || 0,
                     l = e.attributePoints[t] || 0,
-                    total = Math.min(20, a + u + l),
+                    total = Math.min(TIER_CAP(e.level), a + u + l),
                     mod = abilityMod(total);
                   return `${a}(基础) + ${u}(层级) + ${l}(额外) = ${total}(mod ${mod >= 0 ? "+" + mod : "" + mod})`;
                 };
@@ -2094,7 +2097,7 @@
                 (() => {
                   const fa = (t) =>
                       Math.min(
-                        20,
+                        TIER_CAP(e.level),
                         (e.attrAssign && e.attrAssign[t]
                           ? Number(e.attrAssign[t])
                           : (e.buyScores && e.buyScores[t]) || 0) +
