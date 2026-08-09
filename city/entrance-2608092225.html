@@ -171,20 +171,20 @@
   <!-- 1 组织与人物设定 -->
   <div class="card step" data-step="1">
     <h3>所属组织与人物设定</h3>
-    <p class="hint" style="margin-bottom:8px">选择所属组织（决定阵营与事件触发）；用自由文字设定你的性格、外貌与背景——无需机械的职务下拉。</p>
+    <p class="hint" style="margin-bottom:8px">选择所属组织（决定阵营与事件触发）；设定你的性格、外貌与背景——性格/外貌可自行填写，也可投掷随机池获取（🎲）；背景纯自由发挥。</p>
     <div class="opt-grid" id="org-grid"></div>
     <div class="row" style="margin-top:14px" id="org-detail">
-      <div class="field" style="flex:1"><label>性格</label>
-        <textarea id="in-persona-personality" rows="2" style="width:100%" placeholder="如：外冷内热，对温柔没有抵抗力，越紧张越爱逞强"></textarea>
+      <div class="field" style="flex:1"><label>性格 <span class="chip" style="padding:1px 8px;font-size:11px;cursor:pointer" onclick="rollPersona('性格')">🎲 投掷</span></label>
+        <textarea id="in-persona-personality" rows="2" style="width:100%" placeholder="自行填写，或点 🎲 从随机池获取"></textarea>
       </div>
     </div>
     <div class="row">
-      <div class="field" style="flex:1"><label>外貌</label>
-        <textarea id="in-persona-app" rows="2" style="width:100%" placeholder="如：黑长直，左眼下方一颗泪痣，常穿制服裙"></textarea>
+      <div class="field" style="flex:1"><label>外貌（身材，无需服饰） <span class="chip" style="padding:1px 8px;font-size:11px;cursor:pointer" onclick="rollPersona('外貌')">🎲 投掷</span></label>
+        <textarea id="in-persona-app" rows="2" style="width:100%" placeholder="自行填写身材，或点 🎲 从随机池获取（如：高挑丰满，曲线分明）"></textarea>
       </div>
     </div>
     <div class="row">
-      <div class="field" style="flex:1"><label>背景故事</label>
+      <div class="field" style="flex:1"><label>背景故事（纯自由发挥）</label>
         <textarea id="in-persona-bg" rows="3" style="width:100%" placeholder="如：从小在临空市长大，父母是安保部老人，自己却对魔族有说不清的好奇"></textarea>
       </div>
     </div>
@@ -573,6 +573,54 @@
   function mod(v) { var m = Math.floor((Number(v) - 10) / 2); return m >= 0 ? '+' + m : '' + m; }
   function modNum(v) { return Math.floor((Number(v) - 10) / 2); }
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  // 人物设定随机池（性格/外貌可投掷，背景纯自由）
+  var PERSONA_POOL = {
+    '性格': [
+      '温柔善良，总是战斗在第一线，把别人护在身后',
+      '看似正经，实际上是一个无可救药的痴女，越压抑越兴奋',
+      '外冷内热，对温柔没有抵抗力，越紧张越爱逞强',
+      '天真好奇，越是禁忌的事越忍不住想靠近',
+      '嘴硬心软，明明关心却总用刻薄话把人气走',
+      '胆小怕事，但关键时刻会硬着头皮顶上，绝不当逃兵',
+      '完美主义者，容不得自己「变脏」，却一天天觉得越来越累',
+      '永远在笑，用笑容掩盖内心的不安与孤独',
+      '谨慎多疑，谁都不轻信，却又比谁都渴望被信任',
+      '直率冲动，想到什么就做什么，从不后悔自己的选择',
+      '喜欢毛茸茸的东西，每次看见妖狐或兽耳娘都会心跳加速，忍不住想摸',
+      '表面正经，实际上每天晚上都会偷偷自慰，白天又装得若无其事',
+      '容易害羞，一被夸就脸红，但被撩到一定程度会突然变得大胆主动',
+      '看似强势，其实极度渴望被占有，嘴上说着不要，身体却很诚实',
+      '喜欢收集对方的贴身物品，闻着熟悉的气味才能安心入睡',
+      '表面上对情爱嗤之以鼻，背地里却在偷偷学习各种取悦对方的技巧',
+      '执着而专一，认定一个人就死心塌地，愿意为对方做任何事',
+      '在熟人面前是可靠的大姐姐，独自一人时却会抚着身体幻想被温柔对待'
+    ],
+    '外貌': [
+      '娇小纤细的身形，腰肢却韧劲十足，动作像猫一样轻巧灵活；皮肤细腻，指尖冰凉，胸前曲线虽然不算丰满却形状圆润挺翘',
+      '高挑丰满的曲线，肩颈线条优美，腰细臀翘，走起路来自带摇曳的风情；身形饱满柔软，站着时能明显感到衣料下起伏的弧度',
+      '匀称健美的身形，四肢修长，肌肉线条利落结实，带着常年锻炼的弹性；腿长且直，腰腹紧致，整个身体充满健康的张力',
+      '纤细柔软的身形，皮肤白得近乎透明，体态轻盈得像一阵风；腰肢纤细得能一臂环住，胸前却意外地有份量，走山路时会轻轻晃动',
+      '偏瘦而挺拔的身形，长腿笔直，气质清冷，安静时像一幅画；锁骨线条分明，肩背薄削，胸型小巧但腰臀曲线干净利落',
+      '微圆润的丰腴身形，柔软而有弹性，腰臀曲线饱满，抱起来手感极好；但别被表象骗了，爆发起来力道惊人，耐力也好得出奇',
+      '中等身高的匀称身形，比例恰到好处，锁骨明显，肩膀瘦削而平；腰线收得漂亮，臀部圆翘，双腿匀称有力',
+      '线条利落的运动型身材，腰细腿长，站姿笔挺，肌肉带着常年训练的光泽；紧致的小腹与有力的双腿，让她行动起来像猎豹一样迅捷',
+      '少女般纤细的身形，带着一点没长开的稚气，但胸前发育却意外地好，和纤瘦的四肢形成鲜明的反差；皮肤水嫩，一掐就红',
+      '成熟丰腴的身形，曲线起伏很大，腰臀比惊人；腰肢柔软，胸前饱满，浑身上下散发着慵懒又勾人的气息',
+      '清瘦修长的身形，肩宽而腰窄，腿长且比例优越；肤色偏白，身形带着一种疏离的冷感，但腰腹线条紧致，藏着惊人的柔韧性',
+      '小巧玲珑的身形，身高不高但比例极佳，胸前饱满与娇小身形形成反差；肌肤嫩滑，四肢纤细，腰肢柔软得能做各种高难度动作',
+      '健美结实的身形，手臂与腿部的肌肉线条清晰，腹部有隐约的腹肌轮廓；胸前饱满，腰肢有力，整个身体散发着野性与力量感',
+      '柔弱纤细的身形，腰肢不盈一握，皮肤白嫩；胸前曲线柔和，双腿修长，站着时总带着一点怯生生的姿态，让人忍不住想护着她',
+      '高挑苗条的身形，四肢修长纤细，腰肢细软；胸前起伏适中，臀部圆润，身姿挺拔，走起路来带着一种说不出的韵律感',
+      '匀称柔和的身形，没有过于鲜明的肌肉，但线条流畅自然；腰肢柔软，胸前丰满，皮肤带着健康的暖色，浑身是温软又舒服的质感'
+    ]
+  };
+  function rollPersona(field) {
+    var pool = PERSONA_POOL[field];
+    if (!pool || !pool.length) return;
+    var pick = pool[Math.floor(Math.random() * pool.length)];
+    if (field === '性格') { S.persona.性格 = pick; $('in-persona-personality').value = pick; }
+    else if (field === '外貌') { S.persona.外貌 = pick; $('in-persona-app').value = pick; }
+  }
   // 起始地点完整字符串：城市外(交汇带/魔界)用自身作前缀，城市内用 临空市-
   function locStr(path) {
     var p = (path || S.loc).join('-');
