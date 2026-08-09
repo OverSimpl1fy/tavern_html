@@ -1,0 +1,808 @@
+<!-- 临空市 · 角色创建（纯原生 JS 自包含版——兼容 $('body').load() 注入，无外部 CDN 依赖） -->
+<style>
+  :root {
+    --lk-bg: #150a2b; --lk-bg2: #1d0f3d; --lk-card: #241244; --lk-line: #4a2a7a;
+    --lk-text: #f0e6ff; --lk-dim: #a88cd6; --lk-accent: #9d6bff; --lk-gold: #e8c87a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #150a2b; font-family: "Noto Sans SC","Source Han Sans SC","Microsoft YaHei",sans-serif; color: #f0e6ff; font-size: 14px; min-height: 100%; position: relative; overflow-x: hidden; }
+  .starfield, .starfield-twi { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+  .starfield { background:
+      radial-gradient(1px 1px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 25% 65%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 38% 32%, #e8d0ff, transparent), radial-gradient(1px 1px at 52% 78%, #fff, transparent),
+      radial-gradient(1px 1px at 64% 15%, #fff, transparent), radial-gradient(2px 2px at 76% 48%, #d8a8ff, transparent),
+      radial-gradient(1px 1px at 88% 70%, #fff, transparent), radial-gradient(1.5px 1.5px at 94% 25%, #e8d0ff, transparent),
+      radial-gradient(1px 1px at 8% 88%, #fff, transparent), radial-gradient(1px 1px at 45% 8%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 70% 90%, #d8a8ff, transparent), radial-gradient(1px 1px at 30% 45%, #fff, transparent),
+      radial-gradient(1px 1px at 55% 55%, #fff, transparent), radial-gradient(1.5px 1.5px at 85% 5%, #fff, transparent),
+      radial-gradient(1px 1px at 5% 40%, #e8d0ff, transparent), radial-gradient(1px 1px at 33% 85%, #fff, transparent),
+      radial-gradient(2px 2px at 60% 35%, #fff, transparent), radial-gradient(1px 1px at 90% 60%, #fff, transparent),
+      linear-gradient(180deg, #1a0d33 0%, #241147 45%, #160a2e 100%); }
+  .starfield-twi { background:
+      radial-gradient(1.5px 1.5px at 20% 25%, #fff, transparent), radial-gradient(2px 2px at 48% 68%, #c9a0ff, transparent),
+      radial-gradient(1.5px 1.5px at 72% 30%, #fff, transparent), radial-gradient(2px 2px at 90% 75%, #ffd8ff, transparent),
+      radial-gradient(1px 1px at 35% 92%, #fff, transparent), radial-gradient(1.5px 1.5px at 80% 12%, #d8a8ff, transparent);
+      animation: twinkle 4s ease-in-out infinite; }
+  @keyframes twinkle { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.85; } }
+  #app { max-width: 900px; margin: 0 auto; padding: 16px 18px 60px; position: relative; z-index: 1; min-height: 100vh; }
+  .head { display: flex; flex-direction: column; gap: 6px; padding: 14px 18px; margin-bottom: 8px;
+    border: 1px solid rgba(157,107,255,0.35); border-radius: 12px;
+    background: linear-gradient(135deg, rgba(157,107,255,0.14), rgba(214,107,255,0.06), rgba(30,15,61,0.6));
+    box-shadow: 0 0 24px rgba(157,107,255,0.25); position: relative; overflow: hidden; }
+  .head::before { content: '✦ ✧ ✦ ✧ ✦ ✧ ✦'; position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: 8px; color: rgba(216,168,255,0.5); letter-spacing: 8px; animation: twinkle 3s ease-in-out infinite; }
+  .head h1 { font-size: 22px; letter-spacing: 0.14em; color: #d8b0ff; text-shadow: 0 0 14px rgba(157,107,255,0.9); }
+  .head p { color: var(--lk-dim); font-size: 12px; }
+  .tabs { display: flex; gap: 6px; padding: 10px 0; flex-wrap: wrap; }
+  .tabs button { background: linear-gradient(180deg, var(--lk-bg2), #1a0e36); color: var(--lk-dim); border: 1px solid var(--lk-line); border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 13px; position: relative; }
+  .tabs button.active { background: linear-gradient(135deg, #7c3aed, #a855f7, #d66bff); color: #fff; border-color: #b57bff; font-weight: 600; box-shadow: 0 0 14px rgba(168,85,247,0.55); }
+  .tabs button.active::after { content: '✦'; position: absolute; top: -4px; right: -2px; font-size: 9px; color: #ffd8ff; }
+  .card { background: linear-gradient(160deg, #2a1750, #1f0f3d 60%, #180b2e); border: 1px solid rgba(122,74,200,0.4); border-radius: 12px; padding: 13px 15px; margin-bottom: 12px; box-shadow: 0 0 18px rgba(157,107,255,0.12), 0 4px 20px rgba(0,0,0,0.4); position: relative; }
+  .card::before { content: '✦'; position: absolute; top: 8px; right: 14px; color: rgba(216,168,255,0.35); font-size: 12px; }
+  .card h3 { font-size: 13px; color: #b78bff; letter-spacing: 0.1em; margin-bottom: 10px; text-shadow: 0 0 8px rgba(157,107,255,0.5); }
+  .card h3::before { content: '✧ '; color: rgba(216,168,255,0.6); }
+  .row { display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; align-items: center; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 12px; color: var(--lk-dim); }
+  input, select, textarea { background: rgba(18,10,36,0.8); border: 1px solid rgba(157,107,255,0.3); color: var(--lk-text); border-radius: 6px; padding: 6px 10px; font-size: 13px; }
+  input:focus, select:focus { outline: none; border-color: var(--lk-accent); box-shadow: 0 0 8px rgba(157,107,255,0.4); }
+  .opt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .opt { background: linear-gradient(160deg, #1e1140, #170b2e); border: 1px solid rgba(157,107,255,0.3); border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.2s; }
+  .opt:hover { border-color: rgba(157,107,255,0.6); box-shadow: 0 0 10px rgba(157,107,255,0.2); }
+  .opt.active { border-color: #b57bff; background: rgba(157,107,255,0.16); box-shadow: 0 0 12px rgba(157,107,255,0.3); }
+  .opt .nm { font-size: 13px; }
+  .opt .desc { font-size: 11px; color: var(--lk-dim); margin-top: 2px; line-height: 1.5; }
+  .attr-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+  .attr-row .nm { width: 56px; color: var(--lk-dim); }
+  .attr-row .sc { width: 30px; text-align: center; font-size: 15px; font-weight: 700; color: #e8d0ff; }
+  .attr-row .mod { width: 44px; color: var(--lk-gold); font-size: 12px; }
+  .attr-row button { width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgba(157,107,255,0.3); background: #1a0e36; color: #e8d0ff; cursor: pointer; font-size: 14px; }
+  .attr-row button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip { background: rgba(122,74,200,0.18); border: 1px solid rgba(157,107,255,0.35); border-radius: 10px; padding: 2px 10px; font-size: 12px; cursor: pointer; color: #cbb0ff; }
+  .chip.active { border-color: #b57bff; color: #fff; background: rgba(157,107,255,0.25); box-shadow: 0 0 8px rgba(157,107,255,0.3); }
+  .chip.recon { border-color: rgba(214,107,255,0.6); color: #e0b0ff; }
+  .bgs { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+  .bg { background: linear-gradient(160deg, #1e1140, #170b2e); border: 1px solid rgba(157,107,255,0.3); border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; }
+  .bg:hover { border-color: rgba(157,107,255,0.6); }
+  .bg.active { border-color: var(--lk-gold); box-shadow: 0 0 12px rgba(232,200,122,0.3); }
+  .bg .nm { font-size: 13px; font-weight: 600; color: #e8d0ff; }
+  .bg .desc { font-size: 11px; color: var(--lk-dim); margin-top: 4px; line-height: 1.6; }
+  .foot { display: flex; align-items: center; gap: 12px; padding-top: 4px; flex-wrap: wrap; }
+  .btn-main { background: linear-gradient(135deg, #7c3aed, #a855f7, #d66bff); color: #fff; border: none; border-radius: 10px; padding: 11px 28px; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 0 16px rgba(168,85,247,0.5); }
+  .mini-btn { background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; border: none; border-radius: 8px; padding: 5px 14px; font-size: 13px; cursor: pointer; box-shadow: 0 0 10px rgba(168,85,247,0.4); }
+  .hint { color: var(--lk-dim); font-size: 12px; }
+  .warn { color: #e0707a; font-size: 12px; }
+  .pg { color: var(--lk-gold); font-size: 12px; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 13px; }
+  .kv .k { color: #a88cd6; }
+  .kv .v { color: var(--lk-text); }
+  .hidden { display: none !important; }
+</style>
+
+<div class="starfield" aria-hidden="true"></div>
+<div class="starfield-twi" aria-hidden="true"></div>
+<div id="app">
+  <div class="head">
+    <h1>✧ 临空市 · 角色创建 ✧</h1>
+    <p>人类与魔族战争最前线 · 堕落与守护的故事即将开始</p>
+  </div>
+
+  <!-- 快速导入：预设管理工具栏 -->
+  <div class="card" style="padding:10px 15px;margin-bottom:10px">
+    <div class="row" style="margin-bottom:6px">
+      <b style="color:#b78bff;font-size:13px">✦ 快速导入</b>
+      <span class="chip" onclick="savePreset()">💾 保存为预设</span>
+      <span class="chip" onclick="exportPresets()">📤 导出全部预设</span>
+      <span class="chip" onclick="document.getElementById('import-file').click()">📂 导入预设文件</span>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importPresets(this)">
+    </div>
+    <div class="row">
+      <select id="preset-select" style="flex:1" onchange="loadPreset(this.value)"></select>
+      <span class="chip" id="preset-count" style="color:#a88cd6">0 个预设</span>
+    </div>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button data-step="0">① 基础信息</button>
+    <button data-step="1">② 组织身份</button>
+    <button data-step="2">③ 起始地点</button>
+    <button data-step="3">④ 属性熟练</button>
+    <button data-step="4">⑤ 起始事件</button>
+    <button data-step="5">⑥ 开局背景</button>
+    <button data-step="6">⑦ 最终确认</button>
+  </nav>
+
+  <!-- 0 基础信息 -->
+  <div class="card step" data-step="0">
+    <h3>基础信息</h3>
+    <div class="row">
+      <div class="field"><label>姓名</label><input id="in-name" placeholder="你的名字"></div>
+      <div class="field"><label>年龄</label><input id="in-age" type="number" value="18" min="14" max="40"></div>
+      <div class="field"><label>性别（临空市只有女性·含扶她）</label>
+        <select id="in-gender"><option>女性</option><option>扶她</option><option>自定义</option></select>
+      </div>
+    </div>
+    <div class="field"><label>种族</label><div class="opt-grid" id="race-grid"></div></div>
+    <p class="pg" id="race-warn" style="margin-top:8px"></p>
+  </div>
+
+  <!-- 1 组织身份 -->
+  <div class="card step" data-step="1">
+    <h3>所属组织与推荐身份</h3>
+    <div class="opt-grid" id="org-grid"></div>
+    <div class="row" style="margin-top:12px" id="org-detail">
+      <div class="field" style="flex:1"><label>身份（职务）</label><select id="in-identity"></select></div>
+      <div class="field"><label>职位（评价）</label>
+        <select id="in-rank"><option>见习</option><option>正式</option><option>精英</option><option>王牌</option></select>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 起始地点 -->
+  <div class="card step" data-step="2">
+    <h3>起始地点</h3>
+    <p class="pg" id="loc-current" style="margin-bottom:8px"></p>
+    <div class="opt-grid" id="loc-grid"></div>
+  </div>
+
+  <!-- 3 属性与熟练 -->
+  <div class="card step" data-step="3">
+    <h3>DND 六维属性（掷骰制 or 标准购点）</h3>
+    <div class="row" style="margin-bottom:8px">
+      <span class="chip" id="m-roll" onclick="setAttrMethod('roll')">🎲 掷骰制（4d6 取高 3）</span>
+      <span class="chip" id="m-pointbuy" onclick="setAttrMethod('pointbuy')">✦ 标准购点（27 点）</span>
+    </div>
+    <div id="attr-roll" class="hidden">
+      <p class="hint" style="margin-bottom:6px">掷 4d6 并去掉最低骰，共 6 次；将点数自由分配给六维。</p>
+      <div class="row"><button class="mini-btn" onclick="rollDice()">🎲 掷骰</button><span id="roll-scores"></span></div>
+      <div id="roll-rows"></div>
+    </div>
+    <div id="attr-pointbuy">
+      <p class="hint" style="margin-bottom:6px">标准购点（DND 5e）：基础 8，共 27 点。成本：8=0,9=1,10=2,11=3,12=4,13=5,14=7,15=9（上限 15）。</p>
+      <p class="hint" style="margin-bottom:8px">剩余点数：<b style="color:var(--lk-gold)" id="pb-remain"></b> <span class="warn" id="pb-over"></span></p>
+      <div id="pb-rows"></div>
+    </div>
+  </div>
+  <div class="card step" data-step="3">
+    <h3>熟练项（选择 2~4 项）</h3>
+    <div class="chips" id="skill-chips"></div>
+    <p class="hint" style="margin-top:6px">已选 <b id="prof-count">0</b> 项。✦ 紫色标记为<侦察类熟练>（察觉/侦察/洞察/魔力感知），决定能否发现魔族隐藏痕迹。</p>
+  </div>
+  <div class="card step" data-step="3">
+    <h3>侦察能力（DND 被动察觉）</h3>
+    <div class="kv">
+      <span class="k">感知修正</span><span class="v" id="rc-wis-mod">+0</span>
+      <span class="k">熟练加成（职位）</span><span class="v" id="rc-rank-bonus">+2</span>
+      <span class="k">侦察类熟练</span><span class="v" id="rc-skills">无</span>
+      <span class="k">被动察觉 DC</span><span class="v"><b style="color:var(--lk-gold);font-size:16px" id="rc-passive">10</b></span>
+      <span class="k">主动侦察</span><span class="v" id="rc-active">d20 +0</span>
+    </div>
+    <p class="hint" style="margin-top:8px">被动察觉 = 10 + 感知修正 + (侦察类熟练时 +熟练加成)。魔族隐匿检定 &lt; 此 DC 时露出破绽（气味/瞳孔/体态/魔力波动），≥ 则不被察觉。</p>
+  </div>
+  <div class="card step" data-step="3">
+    <h3>初始堕落（自定义起点）</h3>
+    <p class="hint" style="margin-bottom:8px">设定开局时的魔化/淫化与堕落六维。魔族种族默认 魔化100（魔化形态=其种族）、淫化按种族默认（可调整）——它们本就已是魔族之躯。</p>
+    <div class="row" id="cor-start">
+      <div class="field"><label>魔化度</label><input type="number" id="cs-mahua" min="0" max="100" value="0" style="width:70px"></div>
+      <div class="field"><label>淫化度</label><input type="number" id="cs-yinhua" min="0" max="100" value="0" style="width:70px"></div>
+    </div>
+    <div class="edit-hint" style="color:#a88cd6;font-size:11px;margin:6px 0 4px">恶堕 · 堕落六维（每维 0-100，可各自不同）</div>
+    <div class="row" id="cor-six-start">
+      <div class="field"><label>道德沦丧</label><input type="number" id="cs-道德沦丧" min="0" max="100" value="0" style="width:70px"></div>
+      <div class="field"><label>共情泯灭</label><input type="number" id="cs-共情泯灭" min="0" max="100" value="0" style="width:70px"></div>
+      <div class="field"><label>欲望沉溺</label><input type="number" id="cs-欲望沉溺" min="0" max="100" value="0" style="width:70px"></div>
+      <div class="field"><label>自我消解</label><input type="number" id="cs-自我消解" min="0" max="100" value="0" style="width:70px"></div>
+      <div class="field"><label>手段残酷</label><input type="number" id="cs-手段残酷" min="0" max="100" value="0" style="width:70px"></div>
+      <div class="field"><label>罪责开脱</label><input type="number" id="cs-罪责开脱" min="0" max="100" value="0" style="width:70px"></div>
+    </div>
+    <p class="warn" id="cs-demon-hint"></p>
+  </div>
+
+  <!-- 4 起始事件 -->
+  <div class="card step" data-step="4">
+    <h3>起始事件（开场故事线）</h3>
+    <p class="hint" style="margin-bottom:8px">选择一个起始事件将直接设定开场；【自定义开场】降级为触发事件入口。</p>
+    <div class="bgs" id="start-bgs"></div>
+    <div class="field hidden" id="custom-start-wrap" style="margin-top:10px">
+      <label>自定义开场白</label>
+      <textarea id="in-custom-start" rows="3" style="width:100%"></textarea>
+    </div>
+  </div>
+
+  <!-- 5 开局背景 -->
+  <div class="card step" data-step="5">
+    <h3>开局背景</h3>
+    <div class="bgs" id="bg-grid"></div>
+    <div class="field hidden" id="custom-bg-wrap" style="margin-top:10px">
+      <label>自定义背景描述</label>
+      <textarea id="in-custom-bg" rows="3" style="width:100%"></textarea>
+    </div>
+  </div>
+
+  <!-- 6 最终确认 -->
+  <div class="card step" data-step="6">
+    <h3>最终确认</h3>
+    <div class="kv" id="cf-summary" style="font-size:13px"></div>
+    <div class="card" style="margin-top:10px;background:rgba(18,10,36,0.6)">
+      <h3>即将生成的开局提示词</h3>
+      <pre id="cf-prompt" style="font-size:12px;color:#a88cd6;white-space:pre-wrap;line-height:1.7;font-family:inherit"></pre>
+    </div>
+    <div class="foot" style="margin-top:10px">
+      <button class="mini-btn" onclick="goStep(5)">◀ 上一步</button>
+      <button class="btn-main" onclick="generate()">✧ 确认并开始临空市之旅</button>
+      <span class="hint" id="gen-hint">请先设定姓名</span>
+    </div>
+  </div>
+
+  <div class="foot">
+    <button class="mini-btn" id="btn-prev" onclick="goStep(S.step - 1)">◀ 上一步</button>
+    <span style="flex:1"></span>
+    <button class="btn-main" id="btn-next" onclick="nextStep()">下一步 ✧</button>
+  </div>
+</div>
+
+<script>
+  /* ══════════ 数据 ══════════ */
+  var ATTRS = ['力量', '敏捷', '体质', '智力', '感知', '魅力'];
+  var RACES = [
+    { n: '人类', d: '临空市的主流种族。可从零开始见证堕落的全过程。' },
+    { n: '魅魔', d: '欲望位面魔族，魅惑与快感侵蚀的专家。' },
+    { n: '吸血鬼', d: '不死系魔族，血魔法与血液契约。' },
+    { n: '史莱姆娘', d: '凝胶之躯，吞噬与同化。' },
+    { n: '妖狐', d: '幻术与魅惑的狐娘，与神社狐神有隐秘关联。' },
+    { n: '蛛魔', d: '蛛丝与巢穴的猎手，在城市的阴影里织网。' },
+    { n: '虫娘', d: '蝶翼复眼的虫之魔女，以鳞粉与茧为陷阱。' },
+    { n: '花娘', d: '花与藤蔓的植物魔物娘，花蜜是甜蜜的毒。' }
+  ];
+  var ORGS = [
+    { n: '安保部', d: '守卫城市的中坚平民力量', ids: ['部长', '警员', '搜查官'] },
+    { n: '临光战队', d: '正面迎敌的精英力量', ids: ['精英战斗员（战队红）', '新晋战斗员', '研究员'] },
+    { n: '魔女结社', d: '暗中行动的魔法少女们', ids: ['魔法少女', '高中生', '小偶像'] },
+    { n: '涤罪教团', d: '信仰圣光，净化堕落之人', ids: ['修女', '圣骑士'] },
+    { n: '樱狐神侍', d: '信仰狐神的神社组织', ids: ['巫女', '武士', '忍者'] },
+    { n: '魔王军', d: '魔族女王的军队', ids: ['百夫长', '战士'] },
+    { n: '女王亲卫', d: '女王的直属护卫', ids: ['魔将', '秘书'] },
+    { n: '欢愉秘教', d: '潜伏城内，传播魔族信仰', ids: ['祭司', '信徒'] },
+    { n: '无', d: '自由市民，不隶属任何组织', ids: ['自由市民'] }
+  ];
+  var LOCS = [
+    { n: '白塔区', d: '行政指挥中枢，秩序森严。', subs: [
+      { n: '市防指挥部' }, { n: '魔力登记局' },
+      { n: '中央研究所', subs: [{ n: '黑色改造实验室（黑区）' }, { n: '圣光抑制器研发部' }] },
+      { n: '市政广场' }, { n: '涤罪教团圣堂' }
+    ]},
+    { n: '学园区', d: '学院与科研设施，青春摇篮。', subs: [
+      { n: '临空学院', subs: [{ n: '图书馆' }, { n: '训练场' }, { n: '试验塔' }] },
+      { n: '圣光神学院' }, { n: '樱狐神道院' }, { n: '魔导专科学校' }, { n: '学生宿舍区' }
+    ]},
+    { n: '工业区', d: '兵工厂与物流枢纽，黑市温床。', subs: [
+      { n: '兵工厂' }, { n: '机械师行会' }, { n: '魔导能源厂' }, { n: '物流枢纽' },
+      { n: '地下黑市', subs: [{ n: '改造医所' }, { n: '魔素道具铺' }, { n: '暗巷交易点' }] }
+    ]},
+    { n: '生活区', d: '住宅与商业区，烟火气最浓。', subs: [
+      { n: '中央市集' }, { n: '住宅街区' }, { n: '姐妹互助会教堂' },
+      { n: '欢乐街', subs: [{ n: '星屑剧场' }, { n: '夜莺酒馆' }, { n: '芳草按摩店' }, { n: '街角糖果屋' }] }
+    ]},
+    { n: '林缘区', d: '城市与远郊的缓冲带。', subs: [
+      { n: '城市公园' }, { n: '瞭望塔' }, { n: '生态农场' }, { n: '郊外小祠' }
+    ]},
+    { n: '远郊', d: '西北山林湖泊，监控盲区。', subs: [
+      { n: '樱狐神社', subs: [{ n: '神社主殿' }, { n: '神社背后-竹林' }, { n: '雾凇湖畔鸟居' }] },
+      { n: '雾凇湖', subs: [{ n: '湖畔旧屋' }, { n: '湖心岛' }] },
+      { n: '废弃矿场', subs: [{ n: '矿道深处' }, { n: '蛛魔巢穴' }] },
+      { n: '魔族大本营', subs: [{ n: '裂隙节点' }, { n: '女王亲卫前哨' }, { n: '魔素提炼场' }, { n: '转化营' }] },
+      { n: '山间隧道' }
+    ]}
+  ];
+  var SKILLS = ['察觉', '洞察', '调查', '侦察', '潜行', '说服', '威吓', '欺瞒', '表演', '医药', '奥术', '运动', '生存', '诱惑', '调教', '驾驶', '魔力感知'];
+  var RECON = ['察觉', '侦察', '洞察', '魔力感知'];
+  var STARTS = [
+    { t: '人', n: '临光战队新兵', d: '晨训号角、战队宿舍、初识战队红。', id: '新晋战斗员', org: '临光战队', race: '人类', magic: '魔导', loc: '白塔区', ev: '起始-临光战队新兵', st: '晨训' },
+    { t: '人', n: '安保部警员', d: '白塔区报到、街头巡逻、街区传闻。', id: '警员', org: '安保部', race: '人类', magic: '无', loc: '白塔区', ev: '起始-安保部警员', st: '街头执勤' },
+    { t: '人', n: '涤罪教团见习修女', d: '晨祷、圣光修行、教团氛围。', id: '修女', org: '涤罪教团', race: '人类', magic: '圣光', loc: '白塔区', ev: '起始-涤罪教团见习修女', st: '晨祷' },
+    { t: '人', n: '魔女结社魔法少女', d: '学园日常、变身初体验、结社指令。', id: '魔法少女/高中生', org: '魔女结社', race: '人类', magic: '魔导', loc: '学园区', ev: '起始-魔女结社魔法少女', st: '学园日常' },
+    { t: '魔', n: '潜入的魅魔', d: '以按摩店店长身份混入，收到魔界密令。', id: '按摩店店长', org: '欢愉秘教', race: '魅魔', magic: '淫魔力', loc: '生活区', ev: '起始-潜入的魅魔', st: '白天的伪装' },
+    { t: '魔', n: '夜之贵族·吸血鬼', d: '地下晚宴，以机械供应商身份收集把柄。', id: '机械供应商', org: '欢愉秘教', race: '吸血鬼', magic: '淫魔力', loc: '工业区', ev: '起始-夜之贵族', st: '地下晚宴' },
+    { t: '魔', n: '欢乐街歌姬·妖狐', d: '以偶像身份演出，接近魔女结社的目标。', id: '偶像歌姬', org: '欢愉秘教', race: '妖狐', magic: '淫魔力', loc: '生活区', ev: '起始-欢乐街歌姬', st: '星屑剧场演出' },
+    { t: '魔', n: '织网者·蛛魔', d: '远郊巢穴，物色猎物，铺设猎网。', id: '猎人', org: '魔王军', race: '蛛魔', magic: '淫魔力', loc: '远郊', ev: '起始-织网者', st: '远郊巢穴' },
+    { t: '自', n: '自定义开场', d: '写下你自己的开场白，降级为触发事件入口。', id: '', org: '', race: '', magic: '', loc: '', ev: '', st: '' }
+  ];
+  var BGS = [
+    { n: '新兵报到', d: '你刚被分配到临空市，在组织大楼前望着这座城市——战争前线的灯火，与暗处窥伺的目光。' },
+    { n: '本地出身', d: '你在临空市长大，从学院毕业，顺理成章成为守护者。你对城市熟悉到麻木，却从未真正看清它。' },
+    { n: '异乡来客', d: '你从人类腹地来到前线城市，带着理想与不安。这里的一切都让你既新奇又警觉。' },
+    { n: '魔族伪装', d: '你是潜入临空市的魔族。你的身份是假的，你的力量是淫魔力，你的任务是转化这座城市最有价值的守护者。' },
+    { n: '被污染者', d: '你曾被魔族捕获后逃脱，体内残留魔素。你回到城市，试图藏起异变特征，忍受着戒断般的渴望。' },
+    { n: '自定义开局', d: '写下你自己的开局背景。' }
+  ];
+
+  var S = {
+    step: 0,
+    name: '', age: 18, gender: '女性', race: '人类',
+    org: '无', identity: '', rank: '见习',
+    loc: ['生活区'],
+    attrs: { 力量: 8, 敏捷: 8, 体质: 8, 智力: 8, 感知: 8, 魅力: 8 },
+    prof: [],
+    magic: '无',
+    attrMethod: 'pointbuy',
+    rolledScores: [15, 13, 12, 11, 10, 8],
+    attrAssign: {},
+    startCorruption: { 魔化度: 0, 淫化度: 0, 道德沦丧: 0, 共情泯灭: 0, 欲望沉溺: 0, 自我消解: 0, 手段残酷: 0, 罪责开脱: 0 },
+    startEvent: '临光战队新兵', customStart: '',
+    bg: '新兵报到', customBg: ''
+  };
+  var PB_COST = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
+  var RANK_BONUS = { 见习: 2, 正式: 3, 精英: 4, 王牌: 5 };
+  var DEMON_YINHUA = { 魅魔: 60, 吸血鬼: 30, 史莱姆娘: 30, 妖狐: 35, 蛛魔: 40, 虫娘: 30, 花娘: 40 };
+  var LIU = ['道德沦丧', '共情泯灭', '欲望沉溺', '自我消解', '手段残酷', '罪责开脱'];
+
+  /* ══════════ 工具 ══════════ */
+  function $(id) { return document.getElementById(id); }
+  function mod(v) { var m = Math.floor((Number(v) - 10) / 2); return m >= 0 ? '+' + m : '' + m; }
+  function modNum(v) { return Math.floor((Number(v) - 10) / 2); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  /* ══════════ 渲染 ══════════ */
+  function renderTabs() {
+    var btns = document.querySelectorAll('#tabs button');
+    btns.forEach(function (b) { b.classList.toggle('active', Number(b.getAttribute('data-step')) === S.step); });
+    document.querySelectorAll('.step').forEach(function (c) {
+      c.classList.toggle('hidden', Number(c.getAttribute('data-step')) !== S.step);
+    });
+    var prev = $('btn-prev'), next = $('btn-next');
+    if (prev) prev.style.display = S.step <= 0 ? 'none' : '';
+    if (next) next.style.display = S.step >= 6 ? 'none' : '';
+    if (S.step === 6) renderSummary();
+  }
+  function goStep(n) { S.step = Math.max(0, Math.min(6, n)); renderTabs(); }
+  function nextStep() { if (S.step < 6) goStep(S.step + 1); }
+
+  /* 最终确认摘要 */
+  function reconLineStr() {
+    var recon = S.prof.filter(function (s) { return RECON.indexOf(s) >= 0; });
+    var wis = modNum(S.attrs['感知']);
+    var bonus = RANK_BONUS[S.rank] || 2;
+    return '被动察觉 DC ' + (10 + wis + (recon.length ? bonus : 0)) + '（感知修正' + mod(S.attrs['感知']) + (recon.length ? ' + 熟练' + bonus : ' + 无侦察熟练') + '）· 主动侦察 d20 ' + (wis + (recon.length ? bonus : 0) >= 0 ? '+' : '') + (wis + (recon.length ? bonus : 0));
+  }
+  function renderSummary() {
+    var attrsStr = ATTRS.map(function (a) { return a + ' ' + S.attrs[a] + '(mod' + mod(S.attrs[a]) + ')'; }).join('、');
+    var se = STARTS.find(function (x) { return x.n === S.startEvent; });
+    var recon = S.prof.filter(function (s) { return RECON.indexOf(s) >= 0; });
+    $('cf-summary').innerHTML =
+      '<span class="k">姓名</span><span class="v"><b>' + esc(S.name || '未设定') + '</b></span>' +
+      '<span class="k">年龄 / 性别</span><span class="v">' + S.age + ' · ' + esc(S.gender) + '</span>' +
+      '<span class="k">种族</span><span class="v">' + esc(S.race) + '</span>' +
+      '<span class="k">组织 / 身份</span><span class="v">' + esc(S.org) + ' · ' + esc(S.identity || '—') + '（' + esc(S.rank) + '）</span>' +
+      '<span class="k">起始地点</span><span class="v">临空市-' + esc(S.loc.join('-')) + '</span>' +
+      '<span class="k">属性</span><span class="v">' + esc(attrsStr) + '</span>' +
+      '<span class="k">熟练项</span><span class="v">' + esc(S.prof.join('、') || '无') + '</span>' +
+      '<span class="k">侦察能力</span><span class="v">' + esc(reconLineStr()) + '</span>' +
+      '<span class="k">初始魔力</span><span class="v">' + esc(S.magic) + '</span>' +
+      '<span class="k">初始堕落</span><span class="v">魔化' + S.startCorruption.魔化度 + (isDemonRace(S.race) ? '（' + S.race + '）' : '') + ' · 淫化' + S.startCorruption.淫化度 + ' · 六维' + LIU.map(function (k) { return S.startCorruption[k] || 0; }).join('/') + '</span>' +
+      '<span class="k">起始事件</span><span class="v">' + (se ? se.t + ' ' + esc(se.n) : '自定义开场') + '</span>' +
+      '<span class="k">开局背景</span><span class="v">' + esc(bgDesc()) + '</span>';
+    $('cf-prompt').textContent = buildPrompt();
+    $('gen-hint').textContent = S.name ? '确认后发送给 AI 并开场' : '请先设定姓名';
+  }
+  function isDemonRace(r) { return ['魅魔', '吸血鬼', '史莱姆娘', '妖狐', '蛛魔', '虫娘', '花娘'].indexOf(r) >= 0; }
+  function pickRace(r) {
+    S.race = r;
+    if (isDemonRace(r)) {
+      // 魔族默认：魔化100（魔躯，魔化形态=其种族）、淫化按种族默认，可调整
+      S.magic = '淫魔力';
+      S.startCorruption.魔化度 = 100;
+      S.startCorruption.淫化度 = Math.max(S.startCorruption.淫化度, DEMON_YINHUA[r] || 30);
+    } else if (S.startCorruption.魔化度 >= 100) {
+      S.startCorruption.魔化度 = 0;
+    }
+    renderRaces(); renderRaceWarn(); renderCorStart();
+  }
+  function renderCorStart() {
+    $('cs-mahua').value = S.startCorruption.魔化度;
+    $('cs-yinhua').value = S.startCorruption.淫化度;
+    LIU.forEach(function (k) { var el = $('cs-' + k); if (el) el.value = S.startCorruption[k] || 0; });
+    $('cs-demon-hint').textContent = isDemonRace(S.race)
+      ? '⚠ 魔族角色：默认 魔化100（魔化形态=所选种族）、淫化' + (DEMON_YINHUA[S.race] || 30) + '，可按需下调。'
+      : '';
+  }
+  function renderRaces() {
+    var grid = $('race-grid'); grid.innerHTML = '';
+    RACES.forEach(function (r) {
+      var d = document.createElement('div');
+      d.className = 'opt' + (S.race === r.n ? ' active' : '');
+      d.innerHTML = '<div class="nm">' + esc(r.n) + '</div><div class="desc">' + esc(r.d) + '</div>';
+      d.onclick = function () { pickRace(r.n); };
+      grid.appendChild(d);
+    });
+  }
+  function renderRaceWarn() {
+    $('race-warn').textContent = S.race !== '人类' ? '⚠ 魔族角色：已完全魔化（100），需以伪装身份混入临空市（改造抑制器/秘术压制魔化外观）。' : '';
+  }
+  function renderOrgs() {
+    var grid = $('org-grid'); grid.innerHTML = '';
+    ORGS.forEach(function (o) {
+      var d = document.createElement('div');
+      d.className = 'opt' + (S.org === o.n ? ' active' : '');
+      d.innerHTML = '<div class="nm">' + esc(o.n) + '</div><div class="desc">' + esc(o.d) + '</div><div class="desc">推荐身份：' + esc(o.ids.join(' / ')) + '</div>';
+      d.onclick = function () { pickOrg(o.n); };
+      grid.appendChild(d);
+    });
+    renderIdentity();
+  }
+  function pickOrg(n) {
+    S.org = n;
+    var o = ORGS.find(function (x) { return x.n === n; });
+    S.identity = o && o.ids ? o.ids[0] : '';
+    renderOrgs();
+    renderRecon();
+  }
+  function renderIdentity() {
+    var o = ORGS.find(function (x) { return x.n === S.org; });
+    var sel = $('in-identity'); sel.innerHTML = '';
+    (o && o.ids ? o.ids : ['自由市民']).forEach(function (i) {
+      var op = document.createElement('option'); op.textContent = i; op.value = i; sel.appendChild(op);
+    });
+    if (o && o.ids && o.ids.indexOf(S.identity) < 0) S.identity = o.ids[0];
+    sel.value = S.identity;
+  }
+  // 按 S.loc 路径在 LOCS 树中定位当前节点（虚拟根 = LOCS）
+  function locNode(path) {
+    var node = { subs: LOCS };
+    for (var i = 0; i < path.length; i++) {
+      var next = null;
+      (node.subs || []).forEach(function (s) { if (s.n === path[i]) next = s; });
+      if (!next) return null;
+      node = next;
+    }
+    return node;
+  }
+  function renderLocs() {
+    var grid = $('loc-grid'); grid.innerHTML = '';
+    var cur = locNode(S.loc);
+    // 返回上级
+    if (S.loc.length > 0) {
+      var back = document.createElement('div');
+      back.className = 'opt';
+      back.innerHTML = '<div class="nm" style="color:#a88cd6">← 返回上级</div>';
+      back.onclick = function () { S.loc = S.loc.slice(0, -1); renderLocs(); };
+      grid.appendChild(back);
+    }
+    var subs = (cur && cur.subs) ? cur.subs : null;
+    if (subs && subs.length) {
+      subs.forEach(function (s) {
+        var d = document.createElement('div');
+        d.className = 'opt';
+        d.innerHTML = '<div class="nm">' + esc(s.n) + '</div>' + (s.d ? '<div class="desc">' + esc(s.d) + '</div>' : '');
+        d.onclick = function () { S.loc = S.loc.concat([s.n]); renderLocs(); };
+        grid.appendChild(d);
+      });
+      // 中间层可就选这里（无需强制钻到叶子）
+      if (S.loc.length > 0) {
+        var done = document.createElement('div');
+        done.className = 'opt active';
+        done.innerHTML = '<div class="nm">✔ 就选这里：' + esc(S.loc.join('-')) + '</div>';
+        grid.appendChild(done);
+      }
+    } else if (S.loc.length > 0) {
+      var leaf = document.createElement('div');
+      leaf.className = 'opt active';
+      leaf.innerHTML = '<div class="nm">✔ 已确认：' + esc(S.loc.join('-')) + '</div>';
+      grid.appendChild(leaf);
+    }
+    var curLabel = $('loc-current');
+    if (curLabel) curLabel.textContent = '当前选择：临空市-' + S.loc.join('-');
+  }
+  function renderAttrs() {
+    var rollMode = S.attrMethod === 'roll';
+    $('attr-roll').classList.toggle('hidden', !rollMode);
+    $('attr-pointbuy').classList.toggle('hidden', rollMode);
+    $('m-roll').classList.toggle('active', rollMode);
+    $('m-pointbuy').classList.toggle('active', !rollMode);
+    // 掷骰
+    $('roll-scores').innerHTML = S.rolledScores.map(function (s) { return '<span class="chip">' + s + '</span>'; }).join('');
+    var rr = $('roll-rows'); rr.innerHTML = '';
+    ATTRS.forEach(function (a) {
+      var row = document.createElement('div'); row.className = 'attr-row';
+      var sel = document.createElement('select');
+      var opts = '<option value="">— 未分配 —</option>';
+      S.rolledScores.forEach(function (s, i) {
+        var used = S.attrAssign[a] === String(s) ? false : countUsed(String(s)) >= countTotal(s);
+        opts += '<option value="' + s + '"' + (S.attrAssign[a] === String(s) ? ' selected' : '') + (used ? ' disabled' : '') + '>' + s + '</option>';
+      });
+      sel.innerHTML = opts;
+      sel.value = S.attrAssign[a] || '';
+      sel.style.width = '70px';
+      sel.onchange = function () { S.attrAssign[a] = sel.value; S.attrs[a] = sel.value ? Number(sel.value) : 8; renderAttrs(); };
+      row.innerHTML = '<span class="nm">' + a + '</span>';
+      row.appendChild(sel);
+      row.insertAdjacentHTML('beforeend', '<span class="sc">' + (S.attrAssign[a] ? S.attrs[a] : '—') + '</span>' +
+        (S.attrAssign[a] ? '<span class="mod">mod ' + mod(S.attrs[a]) + '</span>' : ''));
+      rr.appendChild(row);
+    });
+    // 购点
+    var spent = 0; ATTRS.forEach(function (a) { spent += PB_COST[S.attrs[a]] || 0; });
+    var remain = 27 - spent;
+    $('pb-remain').textContent = remain;
+    $('pb-over').textContent = remain < 0 ? '⚠ 超出！' : '';
+    var pr = $('pb-rows'); pr.innerHTML = '';
+    ATTRS.forEach(function (a) {
+      var row = document.createElement('div'); row.className = 'attr-row';
+      row.innerHTML = '<span class="nm">' + a + '</span>' +
+        '<button ' + (S.attrs[a] <= 8 ? 'disabled' : '') + ' onclick="subAttr(\'' + a + '\')">−</button>' +
+        '<span class="sc">' + S.attrs[a] + '</span>' +
+        '<button ' + (S.attrs[a] >= 15 || remain < (PB_COST[S.attrs[a] + 1] || 99) ? 'disabled' : '') + ' onclick="addAttr(\'' + a + '\')">＋</button>' +
+        '<span class="mod">mod ' + mod(S.attrs[a]) + '</span>' +
+        '<span class="pg" style="width:50px;text-align:right">(' + (PB_COST[S.attrs[a]] || 0) + '点)</span>';
+      pr.appendChild(row);
+    });
+    renderRecon();
+  }
+  function countTotal(s) { return S.rolledScores.filter(function (x) { return x === s; }).length; }
+  function countUsed(str) { var n = 0; for (var k in S.attrAssign) { if (S.attrAssign[k] === str) n++; } return n; }
+  function renderSkills() {
+    var c = $('skill-chips'); c.innerHTML = '';
+    SKILLS.forEach(function (s) {
+      var d = document.createElement('span');
+      d.className = 'chip' + (S.prof.indexOf(s) >= 0 ? ' active' : '') + (RECON.indexOf(s) >= 0 ? ' recon' : '');
+      d.textContent = s;
+      d.onclick = function () { toggleProf(s); };
+      c.appendChild(d);
+    });
+    $('prof-count').textContent = S.prof.length;
+    renderRecon();
+  }
+  function toggleProf(s) {
+    var i = S.prof.indexOf(s);
+    if (i >= 0) S.prof.splice(i, 1);
+    else if (S.prof.length < 4) S.prof.push(s);
+    renderSkills();
+  }
+  function renderRecon() {
+    var wis = Number(S.attrs['感知']) || 8;
+    var wisMod = modNum(wis);
+    var bonus = RANK_BONUS[S.rank] || 2;
+    var recon = S.prof.filter(function (s) { return RECON.indexOf(s) >= 0; });
+    var hasRecon = recon.length > 0;
+    $('rc-wis-mod').textContent = mod(wis);
+    $('rc-rank-bonus').textContent = '+' + bonus;
+    $('rc-skills').textContent = recon.length ? recon.join('、') : '无';
+    $('rc-passive').textContent = 10 + wisMod + (hasRecon ? bonus : 0);
+    $('rc-active').textContent = 'd20 ' + (wisMod + (hasRecon ? bonus : 0) >= 0 ? '+' : '') + (wisMod + (hasRecon ? bonus : 0));
+  }
+  function renderStarts() {
+    var g = $('start-bgs'); g.innerHTML = '';
+    STARTS.forEach(function (se) {
+      var d = document.createElement('div');
+      d.className = 'bg' + (S.startEvent === se.n ? ' active' : '');
+      d.innerHTML = '<div class="nm">' + esc(se.t) + ' ' + esc(se.n) + '</div><div class="desc">' + esc(se.d) + '</div>' + (se.id ? '<div class="desc">身份：' + esc(se.id) + '</div>' : '');
+      d.onclick = function () { selectStart(se.n); };
+      g.appendChild(d);
+    });
+    $('custom-start-wrap').classList.toggle('hidden', S.startEvent !== '自定义开场');
+  }
+  function selectStart(n) {
+    S.startEvent = n;
+    var se = STARTS.find(function (x) { return x.n === n; });
+    // 解耦：起始事件不限定种族、不更改玩家已设定的种族/魔力——仅设定组织/身份/地点语境
+    if (se && se.org) {
+      S.org = se.org; S.identity = se.id; S.loc = [se.loc];
+      renderOrgs(); renderLocs();
+    }
+    renderStarts();
+  }
+  function renderBgs() {
+    var g = $('bg-grid'); g.innerHTML = '';
+    BGS.forEach(function (b) {
+      var d = document.createElement('div');
+      d.className = 'bg' + (S.bg === b.n ? ' active' : '');
+      d.innerHTML = '<div class="nm">' + esc(b.n) + '</div><div class="desc">' + esc(b.d) + '</div>';
+      d.onclick = function () { S.bg = b.n; renderBgs(); };
+      g.appendChild(d);
+    });
+    $('custom-bg-wrap').classList.toggle('hidden', S.bg !== '自定义开局');
+  }
+
+  /* ══════════ 交互 ══════════ */
+  function setAttrMethod(m) { S.attrMethod = m; renderAttrs(); }
+  function rollDice() {
+    function rd6() { return Math.floor(Math.random() * 6) + 1; }
+    var scores = [];
+    for (var i = 0; i < 6; i++) {
+      var r = [rd6(), rd6(), rd6(), rd6()].sort(function (a, b) { return a - b; });
+      scores.push(r[1] + r[2] + r[3]);
+    }
+    S.rolledScores = scores; S.attrAssign = {};
+    ATTRS.forEach(function (a) { S.attrs[a] = 8; });
+    renderAttrs();
+  }
+  function addAttr(a) {
+    if (S.attrMethod !== 'pointbuy' || S.attrs[a] >= 15) return;
+    if (S.attrs[a] + 1 > 15) return;
+    var spent = 0; ATTRS.forEach(function (x) { spent += PB_COST[S.attrs[x]] || 0; });
+    if (spent + (PB_COST[S.attrs[a] + 1] || 99) > 27) return;
+    S.attrs[a]++;
+    renderAttrs();
+  }
+  function subAttr(a) {
+    if (S.attrMethod !== 'pointbuy' || S.attrs[a] <= 8) return;
+    S.attrs[a]--;
+    renderAttrs();
+  }
+
+  function bgDesc() {
+    var b = BGS.find(function (x) { return x.n === S.bg; });
+    if (S.bg === '自定义开局') return S.customBg || '（自定义背景）';
+    return b ? b.desc : '';
+  }
+
+  /* ══════════ 快速导入：预设管理 ══════════ */
+  var PRESET_KEY = 'lk_city_presets';
+  function getPresets() {
+    try { var raw = localStorage.getItem(PRESET_KEY); var a = raw ? JSON.parse(raw) : []; return Array.isArray(a) ? a : []; }
+    catch (e) { return []; }
+  }
+  function setPresets(list) {
+    try { localStorage.setItem(PRESET_KEY, JSON.stringify(list)); } catch (e) {}
+  }
+  function captureState() {
+    return { name: S.name, age: S.age, gender: S.gender, race: S.race, org: S.org, identity: S.identity, rank: S.rank,
+      loc: S.loc.slice(), attrs: JSON.parse(JSON.stringify(S.attrs)), prof: S.prof.slice(), magic: S.magic,
+      startCorruption: JSON.parse(JSON.stringify(S.startCorruption)),
+      attrMethod: S.attrMethod, rolledScores: S.rolledScores.slice(), attrAssign: JSON.parse(JSON.stringify(S.attrAssign)),
+      startEvent: S.startEvent, customStart: S.customStart, bg: S.bg, customBg: S.customBg };
+  }
+  function applyState(d) {
+    if (!d) return;
+    S.name = d.name || ''; S.age = d.age || 18; S.gender = d.gender || '女性'; S.race = d.race || '人类';
+    S.org = d.org || '无'; S.identity = d.identity || ''; S.rank = d.rank || '见习';
+    S.loc = Array.isArray(d.loc) && d.loc.length ? d.loc.slice() : (d.location ? [d.location] : ['生活区']);
+    if (d.attrs) ATTRS.forEach(function (a) { if (d.attrs[a] != null) S.attrs[a] = Number(d.attrs[a]) || 8; });
+    S.prof = (d.prof || []).slice(); S.magic = d.magic || '无';
+    if (d.attrMethod) S.attrMethod = d.attrMethod;
+    if (d.rolledScores) S.rolledScores = d.rolledScores.slice();
+    if (d.attrAssign) S.attrAssign = JSON.parse(JSON.stringify(d.attrAssign));
+    S.startEvent = d.startEvent || '临光战队新兵'; S.customStart = d.customStart || '';
+    S.bg = d.bg || '新兵报到'; S.customBg = d.customBg || '';
+    if (d.startCorruption) {
+      var sc = JSON.parse(JSON.stringify(d.startCorruption));
+      // 旧预设兼容：旧结构含 恶堕度/魔性侵蚀，将其折算进堕落六维
+      var legacyBad = sc.恶堕度 || 0;
+      if (legacyBad && !sc['道德沦丧'] && !sc['罪责开脱']) { sc['道德沦丧'] = legacyBad; sc['罪责开脱'] = legacyBad; }
+      delete sc.恶堕度; delete sc.魔性侵蚀;
+      LIU.forEach(function (k) { if (sc[k] == null) sc[k] = 0; });
+      S.startCorruption = sc;
+    }
+    $('in-name').value = S.name; $('in-age').value = S.age; $('in-gender').value = S.gender; $('in-rank').value = S.rank;
+    $('in-identity').value = S.identity; $('in-custom-start').value = S.customStart; $('in-custom-bg').value = S.customBg;
+  }
+  function renderPresetSelect() {
+    var list = getPresets();
+    var sel = $('preset-select'); sel.innerHTML = '<option value="">— 选择已保存的预设快速载入 —</option>';
+    list.forEach(function (p) {
+      var op = document.createElement('option'); op.value = p.name; op.textContent = p.name + '（' + (p.data && p.data.name || '未命名') + '）'; sel.appendChild(op);
+    });
+    $('preset-count').textContent = list.length + ' 个预设';
+  }
+  function savePreset() {
+    var name = prompt('为此预设命名：', S.name ? S.name + '·临空市' : '临空市预设');
+    if (!name) return;
+    var list = getPresets();
+    list = list.filter(function (p) { return p.name !== name; });
+    list.push({ name: name, data: captureState(), ts: new Date().toISOString() });
+    setPresets(list); renderPresetSelect();
+    if (typeof toastr !== 'undefined') toastr.success('预设已保存：' + name);
+  }
+  function loadPreset(name) {
+    if (!name) return;
+    var list = getPresets();
+    var p = list.find(function (x) { return x.name === name; });
+    if (!p) return;
+    applyState(p.data);
+    renderTabs(); renderRaces(); renderRaceWarn(); renderOrgs(); renderLocs(); renderAttrs(); renderSkills(); renderStarts(); renderBgs();
+    if (typeof toastr !== 'undefined') toastr.success('已载入预设：' + name);
+  }
+  function exportPresets() {
+    var list = getPresets();
+    if (!list.length) { alert('暂无已保存的预设'); return; }
+    var blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = '临空市预设.json'; a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  function importPresets(input) {
+    var file = input.files && input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var parsed = JSON.parse(reader.result);
+        var arr = Array.isArray(parsed) ? parsed : [parsed];
+        var list = getPresets();
+        arr.forEach(function (p) {
+          if (p && p.name && p.data) {
+            list = list.filter(function (x) { return x.name !== p.name; });
+            list.push(p);
+          }
+        });
+        setPresets(list); renderPresetSelect();
+        if (typeof toastr !== 'undefined') toastr.success('导入 ' + arr.length + ' 个预设');
+      } catch (e) { alert('导入失败：文件不是有效的 JSON 格式'); }
+    };
+    reader.readAsText(file);
+    input.value = '';
+  }
+  function buildPrompt() {
+    var attrs = ATTRS.map(function (a) { return a + ' ' + S.attrs[a] + '（mod ' + mod(S.attrs[a]) + '）'; }).join('，');
+    var se = STARTS.find(function (x) { return x.n === S.startEvent; });
+    var recon = S.prof.filter(function (s) { return RECON.indexOf(s) >= 0; });
+    var wis = modNum(S.attrs['感知']);
+    var bonus = RANK_BONUS[S.rank] || 2;
+    var reconLine = '被动察觉 DC ' + (10 + wis + (recon.length ? bonus : 0)) +
+      '（10 + 感知修正' + mod(S.attrs['感知']) + (recon.length ? ' + 熟练' + bonus : ' + 无侦察熟练') + '）；主动侦察 d20 ' +
+      (wis + (recon.length ? bonus : 0) >= 0 ? '+' : '') + (wis + (recon.length ? bonus : 0)) +
+      (recon.length ? '（侦察类熟练：' + recon.join('、') + '）' : '（未选侦察类熟练项）');
+    var startLine = S.startEvent === '自定义开场'
+      ? (S.customStart ? '【自定义开场白】' + S.customStart : '（自定义开场，降级为触发事件入口）')
+      : (se ? '【起始事件已选择：' + se.n + '】\n' + se.d : '');
+    var eventLine = se && se.ev
+      ? '\n（IMPORTANT：开局即进入事件「' + se.ev + '」，请按该事件的设定展开开场，并在<UpdateVariable>中设置：事件.开启=true、事件.标题=' + se.ev + '、事件.阶段=' + se.st + '、世界.地点=临空市-' + se.loc + '。）'
+      : '';
+    return '【临空市 · 开局设定】\n' +
+      '你是「' + S.name + '」，' + S.age + '岁，性别' + S.gender + '，种族' + S.race + '。\n' +
+      '所属组织：' + S.org + (S.identity ? '，身份：' + S.identity : '') + '（职位：' + S.rank + '）。\n' +
+      '起始地点：临空市-' + S.loc.join('-') + '。\n' +
+      '属性（DND六维）：' + attrs + '。\n' +
+      '熟练项：' + (S.prof.join('、') || '无') + '。\n' +
+      '侦察能力：' + reconLine + '。\n' +
+      '初始魔力：' + S.magic + (isDemonRace(S.race) ? '（魔族起点）' : '') + '。\n' +
+      '初始堕落：魔化度' + S.startCorruption.魔化度 + (isDemonRace(S.race) ? '（魔化形态=' + S.race + '）' : '') + ' / 淫化度' + S.startCorruption.淫化度 + ' / 堕落六维（道德沦丧' + (S.startCorruption['道德沦丧'] || 0) + '、共情泯灭' + (S.startCorruption['共情泯灭'] || 0) + '、欲望沉溺' + (S.startCorruption['欲望沉溺'] || 0) + '、自我消解' + (S.startCorruption['自我消解'] || 0) + '、手段残酷' + (S.startCorruption['手段残酷'] || 0) + '、罪责开脱' + (S.startCorruption['罪责开脱'] || 0) + '）。\n\n' +
+      startLine + eventLine + '\n\n' +
+      '开局背景：' + bgDesc() + '\n\n' +
+      '请以临空市的设定展开开场——描述这座城市、你抵达的场景、与你身份相符的初始处境。城市只有女性（含扶她），百合文化普及；你身处人类与魔族战争的最前线，空气中隐约残留着魔素的气息。请在叙事中自然铺陈「守护、欲望与堕落」的张力，等待我的行动。\n' +
+      '（侦察规则：被动察觉 DC ' + (10 + wis + (recon.length ? bonus : 0)) + ' 决定你是否能发现伪装的魔族痕迹——魔族隐匿检定低于此 DC 时露出破绽。侦察类熟练项：察觉/侦察/洞察/魔力感知。）\n' +
+      '（初始堕落：请按上面的初始堕落数值，在开局时于<UpdateVariable>中设置 主角.堕落档案.魔化度=' + S.startCorruption.魔化度 + (isDemonRace(S.race) ? '、魔化形态=' + S.race : '') + '、主角.堕落档案.淫化度=' + S.startCorruption.淫化度 + '、主角.堕落档案.堕落六维.道德沦丧=' + (S.startCorruption['道德沦丧'] || 0) + '、共情泯灭=' + (S.startCorruption['共情泯灭'] || 0) + '、欲望沉溺=' + (S.startCorruption['欲望沉溺'] || 0) + '、自我消解=' + (S.startCorruption['自我消解'] || 0) + '、手段残酷=' + (S.startCorruption['手段残酷'] || 0) + '、罪责开脱=' + (S.startCorruption['罪责开脱'] || 0) + '。）';
+  }
+  async function generate() {
+    if (!S.name) { $('gen-hint').textContent = '请先设定姓名'; return; }
+    var prompt = buildPrompt();
+    try {
+      // 标准 ST 面板 API：createChatMessages（数组）+ triggerSlash
+      if (typeof createChatMessages === 'function') {
+        await createChatMessages([{ role: 'user', message: prompt }]);
+        if (typeof triggerSlash === 'function') await triggerSlash('/trigger');
+        if (typeof toastr !== 'undefined') toastr.success('开局提示词已发送，等待 AI 开场…');
+      } else if (typeof createChatMessage === 'function') {
+        // 兼容旧 API
+        createChatMessage(prompt, false, false);
+        if (typeof toastr !== 'undefined') toastr.success('开局提示词已发送，等待 AI 开场…');
+      } else {
+        alert('未找到 createChatMessages（请在 SillyTavern 环境中运行本页面）\n\n生成的提示词：\n' + prompt);
+      }
+    } catch (e) { alert('发送失败：' + e.message + '\n\n生成的提示词：\n' + prompt); }
+  }
+
+  /* ══════════ 初始化 ══════════ */
+  function init() {
+    document.querySelectorAll('#tabs button').forEach(function (b) {
+      b.onclick = function () { S.step = Number(b.getAttribute('data-step')); renderTabs(); };
+    });
+    $('in-name').addEventListener('input', function () { S.name = this.value; $('gen-hint').textContent = S.name ? '将生成开局提示词并发送给 AI' : '请先设定姓名'; });
+    $('in-age').addEventListener('change', function () { S.age = Number(this.value) || 18; });
+    $('in-gender').addEventListener('change', function () { S.gender = this.value; });
+    $('in-rank').addEventListener('change', function () { S.rank = this.value; renderRecon(); });
+    $('in-identity').addEventListener('change', function () { S.identity = this.value; });
+    $('in-custom-start').addEventListener('input', function () { S.customStart = this.value; });
+    $('in-custom-bg').addEventListener('input', function () { S.customBg = this.value; });
+    $('cs-mahua').addEventListener('input', function () { S.startCorruption.魔化度 = Math.max(0, Math.min(100, Number(this.value) || 0)); });
+    $('cs-yinhua').addEventListener('input', function () { S.startCorruption.淫化度 = Math.max(0, Math.min(100, Number(this.value) || 0)); });
+    LIU.forEach(function (k) {
+      var el = $('cs-' + k);
+      if (el) el.addEventListener('input', function () { S.startCorruption[k] = Math.max(0, Math.min(100, Number(this.value) || 0)); });
+    });
+    renderPresetSelect();
+    renderCorStart();
+    renderTabs(); renderRaces(); renderRaceWarn(); renderOrgs(); renderLocs(); renderAttrs(); renderSkills(); renderStarts(); renderBgs();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+</script>

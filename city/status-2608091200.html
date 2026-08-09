@@ -1,0 +1,709 @@
+<!-- 临空市 · 守护者档案 v2608091200（纯原生 JS 自包含版——兼容 $('body').load() 注入，无外部 CDN 依赖）
+     堕落系统重构：魔化(分种族)/淫化(力量替换)/恶堕六维；新增伙伴面板 -->
+<style>
+  :root {
+    --lk-bg: #150a2b; --lk-bg2: #1d0f3d; --lk-card: #241244; --lk-line: #4a2a7a;
+    --lk-text: #f0e6ff; --lk-dim: #a88cd6; --lk-accent: #9d6bff; --lk-accent2: #7bd0a0;
+    --lk-gold: #e8c87a; --lk-good: #4fd68a; --lk-warn: #e8b04a; --lk-bad: #e0707a; --lk-deep: #c04860;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #150a2b; font-family: "Noto Sans SC","Source Han Sans SC","Microsoft YaHei",sans-serif; color: #f0e6ff; font-size: 14px; min-height: 100%; position: relative; overflow-x: hidden; }
+  .starfield, .starfield-twi { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+  .starfield { background:
+      radial-gradient(1px 1px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 25% 65%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 38% 32%, #e8d0ff, transparent), radial-gradient(1px 1px at 52% 78%, #fff, transparent),
+      radial-gradient(1px 1px at 64% 15%, #fff, transparent), radial-gradient(2px 2px at 76% 48%, #d8a8ff, transparent),
+      radial-gradient(1px 1px at 88% 70%, #fff, transparent), radial-gradient(1.5px 1.5px at 94% 25%, #e8d0ff, transparent),
+      radial-gradient(1px 1px at 8% 88%, #fff, transparent), radial-gradient(1px 1px at 45% 8%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 70% 90%, #d8a8ff, transparent), radial-gradient(1px 1px at 30% 45%, #fff, transparent),
+      radial-gradient(1px 1px at 55% 55%, #fff, transparent), radial-gradient(1.5px 1.5px at 85% 5%, #fff, transparent),
+      radial-gradient(1px 1px at 5% 40%, #e8d0ff, transparent), radial-gradient(1px 1px at 33% 85%, #fff, transparent),
+      radial-gradient(2px 2px at 60% 35%, #fff, transparent), radial-gradient(1px 1px at 90% 60%, #fff, transparent),
+      linear-gradient(180deg, #1a0d33 0%, #241147 45%, #160a2e 100%); }
+  .starfield-twi { background:
+      radial-gradient(1.5px 1.5px at 20% 25%, #fff, transparent), radial-gradient(2px 2px at 48% 68%, #c9a0ff, transparent),
+      radial-gradient(1.5px 1.5px at 72% 30%, #fff, transparent), radial-gradient(2px 2px at 90% 75%, #ffd8ff, transparent),
+      radial-gradient(1px 1px at 35% 92%, #fff, transparent), radial-gradient(1.5px 1.5px at 80% 12%, #d8a8ff, transparent);
+      animation: twinkle 4s ease-in-out infinite; }
+  @keyframes twinkle { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.85; } }
+  #app { max-width: 860px; margin: 0 auto; padding: 16px 16px 24px; position: relative; z-index: 1; }
+  .head { display: flex; align-items: center; gap: 12px; padding: 14px 18px;
+    border: 1px solid rgba(157,107,255,0.35); border-radius: 12px;
+    background: linear-gradient(135deg, rgba(157,107,255,0.14), rgba(214,107,255,0.06), rgba(30,15,61,0.6));
+    box-shadow: 0 0 24px rgba(157,107,255,0.25); position: relative; overflow: hidden; }
+  .head::before { content: '✦ ✧ ✦ ✧ ✦ ✧ ✦'; position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: 8px; color: rgba(216,168,255,0.5); letter-spacing: 8px; animation: twinkle 3s ease-in-out infinite; }
+  .head h1 { font-size: 18px; letter-spacing: 0.12em; color: #d8b0ff; text-shadow: 0 0 12px rgba(157,107,255,0.8); }
+  .head .sub { color: var(--lk-dim); font-size: 12px; }
+  .head .refresh { margin-left: auto; cursor: pointer; color: var(--lk-dim); border: 1px solid var(--lk-line); background: var(--lk-bg2); border-radius: 6px; padding: 4px 12px; font-size: 12px; }
+  .head .hbtn { cursor: pointer; color: var(--lk-dim); border: 1px solid var(--lk-line); background: var(--lk-bg2); border-radius: 6px; padding: 4px 10px; font-size: 12px; }
+  .head .hbtn.on { background: linear-gradient(135deg,#7c3aed,#a855f7); color: #fff; border-color: #b57bff; }
+  .head .hbtn.save { background: linear-gradient(135deg,#7c3aed,#d66bff); color: #fff; border-color: #b57bff; }
+  .card-toggle { position: absolute; top: 8px; right: 26px; width: 20px; height: 20px; border: 1px solid rgba(157,107,255,0.4); background: transparent; color: #cbb0ff; border-radius: 4px; cursor: pointer; font-size: 11px; line-height: 1; z-index: 2; }
+  .card.collapsed .card-body { display: none; }
+  .card-body { position: relative; }
+  .edit-input { width: 100%; background: rgba(18,10,36,0.9); border: 1px solid rgba(157,107,255,0.5); color: var(--lk-text); border-radius: 5px; padding: 3px 7px; font-size: 12px; margin: 1px 0; }
+  .edit-num { width: 64px; background: rgba(18,10,36,0.9); border: 1px solid rgba(157,107,255,0.5); color: var(--lk-text); border-radius: 5px; padding: 2px 6px; font-size: 12px; text-align: center; }
+  .edit-sel { background: rgba(18,10,36,0.9); border: 1px solid rgba(157,107,255,0.5); color: var(--lk-text); border-radius: 5px; padding: 2px 6px; font-size: 12px; }
+  .edit-hint { color: #a88cd6; font-size: 11px; margin: 6px 0 2px; }
+  .edit-save-row { text-align: right; margin-top: 6px; }
+  .tabs { display: flex; gap: 6px; padding: 10px 0; flex-wrap: wrap; }
+  .tabs button { background: linear-gradient(180deg, var(--lk-bg2), #1a0e36); color: var(--lk-dim); border: 1px solid var(--lk-line); border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 13px; position: relative; }
+  .tabs button.active { background: linear-gradient(135deg, #7c3aed, #a855f7, #d66bff); color: #fff; border-color: #b57bff; font-weight: 600; box-shadow: 0 0 14px rgba(168,85,247,0.55); }
+  .tabs button.active::after { content: '✦'; position: absolute; top: -4px; right: -2px; font-size: 9px; color: #ffd8ff; }
+  .card { background: linear-gradient(160deg, #2a1750, #1f0f3d 60%, #180b2e); border: 1px solid rgba(122,74,200,0.4); border-radius: 12px; padding: 13px 15px; margin-bottom: 12px; box-shadow: 0 0 18px rgba(157,107,255,0.12), 0 4px 20px rgba(0,0,0,0.4); position: relative; }
+  .card::before { content: '✦'; position: absolute; top: 8px; right: 14px; color: rgba(216,168,255,0.35); font-size: 12px; }
+  .card h3 { font-size: 13px; color: #b78bff; letter-spacing: 0.1em; margin-bottom: 9px; text-shadow: 0 0 8px rgba(157,107,255,0.5); }
+  .card h3::before { content: '✧ '; color: rgba(216,168,255,0.6); }
+  .empty { color: var(--lk-dim); font-size: 12px; padding: 8px 0; text-align: center; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 13px; }
+  .kv .k { color: #a88cd6; white-space: nowrap; }
+  .kv .v { color: var(--lk-text); }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chips.scroll { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; padding-bottom: 2px; }
+  .chips.scroll::-webkit-scrollbar { height: 3px; }
+  .chips.scroll::-webkit-scrollbar-thumb { background: rgba(157,107,255,0.4); border-radius: 2px; }
+  .chip { background: rgba(122,74,200,0.18); border: 1px solid rgba(157,107,255,0.35); border-radius: 10px; padding: 1px 9px; font-size: 12px; color: #cbb0ff; flex-shrink: 0; }
+  .rel-tier { display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 8px; margin-left: 6px; vertical-align: middle; }
+  .rel-detail-btn { cursor: pointer; color: #b78bff; font-size: 11px; margin-top: 6px; user-select: none; }
+  .rel-detail { display: none; margin-top: 6px; font-size: 12px; color: var(--lk-dim); line-height: 1.7; border-top: 1px dashed rgba(157,107,255,0.25); padding-top: 6px; }
+  .rel-detail.open { display: block; }
+  .rel-detail .dk { color: #a88cd6; }
+  .track { margin: 8px 0; }
+  .track .row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+  .track .lbl { width: 66px; font-size: 13px; color: var(--lk-dim); flex-shrink: 0; }
+  .track .val { width: 46px; font-size: 12px; text-align: right; color: var(--lk-text); flex-shrink: 0; }
+  .bar { flex: 1; height: 10px; background: #120a24; border-radius: 6px; overflow: hidden; border: 1px solid rgba(157,107,255,0.3); }
+  .bar i { display: block; height: 100%; border-radius: 5px; transition: width 0.5s; box-shadow: 0 0 8px currentColor; }
+  .subtrack { margin-left: 74px; font-size: 12px; color: var(--lk-dim); }
+  .attr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .attr { background: linear-gradient(160deg, #1e1140, #170b2e); border: 1px solid rgba(157,107,255,0.3); border-radius: 8px; padding: 7px 9px; }
+  .attr .nm { font-size: 12px; color: var(--lk-dim); }
+  .attr .sc { font-size: 16px; font-weight: 700; color: #e8d0ff; }
+  .attr .mod { font-size: 11px; color: var(--lk-gold); margin-left: 4px; }
+  .node { border: 1px solid rgba(157,107,255,0.35); border-radius: 8px; padding: 7px 10px; margin: 6px 0; background: linear-gradient(160deg, #271550, #1c0f38); box-shadow: 0 0 10px rgba(157,107,255,0.1); }
+  .node .h { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .node .h b { color: #e8d0ff; font-size: 13px; }
+  .node .h .t { color: var(--lk-dim); font-size: 12px; }
+  .node .badge { font-size: 11px; padding: 0 7px; border-radius: 8px; background: linear-gradient(135deg,#7c3aed,#d66bff); color: #fff; }
+  .node .ev { font-size: 12px; color: var(--lk-dim); margin-top: 3px; }
+  .node .ev::before { content: '✦ '; color: rgba(216,168,255,0.5); }
+  .six-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
+  .six-item { font-size: 12px; }
+  .six-item .nm { color: #b78bff; }
+  .six-item .row { display: flex; align-items: center; gap: 6px; }
+  .six-item .bar { flex: 1; height: 7px; }
+  .six-item .val { width: 34px; text-align: right; color: var(--lk-text); font-size: 11px; }
+  .six-item .desc { color: var(--lk-dim); font-size: 11px; margin-top: 1px; }
+  .rel { display: flex; gap: 10px; align-items: flex-start; }
+  .rel .nm { font-size: 14px; font-weight: 600; color: #e8d0ff; }
+  .rel .meta { font-size: 12px; color: var(--lk-dim); margin-top: 1px; }
+  .rel .fav { font-size: 12px; color: var(--lk-gold); margin-left: auto; white-space: nowrap; }
+  .rel .heart { font-size: 12px; color: var(--lk-bad); margin-top: 1px; }
+  .news-cat { margin-bottom: 8px; }
+  .news-cat .cat { font-size: 12px; color: #b78bff; margin-bottom: 3px; }
+  .news-cat .line { font-size: 12px; color: var(--lk-dim); line-height: 1.7; margin-bottom: 4px; }
+  .stat-line { display: flex; flex-wrap: wrap; gap: 6px; }
+  .stat-pill { font-size: 12px; padding: 2px 9px; border-radius: 10px; background: rgba(122,74,200,0.16); border: 1px solid rgba(157,107,255,0.3); color: var(--lk-dim); }
+  .stat-pill b { color: var(--lk-text); font-weight: 500; }
+  .stat-pill.hot b { color: var(--lk-bad); }
+  .intel-item { border-bottom: 1px dashed rgba(157,107,255,0.25); padding: 5px 0; font-size: 12px; color: var(--lk-dim); line-height: 1.6; }
+  .intel-item b { color: #cbb0ff; }
+  .stage-box { margin: 8px 0; padding: 8px 11px; border: 1px solid rgba(157,107,255,0.35); border-radius: 8px; background: linear-gradient(160deg, #271550, #1c0f38); }
+  .stage-box .st { color: #e8d0ff; font-size: 13px; font-weight: 600; }
+  .stage-box .sb { color: var(--lk-dim); font-size: 12px; margin-top: 3px; line-height: 1.7; }
+  .stage-box .sb b { color: #cbb0ff; font-weight: 500; }
+  .hidden { display: none !important; }
+</style>
+
+<div class="starfield" aria-hidden="true"></div>
+<div class="starfield-twi" aria-hidden="true"></div>
+<div id="app">
+  <div class="head">
+    <h1>✧ 临空市</h1>
+    <button class="hbtn save hidden" id="btn-save" onclick="saveEdits()">💾 保存修改</button>
+    <button class="hbtn" id="btn-edit" onclick="toggleEdit()">✏️ 编辑</button>
+    <button class="refresh" onclick="refresh()" title="刷新">↻</button>
+  </div>
+
+  <nav class="tabs">
+    <button data-panel="profile" onclick="setTab('profile')">主角</button>
+    <button data-panel="corruption" onclick="setTab('corruption')">堕落档案</button>
+    <button data-panel="party" onclick="setTab('party')">伙伴</button>
+    <button data-panel="relations" onclick="setTab('relations')">关系</button>
+    <button data-panel="quests" onclick="setTab('quests')">任务</button>
+    <button data-panel="intel" onclick="setTab('intel')">情报</button>
+    <button data-panel="news" onclick="setTab('news')">新闻</button>
+  </nav>
+
+  <!-- 主角 -->
+  <div class="panel" data-panel="profile">
+    <div class="card"><h3>身份档案</h3><div class="kv" id="pf-identity"></div><div class="chips" id="pf-skills" style="margin-top:8px"></div></div>
+    <div class="card"><h3>六维属性（DND）</h3><div class="attr-grid" id="pf-attrs"></div></div>
+    <div class="card"><h3>状态</h3><div class="stat-line" id="pf-status"></div><div class="chips" id="pf-abnormal" style="margin-top:7px"></div></div>
+    <div class="card"><h3>魔力</h3><div class="kv" id="pf-magic"></div><div class="track" id="pf-magicbar"></div></div>
+    <div class="card"><h3>改造</h3><div class="track" id="pf-mods"></div><div class="chips" id="pf-modlist" style="margin-top:7px"></div></div>
+    <div class="card"><h3>持有物</h3><div class="chips" id="pf-items"></div></div>
+  </div>
+
+  <!-- 堕落档案 -->
+  <div class="panel hidden" data-panel="corruption">
+    <div class="card"><h3>魔化 · 外在魔族化</h3><div id="cor-mahua"></div></div>
+    <div class="card"><h3>淫化 · 内在淫乱化与力量替换</h3><div id="cor-yinhua"></div></div>
+    <div class="card"><h3>恶堕 · 堕落六维</h3><div id="cor-six"></div></div>
+    <div class="card"><h3>魔力转化</h3><div class="kv" id="cor-magic"></div></div>
+    <div class="card"><h3>当前认知</h3><div id="cor-cognition"></div></div>
+    <div class="card"><h3>欲望 xp</h3><div id="cor-xp"></div></div>
+    <div class="card"><h3>淫纹印记 / 特殊项目</h3><div id="cor-marks"></div></div>
+  </div>
+
+  <!-- 伙伴 -->
+  <div class="panel hidden" data-panel="party">
+    <div id="party-list"></div>
+  </div>
+
+  <!-- 关系 -->
+  <div class="panel hidden" data-panel="relations">
+    <div id="rel-list"></div>
+  </div>
+
+  <!-- 任务 -->
+  <div class="panel hidden" data-panel="quests">
+    <div id="q-list"></div>
+  </div>
+
+  <!-- 情报 -->
+  <div class="panel hidden" data-panel="intel">
+    <div class="card"><div id="intel-list"></div></div>
+  </div>
+
+  <!-- 新闻 -->
+  <div class="panel hidden" data-panel="news">
+    <div id="news-list"></div>
+  </div>
+</div>
+
+<script>
+  /* ══════════ 数据 ══════════ */
+  var ATTRS = ['力量', '敏捷', '体质', '智力', '感知', '魅力'];
+  var LIU = ['道德沦丧', '共情泯灭', '欲望沉溺', '自我消解', '手段残酷', '罪责开脱'];
+  var LIU_DESC = {
+    '道德沦丧': '道德观的崩解', '共情泯灭': '同情心的丧失', '欲望沉溺': '对欲望的屈服',
+    '自我消解': '独立意志的丧失', '手段残酷': '行事手段的残忍', '罪责开脱': '对罪责的推卸'
+  };
+  var DEMON_TYPES = ['妖狐', '魅魔', '吸血鬼', '史莱姆娘', '蛛魔', '虫娘', '花娘'];
+
+  // 魔化分种族进度表（band 与 lore 一致，用于当前阶段展示）
+  var MAHUA_TABLES = {
+    '妖狐': [
+      { band: '0-9', stage: '魔素渗入', body: '体香带极淡的甜味；情绪激动时瞳色偶闪异彩', talent: '对幻象/障眼法更敏感', stable: '—' },
+      { band: '10-24', stage: '淫纹初现', body: '小腹出现淡色淫纹（可隐藏）；发色在光下泛起异色反光', talent: '幻术亲和初醒：能看穿简单幻象', stable: '强力圣光净化可退' },
+      { band: '25-49', stage: '狐耳初生', body: '长出狐耳（不稳定，可被净化/抑制器收回）；尾芽', talent: '幻术编织初成；魅惑力微升', stable: '净化极难但非不可' },
+      { band: '50-64', stage: '狐尾生', body: '狐尾长出（不稳定但难藏）；瞳色常驻异彩', talent: '幻术可用（编织幻觉）；狐火初凝', stable: '大体不可逆，只能压制外观' },
+      { band: '65-79', stage: '狐性苏醒', body: '狐耳/狐尾/异彩瞳固化；体表偶现狐纹', talent: '狐狸本能主导——夜间活跃/对月敏感/领地警戒/依恋信任者；变身术初成', stable: '特征固化' },
+      { band: '80-100', stage: '彻底妖狐', body: '完全妖狐形态，妖性圆满', talent: '幻术/魅惑/狐火/变身全天赋；野性直觉与狡黠本性支配身心', stable: '不可逆' }
+    ],
+    '魅魔': [
+      { band: '0-9', stage: '魔素渗入', body: '体香带微甜；肌肤泛起淡淡蜜色光泽', talent: '对情绪/气氛的感知微升', stable: '—' },
+      { band: '10-24', stage: '心瞳初现', body: '瞳孔在激动/发情时短暂变为心形；发根染色', talent: '魅惑天赋初醒：言语姿态带轻微蛊惑力', stable: '强力圣光净化可退' },
+      { band: '25-49', stage: '魅惑成形', body: '心形瞳常驻（可隐藏）；蜜色肌肤光泽明显；尾芽', talent: '魅惑可用；快感侵蚀初成', stable: '净化极难但非不可' },
+      { band: '50-64', stage: '蝠翼雏形', body: '心形尾长出；蝠翼雏形展开；体香显著', talent: '快感侵蚀纯熟；魔力吸取初成', stable: '大体不可逆，只能压制外观' },
+      { band: '65-79', stage: '猎食欲醒', body: '完整蝠翼；心形尾柔韧有力；体香浓烈', talent: '魅魔本能苏醒——对目标品味与狩猎的渴望、对玷污圣洁的执念；梦境侵蚀初窥；形态诱惑', stable: '特征固化' },
+      { band: '80-100', stage: '彻底魅魔', body: '完全魅魔形态，心形瞳/蝠翼/心形尾齐备', talent: '魅惑/快感侵蚀/魔力吸取/梦境侵蚀全天赋；以魅惑为常态', stable: '不可逆' }
+    ],
+    '吸血鬼': [
+      { band: '0-9', stage: '魔素渗入', body: '面色微显苍白；对暗处更舒适，日光下略倦', talent: '血液气味感知微升', stable: '—' },
+      { band: '10-24', stage: '渴血初现', body: '犬齿微尖；瞳色在夜间泛红/银；日光下不适明显', talent: '对血液的渴望初现（可控制）；血魔法初学', stable: '强力圣光净化可退' },
+      { band: '25-49', stage: '獠牙成型', body: '獠牙成型；肌肤苍白；红/银瞳常驻（可隐藏）', talent: '血魔法可用；暗夜之力觉醒', stable: '净化极难但非不可' },
+      { band: '50-64', stage: '血之契约', body: '苍白/獠牙/红瞳不可藏；皮肤在光下泛冷光', talent: '血液控制纯熟（吸血/血契约）；再生能力觉醒', stable: '大体不可逆，只能压制外观' },
+      { band: '65-79', stage: '血之渴望', body: '特征固化；优雅贵族气质浮现；厌光', talent: '吸血鬼本能苏醒——对血液的渴望、对猎物/血仆的占有欲；转化后裔能力初成', stable: '特征固化' },
+      { band: '80-100', stage: '彻底血族', body: '完全血族形态；苍白/獠牙/红瞳；日光几乎无法忍受', talent: '血魔法/血液控制/暗夜之力/不朽再生/转化后裔全天赋', stable: '不可逆' }
+    ],
+    '史莱姆娘': [
+      { band: '0-9', stage: '魔素渗入', body: '肌肤泛起淡淡凝胶光泽；体温微升', talent: '触感更敏锐', stable: '—' },
+      { band: '10-24', stage: '凝胶化初', body: '指尖/耳垂等部位微透明；肌肤更温润', talent: '拟态初学（局部形态微调）；凝胶可轻微变形', stable: '强力圣光净化可退' },
+      { band: '25-49', stage: '凝胶扩展', body: '凝胶化扩大（手臂/脸颊）；体温恒定温润', talent: '拟态可用；束缚初成；吞噬溶解初学', stable: '净化极难但非不可' },
+      { band: '50-64', stage: '半凝胶躯', body: '下半身/躯干凝胶化；凝胶核心成形', talent: '拟态稳定；吞噬溶解可用；束缚纯熟；可分裂子体细胞', stable: '大体不可逆，只能压制外观' },
+      { band: '65-79', stage: '吞噬欲醒', body: '凝胶核心固化；全身可部分流体化', talent: '史莱姆本能苏醒——对包裹/同化的渴望、模仿欲；同化初窥；分裂增殖', stable: '特征固化' },
+      { band: '80-100', stage: '彻底史莱姆娘', body: '完全凝胶之躯，核心稳定，可固化为人形', talent: '吞噬/拟态/束缚/同化/分裂增殖全天赋', stable: '不可逆' }
+    ],
+    '蛛魔': [
+      { band: '0-9', stage: '魔素渗入', body: '肌肤微泛冷光；对蛛丝/缠绕的触感更敏感', talent: '对"线"的感知微升', stable: '—' },
+      { band: '10-24', stage: '蛛纹初现', body: '额间蛛纹初现（可隐藏）；指尖可吐细蛛丝；多目偶现', talent: '蛛丝操控初学；毒液腺初成（麻痹性弱）', stable: '强力圣光净化可退' },
+      { band: '25-49', stage: '织丝成形', body: '蛛纹明显；蛛丝坚韧化；下肢出现绒毛/硬皮', talent: '蛛丝束缚可用；毒液可麻痹/催情；巢穴经营初学', stable: '净化极难但非不可' },
+      { band: '50-64', stage: '蛛化之躯', body: '下肢蛛化（八足/后肢）；纺丝器成形', talent: '蛛丝束缚纯熟；毒液纯熟；茧化初窥', stable: '大体不可逆，只能压制外观' },
+      { band: '65-79', stage: '猎手本能', body: '多目常驻；蛛魔形态固化；巢穴气息缠绕', talent: '蛛魔本能苏醒——对猎物入网的耐心与喜悦、对巢穴的占有欲；共生茧可用', stable: '特征固化' },
+      { band: '80-100', stage: '彻底蛛魔', body: '完全蛛魔形态（人身上身+蜘蛛下身/八足/纺丝器）', talent: '蛛丝/毒液/巢穴/共生茧全天赋', stable: '不可逆' }
+    ],
+    '虫娘': [
+      { band: '0-9', stage: '魔素渗入', body: '肌肤泛鳞粉光泽；视觉敏锐度微升', talent: '对细微振动的感知微升', stable: '—' },
+      { band: '10-24', stage: '复眼初现', body: '复眼偶现（可收起）；鳞粉分泌初成；翅芽', talent: '鳞粉迷幻初学；虫群初联络', stable: '强力圣光净化可退' },
+      { band: '25-49', stage: '鳞翅成形', body: '复眼常驻（可收起）；蝶翼/蜻蜓翅雏形；触角/虫足残片', talent: '鳞粉迷幻可用；虫群操控熟练；茧化蜕变初成', stable: '净化极难但非不可' },
+      { band: '50-64', stage: '蜕变之躯', body: '蝶翼/蜻蜓翅展开；色彩绚丽；鳞粉浓郁', talent: '茧化蜕变可用；拟态纯熟；蜕皮再生初醒', stable: '大体不可逆，只能压制外观' },
+      { band: '65-79', stage: '巢群本能', body: '翅/复眼/触角固化；鳞粉质感常驻', talent: '虫娘本能苏醒——对巢/虫群的归属感、以茧包裹改造的渴望；蜕皮再生纯熟', stable: '特征固化' },
+      { band: '80-100', stage: '彻底虫娘', body: '完全虫娘形态（蝶翼/复眼/触角/鳞粉）', talent: '鳞粉迷幻/虫群操控/茧化蜕变/拟态/蜕皮再生全天赋', stable: '不可逆' }
+    ],
+    '花娘': [
+      { band: '0-9', stage: '魔素渗入', body: '体香初现（淡淡花香）；肌肤泛植物光泽', talent: '对光照/湿润更敏感', stable: '—' },
+      { band: '10-24', stage: '花叶初生', body: '发间生小花/嫩叶；花香惑心初成', talent: '花香惑心初学；藤蔓自指尖延展（细藤）', stable: '强力圣光净化可退' },
+      { band: '25-49', stage: '藤蔓成形', body: '藤蔓自身体延展渐多；花瓣融入身体；植物脉络渐显', talent: '花香惑心可用；花蜜分泌；藤蔓束缚可用', stable: '净化极难但非不可' },
+      { band: '50-64', stage: '植物之躯', body: '发间/身上花朵藤蔓常驻；植物脉络浮现；光合能力初显', talent: '花蜜成瘾可用；藤蔓束缚纯熟；种子寄生初窥；光合再生觉醒', stable: '大体不可逆，只能压制外观' },
+      { band: '65-79', stage: '扎根本能', body: '植物化外观固化；体香浓郁', talent: '花娘本能苏醒——对生长/扎根/寄生的渴望、以花蜜与香气俘获猎物的天性；种子寄生可用', stable: '特征固化' },
+      { band: '80-100', stage: '彻底花娘', body: '完全花娘形态（花/藤蔓/植物脉络）', talent: '花香惑心/花蜜成瘾/藤蔓束缚/种子寄生/光合再生全天赋', stable: '不可逆' }
+    ]
+  };
+
+  // 淫化阶段参考
+  var YINHUA_STAGES = [
+    { band: '0-19', name: '懵懂', body: '对魔族性征无特殊兴趣，反感魔素的"甜腻感"', power: '原始力量纯净。转化: 无' },
+    { band: '20-34', name: '好奇', body: '对魔族产生性好奇，偶发异样快感；微热可被撩起', power: '力量回路被魔素"擦过"，使用时有暖流' },
+    { band: '35-49', name: '初尝', body: '体验到超越人类伴侣的快感，主动靠近魔族', power: '替换启动: 接近40时力量开始"变味"' },
+    { band: '50-64', name: '沉溺', body: '依赖魔素道具，发情时渴望魔族体液', power: '力量已明显替换: 圣邪光/堕灵气/淫魔导已生效' },
+    { band: '65-84', name: '依赖', body: '淫魔力快感成为必需品，戒断魔瘾；主动献身换魔素', power: '替换深化: 接近70时原始力量几乎被淫魔力接管' },
+    { band: '85-100', name: '淫堕', body: '身体与欲望完全被魔素驯化，能为魔族"充能"', power: '完全替换: 淫化≥70起力量彻底转为淫魔力' }
+  ];
+
+  var tab = 'profile';
+  var stat = {};
+
+  function $ (id) { return document.getElementById(id); }
+  function esc (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function num (v) { var n = Number(v); return isNaN(n) ? 0 : n; }
+  function modStr (v) { var m = Math.floor((num(v) - 10) / 2); return m >= 0 ? '+' + m : '' + m; }
+  function barColor (v) { v = num(v); if (v <= 25) return '#4fd68a'; if (v <= 60) return '#e8b04a'; if (v <= 90) return '#e0707a'; return '#c04860'; }
+  function eroColor (v) { v = num(v); if (v <= 30) return '#7bd0a0'; if (v <= 60) return '#9d6bff'; if (v <= 80) return '#e0707a'; return '#c04860'; }
+  function pct (v) { v = num(v); return Math.max(0, Math.min(100, v)) + '%'; }
+  function favColor (v) { v = num(v); if (v < 0) return '#e0707a'; if (v >= 60) return '#e8c87a'; return '#7bd0a0'; }
+  function convColor (v) { return (!v || v === '无') ? '#a88cd6' : '#e0707a'; }
+  function fmtList (v) { return Array.isArray(v) ? v.join('、') : (v || '—'); }
+  function has (v) { return v !== undefined && v !== null && String(v).trim() !== ''; }
+  function stageOf (tables, form, val) {
+    var rows = tables[form];
+    if (!rows) return null;
+    for (var i = rows.length - 1; i >= 0; i--) {
+      var lo = Number(rows[i].band.split('-')[0]);
+      if (num(val) >= lo) return rows[i];
+    }
+    return rows[0];
+  }
+  function yinhuaStage (val) {
+    for (var i = YINHUA_STAGES.length - 1; i >= 0; i--) {
+      var lo = Number(YINHUA_STAGES[i].band.split('-')[0]);
+      if (num(val) >= lo) return YINHUA_STAGES[i];
+    }
+    return YINHUA_STAGES[0];
+  }
+
+  /* ══════════ 收起/编辑 ══════════ */
+  var editMode = false;
+  function setupCards () {
+    document.querySelectorAll('.card').forEach(function (card) {
+      if (card.querySelector('.card-toggle')) return;
+      var toggle = document.createElement('button');
+      toggle.className = 'card-toggle';
+      toggle.textContent = '▾';
+      toggle.onclick = function () { toggleCard(card); };
+      card.appendChild(toggle);
+      var body = document.createElement('div');
+      body.className = 'card-body';
+      var started = false;
+      Array.prototype.slice.call(card.childNodes).forEach(function (n) {
+        if (n === toggle) return;
+        if (n.nodeType === 1 && n.tagName === 'H3') { started = true; return; }
+        if (started) body.appendChild(n);
+      });
+      card.appendChild(body);
+    });
+  }
+  function toggleCard (card) {
+    card.classList.toggle('collapsed');
+    var t = card.querySelector('.card-toggle');
+    if (t) t.textContent = card.classList.contains('collapsed') ? '▸' : '▾';
+  }
+  function toggleEdit () {
+    editMode = !editMode;
+    var b = $('btn-edit');
+    if (b) b.classList.toggle('on', editMode);
+    var s = $('btn-save');
+    if (s) s.classList.toggle('hidden', !editMode);
+    render();
+  }
+  function editField (path, value, isNum) {
+    return '<input class="' + (isNum ? 'edit-num' : 'edit-input') + '" data-path="' + path + '" value="' + esc(value == null ? '' : value) + '">';
+  }
+  function editSel (path, value, options) {
+    var opts = options.map(function (o) { return '<option value="' + esc(o) + '"' + (String(value) === o ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('');
+    return '<select class="edit-sel" data-path="' + path + '">' + '<option value="">（未设定）</option>' + opts + '</select>';
+  }
+  // 显示 or 编辑（数组路径：身份 用顿号分隔文本）
+  function dOrE (path, value, isNum) {
+    if (editMode) return editField(path, value, isNum);
+    return esc(value == null ? '' : value);
+  }
+  function dOrEArr (path, arr) {
+    if (editMode) return editField(path, Array.isArray(arr) ? arr.join('、') : (arr || ''));
+    return esc(fmtList(arr));
+  }
+  function isArrayPath (path) { return /身份$/.test(path); }
+  function collectEdits () {
+    var out = [];
+    document.querySelectorAll('[data-path]').forEach(function (el) {
+      out.push({ path: el.getAttribute('data-path'), value: el.value });
+    });
+    return out;
+  }
+  async function writeStatData (path, value) {
+    try {
+      if (typeof waitGlobalInitialized === 'function') await waitGlobalInitialized('Mvu');
+      if (!window.Mvu) { console.error('[临空市] Mvu 不可用，无法写入'); return false; }
+      var data = Mvu.getMvuData({ type: 'message', message_id: getCurrentMessageId() });
+      if (!data) data = { stat_data: {} };
+      if (!data.stat_data) data.stat_data = {};
+      var parts = path.split('.');
+      var obj = data.stat_data;
+      for (var i = 0; i < parts.length - 1; i++) {
+        if (!obj[parts[i]] || typeof obj[parts[i]] !== 'object') obj[parts[i]] = {};
+        obj = obj[parts[i]];
+      }
+      obj[parts[parts.length - 1]] = value;
+      await Mvu.replaceMvuData(data, { type: 'message', message_id: getCurrentMessageId() });
+      return true;
+    } catch (e) { console.error('[临空市] 写入失败', e); return false; }
+  }
+  async function saveEdits () {
+    var edits = collectEdits();
+    if (!edits.length) return;
+    var ok = true;
+    for (var i = 0; i < edits.length; i++) {
+      var e = edits[i];
+      var v = e.value;
+      if (isArrayPath(e.path)) {
+        v = String(e.value).split(/[、，,、\s]+/).filter(function (x) { return x; });
+      } else if (/^\s*-?\d+(\.\d+)?\s*$/.test(v)) {
+        v = Number(v);
+      }
+      var r = await writeStatData(e.path, v);
+      if (!r) ok = false;
+    }
+    if (typeof toastr !== 'undefined') toastr.success(ok ? '已保存修改' : '部分保存失败');
+    toggleEdit();
+    refresh();
+  }
+
+  /* ══════════ 渲染 ══════════ */
+  function setTab (t) {
+    tab = t;
+    document.querySelectorAll('.tabs button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-panel') === t); });
+    document.querySelectorAll('.panel').forEach(function (p) { p.classList.toggle('hidden', p.getAttribute('data-panel') !== t); });
+    render();
+  }
+
+  function render () {
+    if (tab === 'profile') renderProfile();
+    else if (tab === 'corruption') renderCorruption();
+    else if (tab === 'party') renderParty();
+    else if (tab === 'relations') renderRelations();
+    else if (tab === 'quests') renderQuests();
+    else if (tab === 'intel') renderIntel();
+    else if (tab === 'news') renderNews();
+  }
+
+  function p () { return stat.主角 || {}; }
+  function arch () { return p().堕落档案 || {}; }
+  function sixOf (o) { return (o && o.堕落六维) || {}; }
+
+  function renderProfile () {
+    var pj = p();
+    var skills = (pj.熟练项 || []);
+    var idHtml =
+      '<span class="k">姓名</span><span class="v"><b>' + dOrE('主角.姓名', pj.姓名 || '未设定') + '</b></span>' +
+      '<span class="k">昵称</span><span class="v">' + dOrE('主角.昵称', pj.昵称 || '') + '</span>' +
+      '<span class="k">年龄 / 性别</span><span class="v">' + dOrE('主角.年龄', pj.年龄 || '?', true) + ' · ' + dOrE('主角.性别', pj.性别 || '女性') + '</span>' +
+      '<span class="k">种族</span><span class="v">' + dOrE('主角.种族', pj.种族 || '人类') + '</span>' +
+      '<span class="k">所属组织</span><span class="v">' + dOrE('主角.所属组织', pj.所属组织 || '无') + '</span>' +
+      '<span class="k">身份</span><span class="v">' + dOrEArr('主角.身份', pj.身份) + '</span>' +
+      '<span class="k">职位</span><span class="v">' + dOrE('主角.职位', pj.职位 || '见习') + '</span>' +
+      '<span class="k">资金</span><span class="v">' + dOrE('主角.资金', pj.资金 || '普通') + '</span>';
+    $('pf-identity').innerHTML = idHtml;
+    $('pf-skills').innerHTML = skills.length ? '<div class="chips scroll">' + skills.map(function (s) { return '<span class="chip">' + esc(s) + '</span>'; }).join('') + '</div>' : '';
+
+    var attrs = (pj.属性 || {});
+    $('pf-attrs').innerHTML = ATTRS.map(function (a) {
+      if (editMode) return '<div class="attr"><div class="nm">' + a + '</div><div>' + editField('主角.属性.' + a, attrs[a] || 8, true) + '</div></div>';
+      return '<div class="attr"><div class="nm">' + a + '</div><div><span class="sc">' + num(attrs[a] || 8) + '</span><span class="mod">mod ' + modStr(attrs[a] || 8) + '</span></div></div>';
+    }).join('');
+
+    var st = pj.状态 || {};
+    var hotLust = ['发情', '失神'].indexOf(st.发情) >= 0;
+    var hotWound = ['重伤', '濒危'].indexOf(st.伤痛) >= 0;
+    if (editMode) {
+      $('pf-status').innerHTML =
+        '<div class="stat-line">' +
+        '<span class="stat-pill">体力 ' + editField('主角.状态.体力', st.体力 || '充沛') + '</span>' +
+        '<span class="stat-pill">魔力 ' + editField('主角.状态.魔力', st.魔力 || '充盈') + '</span>' +
+        '<span class="stat-pill">清醒 ' + editField('主角.状态.清醒', st.清醒 || '清醒') + '</span>' +
+        '<span class="stat-pill">发情 ' + editField('主角.状态.发情', st.发情 || '冷静') + '</span>' +
+        '<span class="stat-pill">伤痛 ' + editField('主角.状态.伤痛', st.伤痛 || '无') + '</span></div>';
+    } else {
+      $('pf-status').innerHTML =
+        '<span class="stat-pill">体力 <b>' + esc(st.体力 || '充沛') + '</b></span>' +
+        '<span class="stat-pill">魔力 <b>' + esc(st.魔力 || '充盈') + '</b></span>' +
+        '<span class="stat-pill">清醒 <b>' + esc(st.清醒 || '清醒') + '</b></span>' +
+        '<span class="stat-pill' + (hotLust ? ' hot' : '') + '">发情 <b>' + esc(st.发情 || '冷静') + '</b></span>' +
+        '<span class="stat-pill' + (hotWound ? ' hot' : '') + '">伤痛 <b>' + esc(st.伤痛 || '无') + '</b></span>';
+    }
+    var ab = st.异常 || {};
+    $('pf-abnormal').innerHTML = Object.keys(ab).length
+      ? Object.keys(ab).map(function (k) { return '<span class="chip">' + esc(k) + '：' + esc((ab[k] || {}).效果) + ' <em style="opacity:.6">（' + esc((ab[k] || {}).剩余) + '）</em></span>'; }).join('')
+      : '';
+
+    var mg = pj.魔力 || {};
+    $('pf-magic').innerHTML =
+      '<span class="k">类型</span><span class="v">' + dOrE('主角.魔力.类型', mg.类型 || '无') + '</span>' +
+      '<span class="k">转化</span><span class="v"><b style="color:' + convColor(mg.转化) + '">' + esc(mg.转化 || '无') + '</b></span>';
+    $('pf-magicbar').innerHTML = editMode
+      ? '<div class="row"><span class="lbl">觉醒度</span>' + editField('主角.魔力.觉醒度', mg.觉醒度 || 0, true) + '</div>'
+      : '<div class="row"><span class="lbl">觉醒度</span><div class="bar"><i style="width:' + pct(mg.觉醒度) + ';background:' + barColor(mg.觉醒度) + '"></i></div><span class="val">' + num(mg.觉醒度) + '</span></div>';
+
+    var mods = pj.改造 || {};
+    $('pf-mods').innerHTML = editMode
+      ? '<div class="row"><span class="lbl">改造度</span>' + editField('主角.改造.程度', mods.程度 || 0, true) + '</div>'
+      : '<div class="row"><span class="lbl">改造度</span><div class="bar"><i style="width:' + pct(mods.程度) + ';background:' + barColor(mods.程度) + '"></i></div><span class="val">' + num(mods.程度) + '</span></div>';
+    var modList = mods.列表 || {};
+    $('pf-modlist').innerHTML = Object.keys(modList).length
+      ? Object.keys(modList).map(function (k) { return '<span class="chip">' + esc(k) + '：' + esc((modList[k] || {}).类型) + ' <em style="opacity:.6">（' + esc((modList[k] || {}).位置) + '）</em></span>'; }).join('')
+      : '';
+
+    var items = pj.持有物 || {};
+    $('pf-items').innerHTML = Object.keys(items).length
+      ? '<div class="chips scroll">' + Object.keys(items).map(function (k) { return '<span class="chip">' + esc(k) + ' ×' + (num(items[k].数量) || 1) + '</span>'; }).join('') + '</div>'
+      : '<div class="empty">暂无持有物</div>';
+  }
+
+  function barTrack (lbl, val, max, colorFn, desc) {
+    return '<div class="track"><div class="row"><span class="lbl">' + lbl + '</span><div class="bar"><i style="width:' + pct(val) + ';background:' + colorFn(val) + '"></i></div><span class="val">' + num(val) + '/' + max + '</span></div>' + (desc ? '<div class="subtrack">' + desc + '</div>' : '') + '</div>';
+  }
+  function nodeCards (nodes, showDim) {
+    if (!nodes) return '<div class="empty">尚未激活任何节点</div>';
+    var keys = Object.keys(nodes).filter(function (k) { return nodes[k] && nodes[k].是否激活 === true; });
+    if (!keys.length) return '<div class="empty">尚未激活任何节点</div>';
+    return keys.map(function (k) {
+      var nd = nodes[k];
+      return '<div class="node"><div class="h"><b>✦ ' + esc(nd.名称 || k) + '</b><span class="t">阈值 ' + num(nd.阈值) + '</span>' +
+        (showDim && nd.维度 ? '<span class="t">维度：' + esc(nd.维度) + '</span>' : '') +
+        '<span class="badge">已激活</span></div>' +
+        (nd.节点事件 ? '<div class="ev">事件：' + esc(nd.节点事件) + '</div>' : '') +
+        (nd.心态变化 ? '<div class="ev">心态：' + esc(nd.心态变化) + '</div>' : '') + '</div>';
+    }).join('');
+  }
+  function renderCorruption () {
+    var a = arch();
+    var form = a.魔化形态 || '';
+    var mh = stageOf(MAHUA_TABLES, form, a.魔化度);
+    var yh = yinhuaStage(a.淫化度);
+
+    // ── 魔化卡 ──
+    var mhHtml = '';
+    if (editMode) {
+      mhHtml += '<div class="row" style="margin-bottom:6px"><span class="lbl">魔化度</span>' + editField('主角.堕落档案.魔化度', a.魔化度 || 0, true) + '</div>' +
+        '<div class="row" style="margin-bottom:6px"><span class="lbl">魔化形态</span>' + editSel('主角.堕落档案.魔化形态', form, DEMON_TYPES) + '</div>' +
+        '<div class="edit-hint">魔化表现</div>' + editField('主角.堕落档案.魔化表现', a.魔化表现 || '');
+    } else {
+      mhHtml += barTrack('魔化度', a.魔化度, 100, barColor, '身体向 <b>' + esc(form || '未确定形态') + '</b> 魔族化');
+      if (mh) {
+        mhHtml += '<div class="stage-box"><div class="st">' + esc(mh.stage) + ' · 魔化度 ' + esc(mh.band) + '</div>' +
+          '<div class="sb"><b>身体</b>：' + esc(mh.body) + '</div>' +
+          '<div class="sb"><b>天赋</b>：' + esc(mh.talent) + '</div>' +
+          '<div class="sb"><b>稳定性</b>：' + esc(mh.stable) + '</div></div>';
+      } else if (a.魔化表现) {
+        mhHtml += '<div class="stage-box"><div class="sb">' + esc(a.魔化表现) + '</div></div>';
+      }
+    }
+    $('cor-mahua').innerHTML = mhHtml;
+    // 魔化节点（并入魔化卡下方，避免过度分卡）
+    $('cor-mahua').insertAdjacentHTML('beforeend', '<div style="margin-top:6px">' + nodeCards(a.魔化节点) + '</div>');
+
+    // ── 淫化卡 ──
+    var yhHtml = '';
+    if (editMode) {
+      yhHtml += '<div class="row" style="margin-bottom:6px"><span class="lbl">淫化度</span>' + editField('主角.堕落档案.淫化度', a.淫化度 || 0, true) + '</div>' +
+        '<div class="edit-hint">淫化表现</div>' + editField('主角.堕落档案.淫化表现', a.淫化表现 || '');
+    } else {
+      yhHtml += barTrack('淫化度', a.淫化度, 100, eroColor, '身体淫乱化 + 原始力量被淫魔力替换');
+      if (yh) {
+        yhHtml += '<div class="stage-box"><div class="st">' + esc(yh.name) + ' · 淫化度 ' + esc(yh.band) + '</div>' +
+          '<div class="sb"><b>身体/欲望</b>：' + esc(yh.body) + '</div>' +
+          '<div class="sb"><b>力量替换</b>：' + esc(yh.power) + '</div></div>';
+      } else if (a.淫化表现) {
+        yhHtml += '<div class="stage-box"><div class="sb">' + esc(a.淫化表现) + '</div></div>';
+      }
+    }
+    $('cor-yinhua').innerHTML = yhHtml;
+    $('cor-yinhua').insertAdjacentHTML('beforeend', '<div style="margin-top:6px">' + nodeCards(a.淫化节点) + '</div>');
+
+    // ── 堕落六维卡 ──
+    var six = sixOf(a);
+    var sixHtml = '<div class="six-grid">' + LIU.map(function (k) {
+      var v = num(six[k]);
+      return '<div class="six-item"><div class="nm">' + esc(k) + ' <em style="opacity:.7;font-style:normal">' + esc(LIU_DESC[k]) + '</em></div>' +
+        '<div class="row">' + (editMode ? editField('主角.堕落档案.堕落六维.' + k, v, true) : '<div class="bar"><i style="width:' + pct(v) + ';background:' + barColor(v) + '"></i></div><span class="val">' + v + '</span>') + '</div></div>';
+    }).join('') + '</div>';
+    $('cor-six').innerHTML = sixHtml;
+    $('cor-six').insertAdjacentHTML('beforeend', '<div style="margin-top:6px">' + nodeCards(a.恶堕节点, true) + '</div>');
+
+    // ── 魔力转化卡 ──
+    var mg = p().魔力 || {};
+    var convNote = mg.转化 === '淫魔力'
+      ? '原始力量已被淫魔力完全替换（淫化≥70）——净化变污染、治愈变侵蚀，力量味道已是魔族级别'
+      : (mg.转化 && mg.转化 !== '无' ? '原始力量被淫魔力替换中（淫化≥40）——力量带上污染属性' : '原始力量纯净（淫化<40）——无转化');
+    $('cor-magic').innerHTML =
+      '<span class="k">当前转化</span><span class="v"><b style="color:' + convColor(mg.转化) + '">' + esc(mg.转化 || '无') + '</b></span>' +
+      '<span class="k">说明</span><span class="v" style="font-size:12px;color:#a88cd6">' + esc(convNote) + '</span>';
+
+    // ── 当前认知 ──
+    $('cor-cognition').innerHTML = editMode
+      ? editField('主角.堕落档案.当前认知', a.当前认知 || '')
+      : (a.当前认知 ? '<pre style="font-size:12px;color:#a88cd6;white-space:pre-wrap;line-height:1.7;font-family:inherit">' + esc(a.当前认知) + '</pre>' : '<div class="empty">尚未记录心态认知</div>');
+
+    // ── 欲望xp ──
+    var xp = a.欲望xp || {};
+    $('cor-xp').innerHTML = Object.keys(xp).length
+      ? Object.keys(xp).map(function (k) { var x = xp[k]; return '<div class="node"><div class="h"><b>' + esc(x.名字 || k) + '</b><span class="t">开发程度：' + esc(x.开发程度 || '未开发') + '</span></div>' + (x.描述 ? '<div class="ev">' + esc(x.描述) + '</div>' : '') + '</div>'; }).join('')
+      : '<div class="empty">尚未开发性癖</div>';
+
+    // ── 淫纹印记 / 特殊项目 ──
+    var merged = {};
+    var mk = a.淫纹印记 || {}; Object.keys(mk).forEach(function (k) { merged[k] = mk[k]; });
+    var sp = a.特殊项目 || {}; Object.keys(sp).forEach(function (k) { merged[k] = sp[k]; });
+    $('cor-marks').innerHTML = Object.keys(merged).length
+      ? Object.keys(merged).map(function (k) { var m = merged[k]; return '<div class="node"><div class="h"><b>' + esc(m.名字 || k) + '</b><span class="t">' + esc(m.类型) + '</span><span class="t">' + esc(m.状态) + '</span></div>' + (m.描述 ? '<div class="ev">' + esc(m.描述) + '</div>' : '') + '</div>'; }).join('')
+      : '<div class="empty">尚无印记或特殊项目</div>';
+  }
+
+  function relTier (v) {
+    v = num(v);
+    if (v < 0) return { name: '敌对', color: '#e0707a' };
+    if (v <= 20) return { name: '冷淡', color: '#8aa0c0' };
+    if (v <= 50) return { name: '中立', color: '#9d6bff' };
+    if (v <= 80) return { name: '友善', color: '#7bd0a0' };
+    if (v <= 95) return { name: '亲密', color: '#e8c87a' };
+    return { name: '挚爱', color: '#ff6b9d' };
+  }
+  function toggleRelDetail (btn) {
+    var card = btn.parentNode;
+    var detail = card.querySelector('.rel-detail');
+    if (detail) {
+      var open = detail.classList.toggle('open');
+      btn.textContent = open ? '▲ 收起详情' : '▼ 展开详情';
+    }
+  }
+  function relDetailHtml (r) {
+    var parts = [];
+    if (has(r.性格)) parts.push('<div><span class="dk">性格：</span>' + esc(r.性格) + '</div>');
+    if (has(r.喜爱)) parts.push('<div><span class="dk">喜爱：</span>' + esc(r.喜爱) + '</div>');
+    if (has(r.外貌)) parts.push('<div><span class="dk">外貌：</span>' + esc(r.外貌) + '</div>');
+    if (has(r.着装)) parts.push('<div><span class="dk">着装：</span>' + esc(r.着装) + '</div>');
+    if (has(r.心里话)) parts.push('<div><span class="dk">心里话：</span>' + esc(r.心里话) + '</div>');
+    if (has(r.背景故事)) parts.push('<div><span class="dk">背景：</span>' + esc(r.背景故事) + '</div>');
+    if (has(r.当前认知)) parts.push('<div><span class="dk">认知：</span>' + esc(r.当前认知) + '</div>');
+    return parts.join('');
+  }
+  // 关系的堕落显示：魔化/淫化 双轨 + 堕落六维（紧凑）
+  function relCorruptionHtml (name, r, edit) {
+    var tracks =
+      '<div class="row" style="margin-left:50px;width:calc(100% - 50px)"><span class="lbl" style="width:44px">魔化</span>' + (edit ? editField('关系列表.' + name + '.魔化度', r.魔化度 || 0, true) : '<div class="bar"><i style="width:' + pct(r.魔化度) + ';background:' + barColor(r.魔化度) + '"></i></div><span class="val">' + num(r.魔化度) + '</span>') + '</div>' +
+      '<div class="row" style="margin-left:50px;width:calc(100% - 50px)"><span class="lbl" style="width:44px">淫化</span>' + (edit ? editField('关系列表.' + name + '.淫化度', r.淫化度 || 0, true) : '<div class="bar"><i style="width:' + pct(r.淫化度) + ';background:' + eroColor(r.淫化度) + '"></i></div><span class="val">' + num(r.淫化度) + '</span>') + '</div>';
+    var six = sixOf(r);
+    var sixLine = edit
+      ? '<div class="six-grid" style="margin-top:6px">' + LIU.map(function (k) { return '<div class="six-item"><div class="nm">' + esc(k.slice(0, 2)) + '</div>' + editField('关系列表.' + name + '.堕落六维.' + k, six[k] || 0, true) + '</div>'; }).join('') + '</div>'
+      : '<div class="subtrack" style="margin-left:50px">堕落六维：' + LIU.map(function (k) { return esc(k.slice(0, 2)) + ' ' + num(six[k]); }).join('　') + '</div>';
+    return '<div class="track" style="margin-top:7px">' + tracks + '</div>' + sixLine;
+  }
+  // 关系/伙伴卡片主体
+  function relCardHtml (name, r, edit) {
+    var tier = relTier(r.好感度);
+    var detail = relDetailHtml(r);
+    var card = '<div class="card"><div class="rel"><div><div class="nm">✦ ' + esc(r.姓名 || name) + '<span class="rel-tier" style="background:rgba(0,0,0,0.3);color:' + tier.color + ';border:1px solid ' + tier.color + '">' + tier.name + '</span></div>' +
+      '<div class="meta">' + esc(r.种族 || '?') + ' · ' + esc(r.所属组织 || '无') + ' · ' + esc(fmtList(r.身份)) + '</div>' +
+      (r.关系标签 && r.关系标签.length ? '<div class="heart">' + esc(r.关系标签.join('、')) + '</div>' : '') + '</div>' +
+      '<div class="fav"><div>好感度 <b style="color:' + favColor(r.好感度) + '">' + (edit ? editField('关系列表.' + name + '.好感度', r.好感度 || 0, true) : num(r.好感度)) + '</b></div></div></div>' +
+      relCorruptionHtml(name, r, edit) +
+      (detail ? '<div class="rel-detail-btn" onclick="toggleRelDetail(this)">▼ 展开详情</div><div class="rel-detail">' + detail + '</div>' : '') + '</div>';
+    return card;
+  }
+  function renderParty () {
+    var rel = stat.关系列表 || {};
+    var keys = Object.keys(rel).filter(function (k) { return rel[k] && rel[k].在场 === true; });
+    if (!keys.length) { $('party-list').innerHTML = '<div class="card"><div class="empty">暂无在场伙伴</div><div class="empty" style="font-size:11px">关系列表中标有「在场=true」的角色会出现在这里</div></div>'; return; }
+    $('party-list').innerHTML = keys.map(function (name) { return relCardHtml(name, rel[name], editMode); }).join('');
+  }
+  function renderRelations () {
+    var rel = stat.关系列表 || {};
+    var keys = Object.keys(rel);
+    if (!keys.length) { $('rel-list').innerHTML = '<div class="card"><div class="empty">暂无关系角色</div></div>'; return; }
+    $('rel-list').innerHTML = keys.map(function (name) { return relCardHtml(name, rel[name], editMode); }).join('');
+  }
+
+  function renderQuests () {
+    var qs = stat.任务列表 || {};
+    var keys = Object.keys(qs);
+    if (!keys.length) { $('q-list').innerHTML = '<div class="card"><div class="empty">暂无任务</div></div>'; return; }
+    $('q-list').innerHTML = keys.map(function (name) {
+      var q = qs[name] || {};
+      return '<div class="card"><div class="kv">' +
+        '<span class="k">任务</span><span class="v"><b>' + esc(name) + '</b> <span class="chip" style="margin-left:6px">' + esc(q.关注度 || '中') + '</span></span>' +
+        '<span class="k">状态</span><span class="v">' + esc(q.状态 || '进行中') + '</span>' +
+        '<span class="k">进展</span><span class="v">' + esc(q.进展 || '—') + '</span>' +
+        '<span class="k">详情</span><span class="v">' + esc(q.详情 || '—') + '</span>' +
+        '<span class="k">奖励</span><span class="v">' + esc(q.奖励 || '—') + '</span></div></div>';
+    }).join('');
+  }
+
+  function renderIntel () {
+    var info = stat.信息 || {};
+    var keys = Object.keys(info);
+    if (!keys.length) { $('intel-list').innerHTML = '<div class="empty">暂无情报</div>'; return; }
+    $('intel-list').innerHTML = keys.map(function (name) {
+      var inf = info[name];
+      var body = typeof inf === 'string' ? '：' + esc(inf) : (inf && inf.内容 ? '：' + esc(inf.内容) + (inf.来源 ? ' <em style="opacity:.7">（来源：' + esc(inf.来源) + '）</em>' : '') : '');
+      return '<div class="intel-item"><b>✦ ' + esc(name) + '</b>' + body + '</div>';
+    }).join('');
+  }
+
+  function renderNews () {
+    var news = stat.新闻 || {};
+    var cats = Object.keys(news);
+    if (!cats.length) { $('news-list').innerHTML = '<div class="card"><div class="empty">暂无新闻</div></div>'; return; }
+    $('news-list').innerHTML = cats.map(function (catName) {
+      var cat = news[catName] || {};
+      var inner = Object.keys(cat).map(function (k) {
+        return '<div class="news-cat"><div class="cat">✧ ' + esc(k) + '</div><div class="line">' + esc(cat[k] || '—') + '</div></div>';
+      }).join('');
+      return '<div class="card"><h3>' + esc(catName) + '</h3>' + inner + '</div>';
+    }).join('');
+  }
+
+  /* ══════════ 数据读取 ══════════ */
+  function refresh () {
+    try {
+      var v = getVariables({ type: 'message', message_id: getCurrentMessageId() });
+      stat = (v && v.stat_data) || {};
+    } catch (e) { console.error('[临空市状态] 读取失败', e); stat = {}; }
+    render();
+  }
+
+  /* ══════════ 初始化 ══════════ */
+  function init () {
+    setupCards();
+    setTab('profile');
+    refresh();
+    if (typeof waitGlobalInitialized === 'function' && typeof eventOn === 'function') {
+      try {
+        eventOn(tavern_events.GENERATION_AFTER_COMMANDS, refresh);
+        eventOn(tavern_events.MESSAGE_SENT, refresh);
+      } catch (e) {}
+    }
+    setInterval(refresh, 15000);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+</script>
