@@ -1,0 +1,482 @@
+[
+  {
+    "name": "制式长剑",
+    "type": "武器",
+    "rarity": "common",
+    "tag": ["攻击:20", "剑"],
+    "effect": {},
+    "description": "军队制式配发的直刃长剑，结实耐用。",
+    "position": "主手",
+    "cost": 1
+  },
+  {
+    "name": "短剑",
+    "type": "武器",
+    "rarity": "common",
+    "tag": ["攻击:15", "剑"],
+    "effect": {},
+    "description": "轻便的短剑，适合近身缠斗与暗处使用。",
+    "position": "主手",
+    "cost": 1
+  },
+  {
+    "name": "长弓",
+    "type": "武器",
+    "rarity": "common",
+    "tag": ["攻击:18", "弓"],
+    "effect": {},
+    "description": "由硬木与兽筋制成的普通长弓。",
+    "position": "双手",
+    "cost": 1
+  },
+  {
+    "name": "短矛",
+    "type": "武器",
+    "rarity": "common",
+    "tag": ["攻击:16", "矛"],
+    "effect": {},
+    "description": "便于投掷与戳刺的短柄矛。",
+    "position": "主手",
+    "cost": 1
+  },
+  {
+    "name": "手斧",
+    "type": "武器",
+    "rarity": "common",
+    "tag": ["攻击:17", "斧"],
+    "effect": {},
+    "description": "伐木与战斗两用的单刃手斧。",
+    "position": "主手",
+    "cost": 1
+  },
+  {
+    "name": "轻弩",
+    "type": "武器",
+    "rarity": "common",
+    "tag": ["攻击:14", "弩"],
+    "effect": {},
+    "description": "以机括发矢的轻弩，上弦略慢但易上手。",
+    "position": "双手",
+    "cost": 1
+  },
+  {
+    "name": "硬皮甲",
+    "type": "防具",
+    "rarity": "common",
+    "tag": ["防御:15", "皮甲"],
+    "effect": {},
+    "description": "浸油鞣制的硬皮甲，轻便灵活。",
+    "position": "身体",
+    "cost": 1
+  },
+  {
+    "name": "锁子甲",
+    "type": "防具",
+    "rarity": "common",
+    "tag": ["防御:22", "锁甲"],
+    "effect": {},
+    "description": "铁环相扣的锁子甲，防劈砍尚可。",
+    "position": "身体",
+    "cost": 2
+  },
+  {
+    "name": "铁盔",
+    "type": "防具",
+    "rarity": "common",
+    "tag": ["防御:10", "头盔"],
+    "effect": {},
+    "description": "保护头部的圆顶铁盔。",
+    "position": "头部",
+    "cost": 1
+  },
+  {
+    "name": "硬皮靴",
+    "type": "防具",
+    "rarity": "common",
+    "tag": ["防御:8", "靴"],
+    "effect": {},
+    "description": "厚底硬皮长靴，行路耐磨。",
+    "position": "足部",
+    "cost": 0
+  },
+  {
+    "name": "圆木盾",
+    "type": "防具",
+    "rarity": "common",
+    "tag": ["防御:12", "盾"],
+    "effect": {},
+    "description": "包铁边的圆木盾，轻巧易持。",
+    "position": "副手",
+    "cost": 1
+  },
+  {
+    "name": "铁圆盾",
+    "type": "防具",
+    "rarity": "common",
+    "tag": ["防御:18", "盾"],
+    "effect": {},
+    "description": "整铁锻成的圆盾，格挡更加牢靠。",
+    "position": "副手",
+    "cost": 1
+  },
+  {
+    "name": "铜戒指",
+    "type": "饰品",
+    "rarity": "common",
+    "tag": ["戒指"],
+    "effect": {},
+    "description": "普通的铜制戒指，略作装饰。",
+    "position": "戒指",
+    "cost": 0
+  },
+  {
+    "name": "铁项链",
+    "type": "饰品",
+    "rarity": "common",
+    "tag": ["项链"],
+    "effect": {},
+    "description": "挂一枚铁坠的朴素项链。",
+    "position": "项链",
+    "cost": 0
+  },
+  {
+    "name": "皮革护腕",
+    "type": "饰品",
+    "rarity": "common",
+    "tag": ["手腕"],
+    "effect": {},
+    "description": "束紧袖口的皮革护腕。",
+    "position": "手腕",
+    "cost": 0
+  },
+  {
+    "name": "幸运石坠",
+    "type": "饰品",
+    "rarity": "common",
+    "tag": ["项链"],
+    "effect": { "幸运": "佩戴者下一次幸运相关检定获得 +1 加值" },
+    "description": "被乡间称作能带来好运的圆石坠。",
+    "position": "项链",
+    "cost": 1
+  },
+  {
+    "name": "精钢长剑",
+    "type": "武器",
+    "rarity": "uncommon",
+    "tag": ["攻击:60", "剑"],
+    "effect": { "特效": "附带 10 点物理固伤" },
+    "description": "精钢锻打、开刃极利的优质长剑。",
+    "position": "主手",
+    "cost": 6
+  },
+  {
+    "name": "附魔短弓",
+    "type": "武器",
+    "rarity": "uncommon",
+    "tag": ["攻击:55", "弓"],
+    "effect": { "特效": "箭矢附带 8 点火焰固伤" },
+    "description": "弓身上刻着微弱火元素附魔的短弓。",
+    "position": "双手",
+    "cost": 6
+  },
+  {
+    "name": "十字骑枪",
+    "type": "武器",
+    "rarity": "uncommon",
+    "tag": ["攻击:65", "枪"],
+    "effect": { "特效": "冲锋时伤害 +15%" },
+    "description": "骑士惯用的十字骑枪，冲势惊人。",
+    "position": "主手",
+    "cost": 7
+  },
+  {
+    "name": "精工战斧",
+    "type": "武器",
+    "rarity": "uncommon",
+    "tag": ["攻击:70", "斧"],
+    "effect": {},
+    "description": "重心考究的精工双刃战斧。",
+    "position": "双手",
+    "cost": 7
+  },
+  {
+    "name": "全身板甲",
+    "type": "防具",
+    "rarity": "uncommon",
+    "tag": ["防御:75", "板甲"],
+    "effect": {},
+    "description": "覆盖全身的锻钢板甲，重而坚实。",
+    "position": "身体",
+    "cost": 8
+  },
+  {
+    "name": "附魔皮甲",
+    "type": "防具",
+    "rarity": "uncommon",
+    "tag": ["防御:55", "皮甲"],
+    "effect": { "特效": "对火焰伤害的减免 +5%" },
+    "description": "经抗火附魔的轻便皮甲。",
+    "position": "身体",
+    "cost": 6
+  },
+  {
+    "name": "精钢盔",
+    "type": "防具",
+    "rarity": "uncommon",
+    "tag": ["防御:45", "头盔"],
+    "effect": {},
+    "description": "精钢锻造、内衬软革的头盔。",
+    "position": "头部",
+    "cost": 5
+  },
+  {
+    "name": "秘银护胫",
+    "type": "防具",
+    "rarity": "uncommon",
+    "tag": ["防御:45", "护腿"],
+    "effect": {},
+    "description": "轻如皮甲的秘银护胫，守护双腿。",
+    "position": "足部",
+    "cost": 6
+  },
+  {
+    "name": "骑士塔盾",
+    "type": "防具",
+    "rarity": "uncommon",
+    "tag": ["防御:60", "盾"],
+    "effect": {},
+    "description": "能护住半身的骑士塔盾。",
+    "position": "副手",
+    "cost": 6
+  },
+  {
+    "name": "秘银戒指",
+    "type": "饰品",
+    "rarity": "uncommon",
+    "tag": ["戒指"],
+    "effect": { "加成": "魔力恢复速度 +5%" },
+    "description": "嵌着一线秘银纹路的戒指。",
+    "position": "戒指",
+    "cost": 5
+  },
+  {
+    "name": "魔力项链",
+    "type": "饰品",
+    "rarity": "uncommon",
+    "tag": ["项链"],
+    "effect": { "加成": "法力值上限 +5%" },
+    "description": "内蕴一丝魔力的晶石项链。",
+    "position": "项链",
+    "cost": 5
+  },
+  {
+    "name": "精钢护腕",
+    "type": "饰品",
+    "rarity": "uncommon",
+    "tag": ["手腕"],
+    "effect": { "加成": "格挡时护甲等级 +1" },
+    "description": "包覆小臂的精钢护腕。",
+    "position": "手腕",
+    "cost": 5
+  },
+  {
+    "name": "元素长剑",
+    "type": "武器",
+    "rarity": "rare",
+    "tag": ["攻击:140", "剑"],
+    "effect": { "元素伤害": "攻击附带 15 点元素伤害" },
+    "description": "剑身流转着四系元素的魔剑。",
+    "position": "主手",
+    "cost": 17
+  },
+  {
+    "name": "精灵复合弓",
+    "type": "武器",
+    "rarity": "rare",
+    "tag": ["攻击:135", "弓"],
+    "effect": { "特效": "射程与命中 +10%" },
+    "description": "艾尔文海姆工匠以千年木制成的复合弓。",
+    "position": "双手",
+    "cost": 16
+  },
+  {
+    "name": "龙鳞战刃",
+    "type": "武器",
+    "rarity": "rare",
+    "tag": ["攻击:160", "剑"],
+    "effect": { "特性": "对龙类目标伤害 +10%" },
+    "description": "以龙鳞淬火的大剑，隐隐泛着龙威。",
+    "position": "双手",
+    "cost": 18
+  },
+  {
+    "name": "秘银锁子甲",
+    "type": "防具",
+    "rarity": "rare",
+    "tag": ["防御:150", "锁甲"],
+    "effect": { "特效": "重量极轻，不阻碍行动" },
+    "description": "轻若布衣却坚逾精钢的秘银锁甲。",
+    "position": "身体",
+    "cost": 17
+  },
+  {
+    "name": "龙鳞甲",
+    "type": "防具",
+    "rarity": "rare",
+    "tag": ["防御:170", "鳞甲"],
+    "effect": { "特性": "对火焰伤害的减免 +10%" },
+    "description": "以成年龙鳞连缀的鳞甲。",
+    "position": "身体",
+    "cost": 18
+  },
+  {
+    "name": "元素护盾",
+    "type": "防具",
+    "rarity": "rare",
+    "tag": ["防御:130", "盾"],
+    "effect": { "特性": "可吸收一次元素法术的部分伤害" },
+    "description": "能吸附元素之力的附魔护盾。",
+    "position": "副手",
+    "cost": 16
+  },
+  {
+    "name": "元素徽记",
+    "type": "饰品",
+    "rarity": "rare",
+    "tag": ["戒指"],
+    "effect": { "加成": "对应属性魔法的威力 +10%" },
+    "description": "刻着元素法阵的古朴徽记戒指。",
+    "position": "戒指",
+    "cost": 15
+  },
+  {
+    "name": "智慧之眼吊坠",
+    "type": "饰品",
+    "rarity": "rare",
+    "tag": ["项链"],
+    "effect": { "检定加成": "奥术与调查检定获得 +3 加值" },
+    "description": "形似竖瞳的水晶吊坠，传闻能开启智慧。",
+    "position": "项链",
+    "cost": 16
+  },
+  {
+    "name": "迅捷手镯",
+    "type": "饰品",
+    "rarity": "rare",
+    "tag": ["手腕"],
+    "effect": { "加成": "先攻检定获得 +3 加值" },
+    "description": "令佩戴者身轻如燕的银镯。",
+    "position": "手腕",
+    "cost": 15
+  },
+  {
+    "name": "守护护符",
+    "type": "饰品",
+    "rarity": "rare",
+    "tag": ["项链"],
+    "effect": { "护盾": "受致命伤时触发一次 100 点护盾" },
+    "description": "据传能挡一次死劫的守护护符。",
+    "position": "项链",
+    "cost": 17
+  },
+  {
+    "name": "屠龙圣剑",
+    "type": "武器",
+    "rarity": "epic",
+    "tag": ["攻击:380", "剑"],
+    "effect": { "特性": "对龙类目标伤害 +30%" },
+    "description": "曾斩杀古龙的圣剑，剑刃上犹存龙血之痕。",
+    "position": "双手",
+    "cost": 55
+  },
+  {
+    "name": "破晓神弓",
+    "type": "武器",
+    "rarity": "epic",
+    "tag": ["攻击:320", "弓"],
+    "effect": { "特效": "箭矢附带 60 点光耀固伤" },
+    "description": "以晨曦之光为弦的神弓，箭出如破晓。",
+    "position": "双手",
+    "cost": 50
+  },
+  {
+    "name": "圣银全身甲",
+    "type": "防具",
+    "rarity": "epic",
+    "tag": ["防御:350", "板甲"],
+    "effect": { "特性": "对邪祟与暗属性伤害的减免 +15%" },
+    "description": "由教会祝福过的圣银所铸全身甲。",
+    "position": "身体",
+    "cost": 55
+  },
+  {
+    "name": "龙骨大盾",
+    "type": "防具",
+    "rarity": "epic",
+    "tag": ["防御:300", "盾"],
+    "effect": { "特性": "可抵挡一次致命打击" },
+    "description": "以龙骨为芯的巨盾，坚不可摧。",
+    "position": "副手",
+    "cost": 50
+  },
+  {
+    "name": "贤者之戒",
+    "type": "饰品",
+    "rarity": "epic",
+    "tag": ["戒指"],
+    "effect": { "检定加成": "奥术、调查与医药检定获得 +5 加值" },
+    "description": "封存着大法师一缕智慧的戒指。",
+    "position": "戒指",
+    "cost": 45
+  },
+  {
+    "name": "苍穹护符",
+    "type": "饰品",
+    "rarity": "epic",
+    "tag": ["项链"],
+    "effect": { "加成": "免疫高空坠落伤害" },
+    "description": "取自银冠城天风的苍穹护符。",
+    "position": "项链",
+    "cost": 45
+  },
+  {
+    "name": "誓约圣剑",
+    "type": "武器",
+    "rarity": "legendary",
+    "tag": ["攻击:850", "剑"],
+    "effect": { "特性": "对破坏誓约者伤害 +50%" },
+    "description": "曾见证《银叶誓约》的神圣长剑。",
+    "position": "主手",
+    "cost": 220
+  },
+  {
+    "name": "龙息魔甲",
+    "type": "防具",
+    "rarity": "legendary",
+    "tag": ["防御:900", "鳞甲"],
+    "effect": { "特性": "免疫火焰与龙息伤害" },
+    "description": "以龙王之鳞锻造、能吞龙息的魔甲。",
+    "position": "身体",
+    "cost": 250
+  },
+  {
+    "name": "星辉之环",
+    "type": "饰品",
+    "rarity": "legendary",
+    "tag": ["戒指"],
+    "effect": { "加成": "命运相关检定时获得 +10 加值" },
+    "description": "流转着星辉的古老之环，似能窥见命运。",
+    "position": "戒指",
+    "cost": 200
+  },
+  {
+    "name": "神铸圣剑",
+    "type": "武器",
+    "rarity": "mythic",
+    "tag": ["攻击:2000", "剑"],
+    "effect": { "特性": "无视大部分伤害减免" },
+    "description": "众神庭院遗留的神铸之剑，凡人不可制作。",
+    "position": "双手",
+    "cost": 600
+  }
+]
