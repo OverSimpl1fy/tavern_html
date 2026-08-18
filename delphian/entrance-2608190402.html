@@ -12333,30 +12333,10 @@
                 t.setBackground(null),
                 a.updateCustomBackgroundDescription(""));
             },
-            N = async () => {
-              try {
-                const e = window.top?.TavernHelper,
-                  a = e?.getCharWorldbookNames("current")?.primary;
-                if (!e || !a) return void t.updateCharacterField("core", "");
-                const l = await e.getWorldbook(a),
-                  o = l?.find(
-                    (e) => e.enabled && /^命定系统-/.test(e.name),
-                  ),
-                  n = o?.name
-                    ?.replace(/^命定系统-/, "")
-                    .replace(/\([^)]*\)$/, "")
-                    .trim();
-                t.updateCharacterField("core", n || "");
-              } catch (e) {
-                (console.error("读取已启用核心失败:", e),
-                  t.updateCharacterField("core", ""));
-              }
-            };
           return (
-            (0, c.onMounted)(async () => {
+            (0, c.onMounted)(() => {
               (r.value.length > 0 && (o.value = r.value[0]),
-                s.value.length > 0 && (n.value = s.value[0]),
-                await N());
+                s.value.length > 0 && (n.value = s.value[0]));
             }),
             (e, a) => (
               (0, c.openBlock)(),
