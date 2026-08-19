@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Delphian Entrance 本地预览</title>
+  <style>
+    body { margin: 0; background: #f5efe6; }
+    iframe { width: 100vw; height: 100vh; border: 0; display: block; }
+  </style>
+</head>
+<body>
+  <iframe id="frame" title="entrance preview"></iframe>
+  <script>
+    (async () => {
+      const target = './entrance-2608190420.html';
+      const resp = await fetch(target);
+      if (!resp.ok) throw new Error('无法加载 ' + target + '，HTTP ' + resp.status);
+      let html = await resp.text();
+
+      // 让 iframe 里的相对路径 ./assets/... 仍然指向当前目录
+      const base = location.href.substring(0, location.href.lastIndexOf('/') + 1);
+      html = html.replace('<head>', '<head><base href="' + base + '">');
+
+      // 在 entrance 的 module script 之前注入本地预览所需的全局依赖
+      const libs = `
+        <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"><\/script>
+        <script src="https://cdn.jsdelivr.net/npm/vue-router@4/dist/vue-router.global.prod.js"><\/script>
+        <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"><\/script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"><\/script>
+      `;
+      html = html.replace('<script type="module">', libs + '<script type="module">');
+
+      const blob = new Blob([html], { type: 'text/html' });
+      document.getElementById('frame').src = URL.createObjectURL(blob);
+    })().catch(err => {
+      document.body.textContent = '预览加载失败：' + err.message;
+    });
+  </script>
+</body>
+</html>
