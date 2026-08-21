@@ -1,4 +1,4 @@
-﻿<head>
+<head>
   <script type="module">
     /*! For license information please see index.js.LICENSE.txt */
     import * as e from "https://testingcf.jsdelivr.net/npm/scheduler/+esm";
@@ -18575,6 +18575,11 @@
         const [filter, setFilter] = (0, u.useState)("all");
         const [selected, setSelected] = (0, u.useState)(null);
         const [section, setSection] = (0, u.useState)("overview");
+        const [avatarEdit, setAvatarEdit] = (0, u.useState)(null);
+        const avatarKey = (n) => "delphian-partner-avatar-" + n;
+        const getAvatar = (n) => { try { return localStorage.getItem(avatarKey(n)); } catch (_) { return null; } };
+        const setAvatar = (n, v) => { try { if (v) localStorage.setItem(avatarKey(n), v); else localStorage.removeItem(avatarKey(n)); } catch (_) {} };
+        const onAvatarFile = (e, n) => { const f = e.target.files && e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { setAvatar(n, String(r.result)); setAvatarEdit(null); }; r.readAsDataURL(f); };
         const cnt = (v) => (_.isObject(v) ? Object.keys(v).length : 0);
         const row = (label, value) =>
           null != value && "" !== String(value)
@@ -18602,7 +18607,9 @@
           { key: "away", label: "不在场" },
           { key: "corrupt", label: "已侵蚀" },
         ];
-        const shown = entries.filter(([, p]) => {
+        const hiddenList = (() => { try { return JSON.parse(localStorage.getItem("delphian-hidden-partners") || "[]"); } catch (_) { return []; } })();
+        const shown = entries.filter(([n, p]) => {
+          if (hiddenList.indexOf(n) !== -1) return false;
           if (filter === "present") return Boolean(p?.在场);
           if (filter === "away") return !p?.在场;
           if (filter === "corrupt") return (Number(p?.堕落度 ?? 0) || 0) > 0;
@@ -18896,10 +18903,28 @@
                           (0, i.jsxs)("div", {
                             className: "partner-detail-header",
                             children: [
-                              (0, i.jsx)("span", { className: "partner-name", children: cur[1]?.姓名 || cur[0] }),
-                              (0, i.jsx)("span", { className: "partner-fav", style: { color: favColor }, children: "好感 " + fav }),
+                              (0, i.jsxs)("div", { className: "partner-head-avatar", title: "点击管理头像", onClick: () => setAvatarEdit(avatarEdit === cur[0] ? null : cur[0]), children: [
+                                getAvatar(cur[0])
+                                  ? (0, i.jsx)("img", { src: getAvatar(cur[0]), alt: "伙伴头像", className: "partner-avatar-img" })
+                                  : (0, i.jsx)("span", { className: "partner-avatar-fallback", children: String(cur[1]?.姓名 || cur[0]).slice(0, 1) }),
+                              ] }),
+                              (0, i.jsxs)("div", { className: "partner-head-identity", children: [
+                                (0, i.jsx)("span", { className: "partner-name", children: cur[1]?.姓名 || cur[0] }),
+                                (0, i.jsx)("span", { className: "partner-fav", style: { color: favColor }, children: "好感 " + fav }),
+                              ] }),
+                              (0, i.jsx)("button", { className: "partner-delete-btn", title: "隐藏该伙伴（本地视图，不修改存档）", onClick: () => { const hidden = (JSON.parse(localStorage.getItem("delphian-hidden-partners") || "[]")); if (hidden.indexOf(cur[0]) === -1) hidden.push(cur[0]); localStorage.setItem("delphian-hidden-partners", JSON.stringify(hidden)); setSelected(null); }, children: (0, i.jsx)("i", { className: "fa-solid fa-user-minus" }) }),
                             ],
                           }),
+                          avatarEdit === cur[0]
+                            ? (0, i.jsxs)("div", { className: "partner-avatar-menu", children: [
+                                (0, i.jsx)("input", { type: "file", accept: "image/png,image/jpeg,image/webp,image/gif", onChange: (e) => onAvatarFile(e, cur[0]) }),
+                                (0, i.jsxs)("div", { className: "partner-avatar-menu-row", children: [
+                                  (0, i.jsx)("input", { id: "partner-avatar-url-" + cur[0], defaultValue: getAvatar(cur[0]) || "", placeholder: "头像图片链接" }),
+                                  (0, i.jsx)("button", { onClick: () => { const el = document.getElementById("partner-avatar-url-" + cur[0]); if (el) setAvatar(cur[0], el.value.trim()); setAvatarEdit(null); }, children: "保存链接" }),
+                                  (0, i.jsx)("button", { onClick: () => { setAvatar(cur[0], null); setAvatarEdit(null); }, children: "删除头像" }),
+                                ] }),
+                              ] })
+                            : null,
                           (0, i.jsxs)("div", {
                             className: "partner-detail-nav",
                             children: [
@@ -28338,10 +28363,79 @@
     }
     .partner-detail-header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 12px;
       padding: 10px 12px;
       border-bottom: 1px solid var(--theme-card-border);
+    }
+    .partner-head-avatar {
+      flex: 0 0 auto;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--theme-card-bg);
+      border: 1px solid var(--theme-card-border);
+      cursor: pointer;
+    }
+    .partner-avatar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .partner-avatar-fallback {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--theme-text-secondary);
+    }
+    .partner-head-identity {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .partner-delete-btn {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--theme-text-secondary);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 4px;
+    }
+    .partner-delete-btn:hover {
+      color: #f85149;
+    }
+    .partner-avatar-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 0 12px 10px;
+      padding: 10px;
+      background: var(--theme-card-bg);
+      border: 1px solid var(--theme-card-border);
+      border-radius: 4px;
+    }
+    .partner-avatar-menu-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .partner-avatar-menu input[type="file"] {
+      font-size: 11px;
+    }
+    .partner-avatar-menu-row input {
+      flex: 1;
+      min-width: 0;
+      background: var(--theme-card-bg);
+      border: 1px solid var(--theme-card-border);
+      color: var(--theme-text-primary);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
     }
     .partner-detail-nav {
       display: flex;
