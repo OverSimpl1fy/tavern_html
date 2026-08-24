@@ -119,7 +119,7 @@
     var rel = s.关系列表 || {};
     var keys = Object.keys(rel);
     if (!keys.length) { $('rel-list').innerHTML = '<div style="padding:30px;text-align:center;color:#7a8598;font-size:12px">暂无已建立关系的角色。<br>请先在主界面完成角色创建与匹配。</div>'; return; }
-    var AV = { '林晚晴': '🌸', '苏晴雪': '🏠', '白露': '🎓', '沈若曦': '⚖️', '顾晚晴': '🌷', '周雨桐': '🎤', '陈雪莉': '🐈', '江月白': '🏛️', '安宁': '🏥', '秦小雨': '🎨' };
+    var AV = { '林晚晴': '🌸', '苏晴雪': '🏠', '白露': '🎓', '沈若曦': '⚖️', '顾晚晴': '🌷', '周雨桐': '🎤', '陈雪莉': '🐈', '江月白': '🏛️', '安宁': '🏥', '秦小雨': '🎨', '柳如烟': '🍷', '柳盼盼': '🎒', '柳甜甜': '🍬' };
     $('rel-list').innerHTML = keys.map(function (name) {
       var r = rel[name] || {};
       var aff = Number(r.好感度) || 0;
