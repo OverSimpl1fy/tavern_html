@@ -1,0 +1,519 @@
+<!-- 悦悦 · 角色创建 + 自动匹配NPC（纯原生 JS 自包含版——兼容 $('body').load() 注入，零 CDN） -->
+<style>
+  :root {
+    --yy-bg: #10131a; --yy-bg2: #171b26; --yy-card: #1d2230; --yy-line: #2c3444;
+    --yy-text: #eef1f6; --yy-dim: #9aa5b8; --yy-accent: #ff6b9d; --yy-accent2: #ff9ec4;
+    --yy-gold: #ffd97a; --yy-green: #6bffb0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--yy-bg); font-family: "Noto Sans SC","Source Han Sans SC","Microsoft YaHei",sans-serif; color: var(--yy-text); font-size: 14px; min-height: 100%; position: relative; overflow-x: hidden; }
+  #app { max-width: 860px; margin: 0 auto; padding: 16px 18px 60px; position: relative; z-index: 1; min-height: 100vh; }
+  .head { display: flex; flex-direction: column; gap: 6px; padding: 14px 18px; margin-bottom: 10px;
+    border: 1px solid rgba(255,107,157,0.4); border-radius: 14px;
+    background: linear-gradient(135deg, rgba(255,107,157,0.16), rgba(255,158,196,0.06), rgba(23,27,38,0.7));
+    box-shadow: 0 0 24px rgba(255,107,157,0.2); }
+  .head h1 { font-size: 22px; letter-spacing: 0.12em; color: var(--yy-accent2); text-shadow: 0 0 14px rgba(255,107,157,0.8); }
+  .head p { color: var(--yy-dim); font-size: 12px; }
+  .steps { display: flex; gap: 6px; padding: 8px 0; flex-wrap: wrap; }
+  .steps button { background: var(--yy-bg2); color: var(--yy-dim); border: 1px solid var(--yy-line); border-radius: 20px; padding: 5px 14px; cursor: pointer; font-size: 12px; }
+  .steps button.active { background: linear-gradient(135deg, #ff6b9d, #ff9ec4); color: #1a0d14; border-color: transparent; font-weight: 700; }
+  .card { background: linear-gradient(160deg, #202637, #1a1f2c 60%, #161a26); border: 1px solid rgba(90,110,150,0.35); border-radius: 12px; padding: 13px 15px; margin-bottom: 12px; }
+  .card h3 { font-size: 13px; color: var(--yy-accent2); letter-spacing: 0.08em; margin-bottom: 10px; }
+  .card h3::before { content: '♡ '; }
+  .row { display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; align-items: center; }
+  .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 130px; }
+  .field label { font-size: 12px; color: var(--yy-dim); }
+  input, select, textarea { background: rgba(12,15,22,0.85); border: 1px solid var(--yy-line); color: var(--yy-text); border-radius: 8px; padding: 7px 10px; font-size: 13px; width: 100%; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--yy-accent); box-shadow: 0 0 8px rgba(255,107,157,0.35); }
+  .opt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .opt { background: linear-gradient(160deg, #1d2434, #171c29); border: 1px solid rgba(90,110,150,0.3); border-radius: 10px; padding: 8px 10px; cursor: pointer; transition: all 0.2s; }
+  .opt:hover { border-color: rgba(255,107,157,0.6); }
+  .opt.active { border-color: var(--yy-accent); background: rgba(255,107,157,0.14); box-shadow: 0 0 12px rgba(255,107,157,0.25); }
+  .opt .nm { font-size: 13px; }
+  .opt .desc { font-size: 11px; color: var(--yy-dim); margin-top: 2px; line-height: 1.5; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip { background: rgba(255,107,157,0.12); border: 1px solid rgba(255,107,157,0.35); border-radius: 14px; padding: 3px 12px; font-size: 12px; cursor: pointer; color: var(--yy-accent2); }
+  .chip.active { border-color: var(--yy-accent); color: #fff; background: rgba(255,107,157,0.3); }
+  .match-card { display: flex; gap: 12px; align-items: flex-start; border: 1px solid rgba(255,107,157,0.35); border-radius: 12px; padding: 12px; margin-bottom: 10px; background: linear-gradient(160deg, rgba(255,107,157,0.08), rgba(23,27,38,0.6)); cursor: pointer; transition: all 0.2s; }
+  .match-card:hover { border-color: var(--yy-accent); box-shadow: 0 0 14px rgba(255,107,157,0.2); }
+  .match-card.selected { border-color: var(--yy-gold); box-shadow: 0 0 16px rgba(255,217,122,0.25); }
+  .match-card .avatar { width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; background: linear-gradient(135deg, #ff6b9d, #b06bff); }
+  .match-card .info { flex: 1; }
+  .match-card .nm { font-size: 15px; font-weight: 700; }
+  .match-card .meta { font-size: 11px; color: var(--yy-dim); margin: 3px 0; }
+  .match-card .reason { font-size: 12px; color: var(--yy-accent2); line-height: 1.6; }
+  .score { font-size: 18px; font-weight: 800; color: var(--yy-gold); }
+  .bar { height: 6px; border-radius: 3px; background: rgba(90,110,150,0.3); margin: 4px 0 8px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #ff6b9d, #ffd97a); }
+  .foot { display: flex; align-items: center; gap: 12px; padding-top: 6px; flex-wrap: wrap; }
+  .btn-main { background: linear-gradient(135deg, #ff6b9d, #ff9ec4); color: #1a0d14; border: none; border-radius: 12px; padding: 12px 30px; font-size: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 0 18px rgba(255,107,157,0.45); }
+  .mini-btn { background: linear-gradient(135deg, #ff6b9d, #ff9ec4); color: #1a0d14; border: none; border-radius: 8px; padding: 5px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .hint { color: var(--yy-dim); font-size: 12px; }
+  .warn { color: #ff7a7a; font-size: 12px; }
+  .ok { color: var(--yy-green); font-size: 12px; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 13px; }
+  .kv .k { color: var(--yy-dim); }
+  .hidden { display: none !important; }
+  pre.out { background: rgba(12,15,22,0.9); border: 1px solid var(--yy-line); border-radius: 10px; padding: 12px; font-size: 12px; white-space: pre-wrap; word-break: break-word; max-height: 300px; overflow-y: auto; color: #c9d4e6; }
+  .tabbar { display: flex; gap: 6px; padding: 8px 0; }
+  .tabbar button { background: var(--yy-bg2); border: 1px solid var(--yy-line); color: var(--yy-dim); border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 13px; }
+  .tabbar button.active { background: linear-gradient(135deg, #ff6b9d, #ff9ec4); color: #1a0d14; font-weight: 700; border-color: transparent; }
+</style>
+<body>
+<div id="app">
+  <div class="head">
+    <h1>♡ 悦悦 · 角色创建</h1>
+    <p>设定向世界书 · 现代都市 × 约炮APP。填写你的角色信息，系统自动匹配最适合你的NPC。</p>
+  </div>
+
+  <div class="steps" id="steps"></div>
+
+  <!-- ① 基础信息 -->
+  <div class="card step-panel" id="panel-0">
+    <h3>① 基础信息</h3>
+    <div class="row">
+      <div class="field"><label>姓名</label><input id="f-name" placeholder="例如：陈默"></div>
+      <div class="field"><label>性别</label><select id="f-gender"><option>男</option><option>女</option><option>自定义</option></select></div>
+      <div class="field"><label>年龄</label><input id="f-age" type="number" value="25" min="18" max="99"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>职业</label><input id="f-job" placeholder="例如：程序员 / 学生 / 医生"></div>
+      <div class="field"><label>居住区域</label><select id="f-district"><option>老城区</option><option>CBD</option><option>大学城</option><option>新城区</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>悦悦昵称</label><input id="f-yue-nick" placeholder="例如：夜行者Jay"></div>
+    </div>
+  </div>
+
+  <!-- ② 外貌与性格 -->
+  <div class="card step-panel hidden" id="panel-1">
+    <h3>② 外貌与性格</h3>
+    <div class="field" style="margin-bottom:10px"><label>外貌描述（身高/体型/发型/风格）</label><textarea id="f-look" rows="2" placeholder="身高178，偏瘦，黑色短发，平时穿衬衫+休闲裤…"></textarea></div>
+    <div class="field" style="margin-bottom:10px"><label>性格（五维字母或自由描述）</label><textarea id="f-persona" rows="2" placeholder="外向开朗，会照顾人，有点闷骚…"></textarea></div>
+    <div class="field" style="margin-bottom:8px"><label>口癖（可选）</label><input id="f-quirk" placeholder="例如：emmm… / 懂的都懂"></div>
+  </div>
+
+  <!-- ③ 经验与偏好 -->
+  <div class="card step-panel hidden" id="panel-2">
+    <h3>③ 经验与偏好</h3>
+    <div class="field" style="margin-bottom:8px"><label>性经验自评</label>
+      <select id="f-exp"><option>处</option><option>很少（1-3次）</option><option>一般</option><option>丰富</option><option>老手</option></select>
+    </div>
+    <div class="field" style="margin-bottom:8px"><label>偏好玩法（可多选）</label>
+      <div class="chips" id="f-play-chips"></div>
+    </div>
+    <div class="field"><label>关系期望</label>
+      <select id="f-expect"><option>先聊着</option><option>顺其自然</option><option>长期关系</option><option>只要一夜</option></select>
+    </div>
+  </div>
+
+  <!-- ④ 自动匹配 -->
+  <div class="card step-panel hidden" id="panel-3">
+    <h3>④ 自动匹配 NPC</h3>
+    <p class="hint" style="margin-bottom:10px">根据你的资料，从 9 张人物卡中按 年龄差 / 性格互补 / 玩法契合 / 关系类型 四维打分。点击卡片选择本次开局的主要目标。</p>
+    <div class="row" style="margin-bottom:10px">
+      <span class="hint">DLC 开关（与 stat_data 世界.悦悦DLC_* 及世界书条目联动）：</span>
+      <label class="hint" style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="f-dlc1" onchange="toggleDlcEntrance(1)"> 少子化对策（解锁 江月白/安宁）</label>
+      <label class="hint" style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="f-dlc2" onchange="toggleDlcEntrance(2)"> 都市夜行</label>
+    </div>
+    <div id="match-list"></div>
+  </div>
+
+  <!-- ⑤ 开局背景 -->
+  <div class="card step-panel hidden" id="panel-4">
+    <h3>⑤ 开局背景</h3>
+    <div class="opt-grid" id="bg-grid"></div>
+  </div>
+
+  <!-- ⑥ 确认 -->
+  <div class="card step-panel hidden" id="panel-5">
+    <h3>⑥ 确认并开始</h3>
+    <div class="kv" id="confirm-kv"></div>
+    <div style="margin:12px 0">
+      <button class="mini-btn" onclick="genPrompt()">预览开局提示词</button>
+      <button class="mini-btn" onclick="savePreset()" style="margin-left:6px">保存为预设</button>
+      <button class="mini-btn" onclick="loadPresetFile()" style="margin-left:6px">导入预设</button>
+      <button class="mini-btn" onclick="exportPresets()" style="margin-left:6px">导出全部</button>
+    </div>
+    <pre class="out hidden" id="prompt-out"></pre>
+    <div class="foot">
+      <button class="btn-main" onclick="startJourney()">♡ 踏上旅程</button>
+      <span class="hint" id="send-status"></span>
+    </div>
+  </div>
+
+  <div class="tabbar" style="margin-top:14px">
+    <button onclick="prevStep()">‹ 上一步</button>
+    <button onclick="nextStep()">下一步 ›</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ══════════ NPC 元数据（entrance 内置，与 lore/json/4_角色 一致） ══════════ */
+  var NPCS = [
+    { name: '林晚晴', age: 28, job: '幼儿园老师', avatar: '🌸', tags: ['温柔', '慢热', '纯爱'], play: ['散步', '做饭', '第一次'], rel: '纯爱慢热', type: '基础', exp: '处', dlc: '' },
+    { name: '苏晴雪', age: 30, job: '全职主妇', avatar: '🏠', tags: ['人妻', '空虚', '背德'], play: ['偷情', '丈夫出差窗口', '危险区域'], rel: '绿帽/背德', type: '基础', exp: '婚内', dlc: '' },
+    { name: '白露', age: 22, job: '大学生', avatar: '🎓', tags: ['活泼', '玩咖', '新鲜感'], play: ['3P', '天台', '车震'], rel: '玩伴→转正', type: '基础', exp: '丰富', dlc: '' },
+    { name: '沈若曦', age: 27, job: '律师', avatar: '⚖️', tags: ['御姐', '强势', '反差'], play: ['办公室', '命令服从', '轻羞辱'], rel: '征服与被征服', type: '基础', exp: '一般', dlc: '' },
+    { name: '顾晚晴', age: 38, job: '花店老板娘', avatar: '🌷', tags: ['熟女', '单亲', '长情'], play: ['花店后屋', '深夜花市'], rel: '认真长情', type: '基础', exp: '婚内(旧)', dlc: '' },
+    { name: '周雨桐', age: 24, job: '主播', avatar: '🎤', tags: ['清纯', '反差', '暴露癖'], play: ['露出', '直播式play', '私拍'], rel: '人设反差', type: '基础', exp: '中等', dlc: '' },
+    { name: '陈雪莉', age: 26, job: '产品经理', avatar: '🐈', tags: ['社恐', '宅女', '反差觉醒'], play: ['宅家play', '角色扮演', '开发'], rel: '第一次', type: '基础', exp: '处', dlc: '' },
+    { name: '江月白', age: 27, job: '婚恋顾问(官方)', avatar: '🏛️', tags: ['职业', '任务感', '生育导向'], play: ['备孕play', '无套', '体检联动'], rel: '任务→真心', type: 'DLC专属', exp: '少', dlc: '少子化对策' },
+    { name: '安宁', age: 29, job: 'ICU护士', avatar: '🏥', tags: ['人妻', '克制', '无套导向'], play: ['偷情', '值班室', '无套'], rel: '绿帽/精神出轨', type: 'DLC专属', exp: '婚内', dlc: '少子化对策' },
+    { name: '秦小雨', age: 26, job: '小学美术老师', avatar: '🎨', tags: ['文艺', '备孕', '借种禁忌'], play: ['借种play', '无套', '画室'], rel: '借种/禁忌', type: 'DLC专属', exp: '婚内', dlc: '少子化对策' }
+  ];
+  var DLC_ENABLED = { '少子化对策': false, '都市夜行': false };
+
+  /* 玩法标签池 */
+  var PLAY_CHIPS = ['纯爱', '调教', '露出', '3P', '绿帽视角', '命令服从', '角色扮演', '轻束缚', '羞辱play', '无套', '野外', '偷情刺激', '慢热养成', '反差开发'];
+
+  /* 开局背景池 */
+  var BGS = {
+    '悦悦匹配': [
+      { name: '深夜划到对方', desc: '凌晨1点，你在悦悦划到了她。互相点了喜欢，她先发了消息：「这么晚还不睡？」' },
+      { name: '共同爱好开场', desc: '你们因为同一个兴趣标签匹配成功，从共同话题聊起，越聊越投缘。' },
+      { name: '她主动找你', desc: '刚匹配成功，她就主动发来开场白，语气里带着试探与期待。' }
+    ],
+    '现实偶遇': [
+      { name: '朋友介绍', desc: '共同的朋友组局，你们在饭局/聚会上认识，聊了几句发现很投缘。' },
+      { name: '线下偶遇', desc: '在咖啡店/书店/健身房偶遇，眼神交汇了几次，你决定上前搭话。' }
+    ],
+    '自定义': [
+      { name: '【自定义开局】', desc: '自由设定开场场景。' }
+    ]
+  };
+
+  var state = {
+    step: 0, maxStep: 5,
+    name: '', gender: '男', age: 25, job: '', district: '老城区', yueNick: '',
+    look: '', persona: '', quirk: '',
+    exp: '一般', plays: [], expect: '先聊着',
+    matched: [], selectedNpc: null, bg: null, customBg: ''
+  };
+
+  /* ══════════ 工具 ══════════ */
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+  function renderSteps() {
+    var names = ['基础', '外貌性格', '经验偏好', '匹配', '开局', '确认'];
+    $('steps').innerHTML = names.map(function (n, i) {
+      return '<button class="' + (i === state.step ? 'active' : '') + '" onclick="gotoStep(' + i + ')">' + (i + 1) + '. ' + n + '</button>';
+    }).join('');
+  }
+
+  function collectInputs() {
+    state.name = $('f-name').value.trim();
+    state.gender = $('f-gender').value;
+    state.age = parseInt($('f-age').value, 10) || 25;
+    state.job = $('f-job').value.trim();
+    state.district = $('f-district').value;
+    state.yueNick = $('f-yue-nick').value.trim();
+    state.look = $('f-look').value.trim();
+    state.persona = $('f-persona').value.trim();
+    state.quirk = $('f-quirk').value.trim();
+    state.exp = $('f-exp').value;
+    state.expect = $('f-expect').value;
+  }
+
+  /* ══════════ 自动匹配引擎 ══════════ */
+  function matchScore(npc) {
+    if (npc.dlc && !DLC_ENABLED[npc.dlc]) return 0;
+    var s = 50; // 基础分
+    // 年龄差：±5 内最优
+    var diff = Math.abs(npc.age - state.age);
+    if (diff <= 3) s += 15; else if (diff <= 6) s += 10; else if (diff <= 10) s += 5; else s -= 5;
+    // 经验匹配：处 vs 老手 互补加分
+    var expMap = { '处': 0, '很少（1-3次）': 1, '一般': 2, '丰富': 3, '老手': 4 };
+    var me = expMap[state.exp] || 2, np = expMap[npc.exp] || 2;
+    if (Math.abs(me - np) >= 2) s += 8; else if (me === np) s += 4;
+    // 玩法契合
+    state.plays.forEach(function (p) {
+      npc.play.forEach(function (np) { if (np.indexOf(p) >= 0 || p.indexOf(np) >= 0) s += 6; });
+      npc.tags.forEach(function (t) { if (t.indexOf(p) >= 0) s += 4; });
+    });
+    // 关系期望
+    if (npc.rel.indexOf('绿帽') >= 0 && state.plays.indexOf('绿帽视角') >= 0) s += 8;
+    if (npc.rel.indexOf('纯爱') >= 0 && (state.expect === '长期关系' || state.plays.indexOf('纯爱') >= 0)) s += 8;
+    if (npc.rel.indexOf('玩伴') >= 0 && state.expect === '只要一夜') s += 6;
+    if (npc.rel.indexOf('征服') >= 0 && state.plays.indexOf('命令服从') >= 0) s += 6;
+    // 随机微扰 ±3（避免每次结果一样）
+    s += Math.floor(Math.random() * 7) - 3;
+    return Math.max(0, Math.min(100, s));
+  }
+
+  function matchReason(npc) {
+    var r = [];
+    var diff = Math.abs(npc.age - state.age);
+    r.push(diff <= 3 ? '年龄很搭' : (diff <= 6 ? '年龄相近' : '年龄差有新鲜感'));
+    if (state.plays.length) r.push('有「' + state.plays[0] + '」玩法契合');
+    if (state.expect === '长期关系' && npc.rel.indexOf('长情') >= 0) r.push('期望一致（长期）');
+    if (npc.rel.indexOf('绿帽') >= 0) r.push('背德/绿帽线');
+    if (npc.type === 'DLC专属') r.push('DLC专属（少子化对策）');
+    return r.join(' · ');
+  }
+
+  function runMatch() {
+    collectInputs();
+    state.matched = NPCS.map(function (n) {
+      var score = matchScore(n);
+      return { npc: n, score: score, reason: matchReason(n) };
+    }).filter(function (m) { return m.score > 0; }).sort(function (a, b) { return b.score - a.score; });
+    renderMatch();
+  }
+
+  function renderMatch() {
+    var box = $('match-list');
+    if (!state.matched.length) { box.innerHTML = '<p class="warn">暂无匹配（可能所有DLC专属角色未启用，或你的偏好过窄）。</p>'; return; }
+    box.innerHTML = state.matched.map(function (m) {
+      var sel = state.selectedNpc && state.selectedNpc.name === m.npc.name ? ' selected' : '';
+      return '<div class="match-card' + sel + '" onclick="selectNpc(\'' + m.npc.name + '\')">' +
+        '<div class="avatar">' + m.npc.avatar + '</div>' +
+        '<div class="info">' +
+          '<div class="nm">' + esc(m.npc.name) + (m.npc.type === 'DLC专属' ? ' <span class="warn">[DLC]</span>' : '') + '</div>' +
+          '<div class="meta">' + m.npc.age + '岁 · ' + esc(m.npc.job) + ' · ' + esc(m.npc.tags.join('/')) + '</div>' +
+          '<div class="bar"><i style="width:' + m.score + '%"></i></div>' +
+          '<div class="reason">匹配度 ' + m.score + '% — ' + esc(m.reason) + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  window.selectNpc = function (name) {
+    var hit = state.matched.filter(function (m) { return m.npc.name === name; })[0];
+    state.selectedNpc = hit ? hit.npc : null;
+    renderMatch();
+  };
+
+  /* DLC 开关（entrance 内） */
+  window.toggleDlcEntrance = async function (which) {
+    var key = which === 1 ? '少子化对策' : '都市夜行';
+    var varKey = '悦悦DLC_' + key;
+    var on = which === 1 ? $('f-dlc1').checked : $('f-dlc2').checked;
+    DLC_ENABLED[key] = on;
+    try { if (typeof setvar === 'function') setvar(varKey, on ? '1' : ''); } catch (e) {}
+    try {
+      if (typeof waitGlobalInitialized === 'function') await waitGlobalInitialized('Mvu');
+      if (window.Mvu) {
+        var data = Mvu.getMvuData({ type: 'message', message_id: getCurrentMessageId() });
+        if (!data) data = { stat_data: {} };
+        if (!data.stat_data) data.stat_data = {};
+        if (!data.stat_data['世界']) data.stat_data['世界'] = {};
+        data.stat_data['世界'][varKey] = on;
+        await Mvu.replaceMvuData(data, { type: 'message', message_id: getCurrentMessageId() });
+      }
+    } catch (e) { console.error('DLC 开关写入失败', e); }
+    runMatch();
+  };
+
+  /* ══════════ 开局背景 ══════════ */
+  function renderBgs() {
+    var html = '';
+    Object.keys(BGS).forEach(function (cat) {
+      html += '<div class="card" style="margin-bottom:8px"><h3>' + esc(cat) + '</h3><div class="opt-grid">';
+      BGS[cat].forEach(function (b) {
+        var sel = state.bg && state.bg.name === b.name ? ' active' : '';
+        html += '<div class="opt' + sel + '" onclick="selectBg(\'' + esc(b.name) + '\')"><div class="nm">' + esc(b.name) + '</div><div class="desc">' + esc(b.desc) + '</div></div>';
+      });
+      html += '</div></div>';
+    });
+    $('bg-grid').innerHTML = html;
+  }
+
+  window.selectBg = function (name) {
+    Object.keys(BGS).forEach(function (cat) {
+      BGS[cat].forEach(function (b) { if (b.name === name) { state.bg = b; if (b.name === '【自定义开局】') state.customBg = prompt('请输入自定义开场场景：', '') || ''; } });
+    });
+    renderBgs();
+  };
+
+  /* ══════════ 步骤导航 ══════════ */
+  function showStep(i) {
+    state.step = i;
+    for (var k = 0; k <= 5; k++) $('panel-' + k).classList.toggle('hidden', k !== i);
+    if (i === 2) renderPlayChips();
+    if (i === 3) runMatch();
+    if (i === 4) renderBgs();
+    if (i === 5) renderConfirm();
+    renderSteps();
+  }
+  window.gotoStep = function (i) { showStep(i); };
+  window.prevStep = function () { if (state.step > 0) showStep(state.step - 1); };
+  window.nextStep = function () { if (state.step < 5) showStep(state.step + 1); };
+
+  function renderPlayChips() {
+    $('f-play-chips').innerHTML = PLAY_CHIPS.map(function (p) {
+      return '<span class="chip' + (state.plays.indexOf(p) >= 0 ? ' active' : '') + '" onclick="togglePlay(\'' + p + '\')">' + p + '</span>';
+    }).join('');
+  }
+  window.togglePlay = function (p) {
+    var i = state.plays.indexOf(p);
+    if (i >= 0) state.plays.splice(i, 1); else state.plays.push(p);
+    renderPlayChips();
+  };
+
+  /* ══════════ 确认页 ══════════ */
+  function renderConfirm() {
+    collectInputs();
+    var rows = [
+      ['姓名', state.name || '（未填写）'], ['性别/年龄', state.gender + ' / ' + state.age + '岁'],
+      ['职业', state.job || '—'], ['居住', state.district],
+      ['悦悦昵称', state.yueNick || '—'],
+      ['外貌', state.look || '—'], ['性格', state.persona || '—'],
+      ['经验', state.exp], ['偏好玩法', state.plays.join('、') || '—'], ['关系期望', state.expect],
+      ['匹配目标', state.selectedNpc ? (state.selectedNpc.name + '（匹配度见上一步）') : '（未选择，将随机匹配）'],
+      ['开局背景', state.bg ? state.bg.name : '（未选择）']
+    ];
+    $('confirm-kv').innerHTML = rows.map(function (r) {
+      return '<div class="k">' + esc(r[0]) + '</div><div class="v">' + esc(r[1]) + '</div>';
+    }).join('');
+  }
+
+  /* ══════════ 提示词生成 ══════════ */
+  function buildPrompt() {
+    collectInputs();
+    var npc = state.selectedNpc || state.matched[0] && state.matched[0].npc || NPCS[0];
+    var bgDesc = state.bg ? (state.bg.name === '【自定义开局】' && state.customBg ? state.customBg : state.bg.desc) : '你们刚刚匹配成功，互相点了喜欢。';
+    var lines = [];
+    lines.push('---');
+    lines.push('【世界】现代都市（与2026年现实社会一致）。悦悦是一款隐秘但圈子内流传广的聊天（约炮）APP，邀请码制，实名+行为分审核。');
+    lines.push('【主角】');
+    lines.push('姓名: ' + (state.name || '未命名'));
+    lines.push('性别/年龄: ' + state.gender + ' / ' + state.age + '岁');
+    lines.push('职业: ' + (state.job || '—'));
+    lines.push('居住: ' + state.district);
+    lines.push('悦悦昵称: ' + (state.yueNick || '—'));
+    lines.push('外貌: ' + (state.look || '—'));
+    lines.push('性格: ' + (state.persona || '—'));
+    lines.push('口癖: ' + (state.quirk || '—'));
+    lines.push('性经验: ' + state.exp);
+    lines.push('偏好玩法: ' + (state.plays.join('、') || '—'));
+    lines.push('关系期望: ' + state.expect);
+    lines.push('---');
+    lines.push('【初始关系目标】' + npc.name + '（' + npc.age + '岁，' + npc.job + '）——人物卡见<角色>标签区，AI 必须按人物卡人设演绎。');
+    lines.push('【开局场景】' + bgDesc);
+    lines.push('---');
+    lines.push('请以主角第一人称展开故事。要求: 符合现代都市真实感；按好感度0~20的「网友期」行为规则演绎NPC；聊天阶段用短句+表情包风格；禁止跳过铺垫直接进入性场景。');
+    return '```text\n' + lines.join('\n') + '\n```\n\n---\n根据<status_current_variables>和以上内容，生成一个符合描述和情景的初始剧情！';
+  }
+
+  window.genPrompt = function () {
+    var out = $('prompt-out');
+    out.textContent = buildPrompt();
+    out.classList.remove('hidden');
+  };
+
+  /* ══════════ 预设管理（localStorage） ══════════ */
+  var LS_KEY = 'lk_yueyue_presets';
+  function loadPresets() { try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch (e) { return []; } }
+  function savePresets(list) { try { localStorage.setItem(LS_KEY, JSON.stringify(list)); } catch (e) {} }
+
+  window.savePreset = function () {
+    collectInputs();
+    var name = prompt('预设名称：', (state.name || '主角') + '-预设');
+    if (!name) return;
+    var list = loadPresets();
+    list = list.filter(function (p) { return p.name !== name; });
+    list.push({ name: name, savedAt: Date.now(), state: JSON.parse(JSON.stringify(state)) });
+    savePresets(list);
+    toastr && toastr.success ? toastr.success('预设「' + name + '」已保存') : alert('预设已保存');
+  };
+
+  window.loadPresetFile = function () {
+    var list = loadPresets();
+    if (!list.length) { alert('暂无已保存预设'); return; }
+    var pick = prompt('输入预设名加载（现有: ' + list.map(function (p) { return p.name; }).join('、') + '）：', list[0].name);
+    var hit = list.filter(function (p) { return p.name === pick; })[0];
+    if (!hit) { alert('未找到预设'); return; }
+    state = JSON.parse(JSON.stringify(hit.state));
+    $('f-name').value = state.name; $('f-gender').value = state.gender; $('f-age').value = state.age;
+    $('f-job').value = state.job; $('f-district').value = state.district; $('f-yue-nick').value = state.yueNick;
+    $('f-look').value = state.look; $('f-persona').value = state.persona; $('f-quirk').value = state.quirk;
+    $('f-exp').value = state.exp; $('f-expect').value = state.expect;
+    renderPlayChips(); renderBgs();
+    toastr && toastr.success ? toastr.success('已加载预设「' + pick + '」') : alert('已加载预设');
+  };
+
+  window.exportPresets = function () {
+    var list = loadPresets();
+    if (!list.length) { alert('暂无预设可导出'); return; }
+    var blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'yueyue_presets.json';
+    a.click();
+  };
+
+  /* ══════════ 开始旅程 ══════════ */
+  window.startJourney = async function () {
+    collectInputs();
+    if (!state.name) { alert('请先填写姓名'); showStep(0); return; }
+    if (!state.selectedNpc) { alert('建议先选择匹配目标（第④步）；未选择则随机匹配。继续？'); }
+    var prompt = buildPrompt();
+    var status = $('send-status');
+    status.textContent = '正在写入角色信息并发送…';
+    try {
+      // 写入 stat_data（经 Mvu）
+      if (typeof waitGlobalInitialized === 'function') await waitGlobalInitialized('Mvu');
+      if (window.Mvu) {
+        var data = Mvu.getMvuData({ type: 'message', message_id: getCurrentMessageId() });
+        if (!data) data = { stat_data: {} };
+        if (!data.stat_data) data.stat_data = {};
+        var sd = data.stat_data;
+        sd['世界'] = sd['世界'] || {};
+        sd['世界']['世界名'] = '悦悦';
+        sd['世界']['时间'] = '2026年-5月-16日-星期六-20:30';
+        sd['世界']['地点'] = '本市-' + state.district;
+        sd['主角'] = sd['主角'] || {};
+        sd['主角']['姓名'] = state.name;
+        sd['主角']['昵称'] = state.yueNick || state.name;
+        sd['主角']['年龄'] = state.age;
+        sd['主角']['性别'] = state.gender;
+        sd['主角']['职业'] = state.job || '';
+        sd['主角']['居住地'] = state.district;
+        sd['主角']['外貌'] = state.look || '';
+        sd['主角']['性格'] = state.persona || '';
+        sd['主角']['经验'] = state.exp;
+        sd['主角']['悦悦'] = sd['主角']['悦悦'] || {};
+        sd['主角']['悦悦']['账号'] = state.yueNick || state.name;
+        sd['主角']['悦悦']['匹配状态'] = '匹配中';
+        if (state.selectedNpc) {
+          sd['关系列表'] = sd['关系列表'] || {};
+          sd['关系列表'][state.selectedNpc.name] = sd['关系列表'][state.selectedNpc.name] || {};
+          var rel = sd['关系列表'][state.selectedNpc.name];
+          rel['在场'] = true;
+          rel['好感度'] = 10;
+          rel['关系标签'] = '网友';
+        }
+        await Mvu.replaceMvuData(data, { type: 'message', message_id: getCurrentMessageId() });
+      }
+      if (typeof createChatMessages === 'function') {
+        await createChatMessages([{ role: 'user', message: prompt }]);
+        if (typeof triggerSlash === 'function') await triggerSlash('/trigger');
+        status.textContent = '✅ 已发送，故事开始！';
+      } else {
+        status.textContent = '⚠️ 未找到 createChatMessages（请在 SillyTavern 环境中运行）。提示词如下：';
+        var out = $('prompt-out');
+        out.textContent = prompt;
+        out.classList.remove('hidden');
+      }
+    } catch (e) {
+      console.error('❌ 踏上旅程时发生错误：', e);
+      status.textContent = '❌ 出错：' + e.message;
+    }
+  };
+
+  /* ══════════ 初始化 ══════════ */
+  function init() {
+    renderSteps();
+    showStep(0);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>

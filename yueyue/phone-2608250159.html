@@ -1,0 +1,282 @@
+<!-- 悦悦 · 手机界面（纯前端实验版：主界面仅悦悦APP → 关系列表 → 聊天）
+     聊天模式：注入指令让 AI 以「交友APP聊天」格式输出（无正文/短句/无旁白）。
+     输出状态：停止输出 / 继续输出（对方正在输入→自动返回更多）/ 输出（3s后撤回，仍可查看撤回内容）。
+     依赖：SillyTavern HTML 面板环境（createChatMessages / getVariables / Mvu）。 -->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0c0e13; font-family: "Noto Sans SC","Source Han Sans SC","Microsoft YaHei",sans-serif; color: #eef1f6; font-size: 13px; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .phone { width: 390px; height: 780px; max-width: 96vw; max-height: 92vh; border-radius: 34px; border: 3px solid #2a3040; background: #10131a; overflow: hidden; position: relative; box-shadow: 0 0 40px rgba(255,107,157,0.25); display: flex; flex-direction: column; }
+  .statusbar { height: 30px; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; font-size: 11px; color: #c9d4e6; background: #13161f; }
+  .screen { flex: 1; overflow-y: auto; position: relative; }
+  /* 主界面 */
+  .home { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; background: linear-gradient(180deg, #10131a 0%, #1a1428 60%, #221230 100%); }
+  .app-icon { width: 96px; height: 96px; border-radius: 24px; background: linear-gradient(135deg, #ff6b9d, #b06bff); display: flex; align-items: center; justify-content: center; font-size: 42px; box-shadow: 0 10px 30px rgba(255,107,157,0.45); cursor: pointer; transition: transform 0.15s; }
+  .app-icon:active { transform: scale(0.94); }
+  .app-name { font-size: 16px; letter-spacing: 0.3em; color: #ff9ec4; }
+  .home .hint { font-size: 11px; color: #7a8598; }
+  /* 列表 */
+  .list-head { padding: 14px 16px; font-size: 15px; font-weight: 700; color: #ff9ec4; display: flex; align-items: center; gap: 10px; background: #13161f; border-bottom: 1px solid #232a3a; }
+  .back { cursor: pointer; font-size: 18px; color: #9aa5b8; }
+  .rel-item { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-bottom: 1px solid #1c2230; cursor: pointer; }
+  .rel-item:active { background: rgba(255,107,157,0.08); }
+  .rel-item .avatar { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #ff6b9d, #b06bff); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .rel-item .nm { font-size: 14px; font-weight: 600; }
+  .rel-item .meta { font-size: 11px; color: #7a8598; margin-top: 2px; }
+  .rel-item .aff { margin-left: auto; font-size: 12px; color: #ffd97a; }
+  /* 聊天 */
+  .chat-head { padding: 10px 16px; display: flex; align-items: center; gap: 10px; background: #13161f; border-bottom: 1px solid #232a3a; position: sticky; top: 0; z-index: 5; }
+  .chat-head .title { font-size: 14px; font-weight: 700; }
+  .chat-head .typing { font-size: 11px; color: #ff9ec4; }
+  .msgs { padding: 14px 12px; }
+  .msg { display: flex; margin-bottom: 10px; }
+  .msg .bubble { max-width: 78%; padding: 9px 12px; border-radius: 14px; font-size: 13px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+  .msg.npc .bubble { background: #232a3a; border-bottom-left-radius: 4px; }
+  .msg.user { justify-content: flex-end; }
+  .msg.user .bubble { background: linear-gradient(135deg, #ff6b9d, #e0558a); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.sys { justify-content: center; }
+  .msg.sys .bubble { background: transparent; color: #7a8598; font-size: 11px; padding: 4px; }
+  .msg.recalled .bubble { background: #1a1f2c; color: #7a8598; border: 1px dashed #2c3444; cursor: pointer; }
+  .msg.recalled .bubble::before { content: '↩ '; }
+  .recalled-content { display: none; }
+  .msg.recalled.show .recalled-content { display: block; margin-top: 6px; padding: 6px 8px; background: rgba(255,107,157,0.08); border-radius: 8px; color: #c9d4e6; font-size: 12px; }
+  /* 输入区 */
+  .input-bar { border-top: 1px solid #232a3a; padding: 8px 10px; display: flex; gap: 8px; align-items: center; background: #13161f; }
+  .input-bar textarea { flex: 1; background: #1a1f2c; border: 1px solid #2c3444; border-radius: 18px; color: #eef1f6; padding: 8px 14px; font-size: 13px; resize: none; height: 36px; font-family: inherit; }
+  .input-bar button { background: linear-gradient(135deg, #ff6b9d, #ff9ec4); color: #1a0d14; border: none; border-radius: 18px; padding: 8px 16px; font-weight: 700; cursor: pointer; }
+  .ctrl-bar { display: flex; gap: 6px; padding: 6px 10px; background: #10131a; border-top: 1px solid #1c2230; flex-wrap: wrap; }
+  .ctrl-bar button { flex: 1; min-width: 88px; background: #1d2230; border: 1px solid #2c3444; color: #c9d4e6; border-radius: 10px; padding: 7px 4px; font-size: 11px; cursor: pointer; }
+  .ctrl-bar button.on { background: rgba(255,107,157,0.2); border-color: #ff6b9d; color: #ff9ec4; }
+  .hidden { display: none !important; }
+</style>
+<body>
+<div class="phone">
+  <div class="statusbar"><span>21:35</span><span>悦悦 · 手机</span><span>🔋</span></div>
+
+  <!-- 主界面（仅悦悦APP） -->
+  <div class="screen" id="home-screen">
+    <div class="home">
+      <div class="app-icon" onclick="openList()">♡</div>
+      <div class="app-name">悦 悦</div>
+      <div class="hint">点按进入 · 已建立关系的角色</div>
+    </div>
+  </div>
+
+  <!-- 关系列表 -->
+  <div class="screen hidden" id="list-screen">
+    <div class="list-head"><span class="back" onclick="backHome()">‹</span> 悦悦 · 联系人</div>
+    <div id="rel-list"></div>
+  </div>
+
+  <!-- 聊天 -->
+  <div class="screen hidden" id="chat-screen">
+    <div class="chat-head">
+      <span class="back" onclick="backList()">‹</span>
+      <div>
+        <div class="title" id="chat-title">—</div>
+        <div class="typing hidden" id="typing">对方正在输入…</div>
+      </div>
+      <div style="margin-left:auto;font-size:11px;color:#7a8598" id="chat-aff"></div>
+    </div>
+    <div class="msgs" id="chat-msgs"></div>
+  </div>
+
+  <div id="ctrl" class="ctrl-bar hidden">
+    <button id="btn-stop" onclick="stopOutput()">⏸ 停止输出</button>
+    <button id="btn-cont" onclick="continueOutput()">▶ 继续输出</button>
+    <button id="btn-recall" onclick="toggleRecallMode()">↩ 输出(3s后撤回)</button>
+  </div>
+  <div class="input-bar hidden" id="inputbar">
+    <textarea id="chat-input" placeholder="说点什么…" rows="1"></textarea>
+    <button onclick="sendMsg()">发送</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var CURRENT = null;       // 当前聊天对象
+  var RECALL_MODE = false;  // 撤回模式
+  var chatLog = {};         // 会话内聊天记录 { npc: [ {who:'npc'|'user'|'sys', text, recalled, ts} ] }
+  var typingTimer = null;
+  var recallTimer = null;
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function stat() {
+    try { var v = getVariables({ type: 'message', message_id: getCurrentMessageId() }); return (v && v.stat_data) || {}; } catch (e) { return {}; }
+  }
+
+  /* ══════════ 导航 ══════════ */
+  window.openList = function () { renderList(); $('home-screen').classList.add('hidden'); $('list-screen').classList.remove('hidden'); };
+  window.backHome = function () { $('list-screen').classList.add('hidden'); $('chat-screen').classList.add('hidden'); hideChatUI(); $('home-screen').classList.remove('hidden'); };
+  window.backList = function () { $('chat-screen').classList.add('hidden'); hideChatUI(); $('list-screen').classList.remove('hidden'); };
+
+  function hideChatUI() { $('ctrl').classList.add('hidden'); $('inputbar').classList.add('hidden'); if (typingTimer) clearTimeout(typingTimer); if (recallTimer) clearTimeout(recallTimer); }
+
+  /* ══════════ 关系列表 ══════════ */
+  function renderList() {
+    var s = stat();
+    var rel = s.关系列表 || {};
+    var keys = Object.keys(rel);
+    if (!keys.length) { $('rel-list').innerHTML = '<div style="padding:30px;text-align:center;color:#7a8598;font-size:12px">暂无已建立关系的角色。<br>请先在主界面完成角色创建与匹配。</div>'; return; }
+    var AV = { '林晚晴': '🌸', '苏晴雪': '🏠', '白露': '🎓', '沈若曦': '⚖️', '顾晚晴': '🌷', '周雨桐': '🎤', '陈雪莉': '🐈', '江月白': '🏛️', '安宁': '🏥', '秦小雨': '🎨' };
+    $('rel-list').innerHTML = keys.map(function (name) {
+      var r = rel[name] || {};
+      var aff = Number(r.好感度) || 0;
+      return '<div class="rel-item" onclick="openChat(\'' + esc(name) + '\')">' +
+        '<div class="avatar">' + (AV[name] || '♡') + '</div>' +
+        '<div><div class="nm">' + esc(r.姓名 || name) + '</div><div class="meta">' + esc(r.职业 || '') + ' · ' + esc(r.关系标签 || '网友') + '</div></div>' +
+        '<div class="aff">' + aff + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  /* ══════════ 聊天 ══════════ */
+  window.openChat = function (name) {
+    CURRENT = name;
+    var r = (stat().关系列表 || {})[name] || {};
+    $('chat-title').textContent = r.姓名 || name;
+    $('chat-aff').textContent = '好感 ' + (Number(r.好感度) || 0);
+    chatLog[name] = chatLog[name] || [];
+    renderMsgs();
+    $('list-screen').classList.add('hidden');
+    $('chat-screen').classList.remove('hidden');
+    $('ctrl').classList.remove('hidden');
+    $('inputbar').classList.remove('hidden');
+  };
+
+  function renderMsgs() {
+    var list = chatLog[CURRENT] || [];
+    $('chat-msgs').innerHTML = list.map(function (m) {
+      var cls = m.who === 'user' ? 'user' : m.who === 'sys' ? 'sys' : 'npc';
+      if (m.recalled) cls += ' recalled';
+      var body = m.recalled ? '对方撤回了一条消息' : esc(m.text);
+      var extra = m.recalled ? '<div class="recalled-content">' + esc(m.text) + '</div>' : '';
+      return '<div class="msg ' + cls + '"><div class="bubble">' + body + extra + '</div></div>';
+    }).join('');
+    var box = $('chat-screen');
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function addMsg(who, text, recalled) {
+    chatLog[CURRENT] = chatLog[CURRENT] || [];
+    chatLog[CURRENT].push({ who: who, text: text, recalled: !!recalled, ts: Date.now() });
+    renderMsgs();
+  }
+
+  /* 3s 撤回：显示 → 3秒后标记撤回（内容仍可点击查看） */
+  function scheduleRecall() {
+    if (recallTimer) clearTimeout(recallTimer);
+    recallTimer = setTimeout(function () {
+      var list = chatLog[CURRENT] || [];
+      var last = list[list.length - 1];
+      if (last && last.who === 'npc' && !last.recalled) { last.recalled = true; renderMsgs(); }
+    }, 3000);
+  }
+
+  window.toggleRecallMode = function () {
+    RECALL_MODE = !RECALL_MODE;
+    $('btn-recall').classList.toggle('on', RECALL_MODE);
+  };
+
+  /* ══════════ 输出控制（优先插件 API，回退提示词注入） ══════════ */
+  // 优先使用 yueyue-phone-chat 插件（真正拦截生成：停止/继续/撤回）；
+  // 插件不可用时回退为「消息指令」请求后端网关（tavern-gateway）按 temp/gateway-phone.md 切换。
+  function phoneApi() {
+    try {
+      if (typeof getExtensionApi === 'function') {
+        var api = getExtensionApi('yueyue-phone');
+        if (api && api.stopOutput) return api;
+      }
+      if (window.Luker && Luker.getContext) {
+        var ctx = Luker.getContext();
+        var api2 = ctx.getExtensionApi && ctx.getExtensionApi('yueyue-phone');
+        if (api2 && api2.stopOutput) return api2;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  window.stopOutput = function () {
+    var api = phoneApi();
+    if (api) { api.stopOutput(); addMsg('sys', '⏸ 已停止输出'); return; }
+    if (typeof stopGeneration === 'function') { try { stopGeneration(); } catch (e) {} }
+    addMsg('sys', '⏸ 已请求停止输出');
+    sendRaw('（系统指令：停止输出。请不要继续生成，等待用户下一条消息。）', true);
+  };
+  window.continueOutput = function () {
+    var api = phoneApi();
+    $('typing').classList.remove('hidden');
+    if (typingTimer) clearTimeout(typingTimer);
+    typingTimer = setTimeout(function () { $('typing').classList.add('hidden'); }, 1800);
+    if (api) { api.continueOutput(); addMsg('sys', '▶ 继续输出'); return; }
+    sendRaw('（系统指令：继续输出。请接着上一条消息继续，像聊天APP一样分段回复更多内容。）', true);
+  };
+
+  /* ══════════ 发送 ══════════ */
+  function sendRaw(text, isCtrl) {
+    if (!CURRENT) return;
+    var prompt = buildChatPrompt(text, isCtrl);
+    if (typeof createChatMessages === 'function') {
+      createChatMessages([{ role: 'user', message: prompt }]).then(function () {
+        if (typeof triggerSlash === 'function') triggerSlash('/trigger');
+      });
+    } else {
+      addMsg('sys', '⚠️ 非 SillyTavern 环境，无法发送。指令内容：' + prompt);
+    }
+  }
+
+  window.sendMsg = function () {
+    var v = $('chat-input').value.trim();
+    if (!v || !CURRENT) return;
+    $('chat-input').value = '';
+    addMsg('user', v);
+    $('typing').classList.remove('hidden');
+    if (typingTimer) clearTimeout(typingTimer);
+    typingTimer = setTimeout(function () { $('typing').classList.add('hidden'); }, 1600);
+    sendRaw(v, false);
+    if (RECALL_MODE) scheduleRecall();
+  };
+
+  function buildChatPrompt(text, isCtrl) {
+    var npc = (stat().关系列表 || {})[CURRENT] || {};
+    return '【悦悦聊天模式】你正在以交友APP聊天的形式与「' + (npc.姓名 || CURRENT) + '」对话。\n' +
+      '输出要求：\n' +
+      '1. 只输出聊天气泡内容：短句（每句≤40字）、口语化、带表情包/语气词（哈哈/嗯嗯/？），像微信/探探聊天；\n' +
+      '2. 禁止输出旁白、场景描写、心理描写、标题、分析——全部改为对话气泡；\n' +
+      '3. 每轮回复 1~4 条气泡，条与条之间用换行分隔；\n' +
+      '4. 保持「' + (npc.姓名 || CURRENT) + '」的人物卡人设与当前好感度（' + (Number(npc.好感度) || 0) + '）行为规则；\n' +
+      '5. 不主动推进约见/性场景，除非用户明确提出；被问到时用聊天方式回答。\n' +
+      '---\n' + text;
+  }
+
+  /* 事件：GENERATION_AFTER_COMMANDS 后把 AI 回复注入为气泡 */
+  function onNewReply() {
+    if (!CURRENT) return;
+    $('typing').classList.add('hidden');
+    try {
+      var chat = window.chat || null;
+      if (Array.isArray(chat) && chat.length) {
+        var last = chat[chat.length - 1];
+        if (last && last.is_user === false && last.mes && typeof last.mes === 'string') {
+          var text = last.mes.replace(/<[^>]+>/g, '').replace(/<!--[\s\S]*?-->/g, '').trim();
+          if (text) { addMsg('npc', text); if (RECALL_MODE) scheduleRecall(); }
+        }
+      }
+    } catch (e) {}
+  }
+
+  function init() {
+    if (typeof waitGlobalInitialized === 'function' && typeof eventOn === 'function') {
+      try {
+        eventOn(tavern_events.GENERATION_AFTER_COMMANDS, onNewReply);
+        eventOn(tavern_events.MESSAGE_SENT, onNewReply);
+      } catch (e) {}
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>
