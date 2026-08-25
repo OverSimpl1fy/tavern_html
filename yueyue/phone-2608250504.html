@@ -5,11 +5,11 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #0c0e13; font-family: "Noto Sans SC","Source Han Sans SC","Microsoft YaHei",sans-serif; color: #eef1f6; font-size: 13px; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-  .phone { width: 390px; max-width: 96vw; border-radius: 34px; border: 3px solid #2a3040; background: #10131a; overflow: hidden; position: relative; box-shadow: 0 0 40px rgba(255,107,157,0.25); display: flex; flex-direction: column; min-height: 200px; }
+  .phone { width: 390px; max-width: 96vw; max-height: 85vh; border-radius: 34px; border: 3px solid #2a3040; background: #10131a; overflow: hidden; position: relative; box-shadow: 0 0 40px rgba(255,107,157,0.25); display: flex; flex-direction: column; min-height: 200px; }
   .statusbar { height: 30px; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; font-size: 11px; color: #c9d4e6; background: #13161f; flex-shrink: 0; }
-  .screen { flex: 1; overflow: visible; position: relative; }
+  .screen { flex: 1; overflow-y: auto; position: relative; -webkit-overflow-scrolling: touch; }
   /* 主界面 */
-  .home { min-height: 420px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; background: linear-gradient(180deg, #10131a 0%, #1a1428 60%, #221230 100%); }
+  .home { min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; background: linear-gradient(180deg, #10131a 0%, #1a1428 60%, #221230 100%); }
   .app-icon { width: 96px; height: 96px; border-radius: 24px; background: linear-gradient(135deg, #ff6b9d, #b06bff); display: flex; align-items: center; justify-content: center; font-size: 42px; box-shadow: 0 10px 30px rgba(255,107,157,0.45); cursor: pointer; transition: transform 0.15s; }
   .app-icon:active { transform: scale(0.94); }
   .app-name { font-size: 16px; letter-spacing: 0.3em; color: #ff9ec4; }
@@ -199,31 +199,68 @@
 
   window.stopOutput = function () {
     var api = phoneApi();
-    if (api) { api.stopOutput(); addMsg('sys', '⏸ 已停止输出'); return; }
+    if (api && api.stopOutput) { api.stopOutput(); addMsg('sys', '⏸ 已停止输出'); return; }
     if (typeof stopGeneration === 'function') { try { stopGeneration(); } catch (e) {} }
     addMsg('sys', '⏸ 已请求停止输出');
-    sendRaw('（系统指令：停止输出。请不要继续生成，等待用户下一条消息。）', true);
   };
   window.continueOutput = function () {
     var api = phoneApi();
     $('typing').classList.remove('hidden');
-    if (typingTimer) clearTimeout(typingTimer);
-    typingTimer = setTimeout(function () { $('typing').classList.add('hidden'); }, 1800);
-    if (api) { api.continueOutput(); addMsg('sys', '▶ 继续输出'); return; }
-    sendRaw('（系统指令：继续输出。请接着上一条消息继续，像聊天APP一样分段回复更多内容。）', true);
+    if (api && api.continueOutput) {
+      api.continueOutput().then(function () {
+        $('typing').classList.add('hidden');
+        addMsg('sys', '▶ 继续输出');
+      });
+      return;
+    }
+    // 回退：静默生成一段续写内容
+    silentGenerate([
+      { role: 'system', content: '【悦悦聊天模式】静默回复。只输出聊天气泡（≤40字/句，1~4条，无旁白）。' },
+      { role: 'user', content: '（系统指令：继续输出。请接着上一条消息继续，像聊天APP一样分段回复更多内容。）' },
+    ]).then(function (reply) {
+      $('typing').classList.add('hidden');
+      appendReply(reply);
+    }).catch(function () { $('typing').classList.add('hidden'); });
   };
 
-  /* ══════════ 发送 ══════════ */
+  /* ══════════ 发送（静默输出：不写聊天记录，结果直接显示在手机） ══════════ */
+  function silentGenerate(messages) {
+    // 优先插件 API（yueyue-phone-chat.sendSilent，内部走 Luker generateTask）
+    var api = phoneApi();
+    if (api && api.sendSilent) return api.sendSilent(messages);
+    // 回退：直接调 Luker generateTask（不写聊天记录）
+    try {
+      if (window.Luker && Luker.getContext) {
+        var ctx = Luker.getContext();
+        if (typeof ctx.generateTask === 'function') {
+          return ctx.generateTask({
+            taskMessages: messages,
+            worldInfoSource: 'chat',
+            includeCharacterCard: true,
+          }).then(function (r) { return (r && r.assistantText) || ''; });
+        }
+      }
+    } catch (e) { console.error('[悦悦手机] generateTask 失败', e); }
+    return Promise.resolve('');
+  }
+
+  function appendReply(reply) {
+    if (!reply || !reply.trim()) { addMsg('sys', '（对方没有回应）'); return; }
+    var bubbles = reply.split(/\n+/).map(function (b) { return b.trim(); }).filter(Boolean);
+    bubbles.forEach(function (b) { addMsg('npc', b); });
+    if (RECALL_MODE) scheduleRecall();
+  }
+
   function sendRaw(text, isCtrl) {
     if (!CURRENT) return;
     var prompt = buildChatPrompt(text, isCtrl);
-    if (typeof createChatMessages === 'function') {
-      createChatMessages([{ role: 'user', message: prompt }]).then(function () {
-        if (typeof triggerSlash === 'function') triggerSlash('/trigger');
-      });
-    } else {
-      addMsg('sys', '⚠️ 非 SillyTavern 环境，无法发送。指令内容：' + prompt);
-    }
+    silentGenerate([
+      { role: 'system', content: '【悦悦聊天模式】静默回复。只输出聊天气泡（≤40字/句，1~4条，无旁白），不要任何解释。' },
+      { role: 'user', content: prompt },
+    ]).then(appendReply).catch(function (e) {
+      console.error('[悦悦手机] 静默生成失败', e);
+      addMsg('sys', '⚠️ 生成失败：' + (e && e.message || e));
+    });
   }
 
   window.sendMsg = function () {
@@ -233,9 +270,18 @@
     addMsg('user', v);
     $('typing').classList.remove('hidden');
     if (typingTimer) clearTimeout(typingTimer);
-    typingTimer = setTimeout(function () { $('typing').classList.add('hidden'); }, 1600);
-    sendRaw(v, false);
-    if (RECALL_MODE) scheduleRecall();
+    // 真正的「对方正在输入」：生成期间显示，结束后隐藏
+    silentGenerate([
+      { role: 'system', content: '【悦悦聊天模式】静默回复。只输出聊天气泡（≤40字/句，1~4条，无旁白），不要任何解释。' },
+      { role: 'user', content: buildChatPrompt(v, false) },
+    ]).then(function (reply) {
+      $('typing').classList.add('hidden');
+      appendReply(reply);
+    }).catch(function (e) {
+      $('typing').classList.add('hidden');
+      console.error('[悦悦手机] 静默生成失败', e);
+      addMsg('sys', '⚠️ 生成失败：' + (e && e.message || e));
+    });
   };
 
   function buildChatPrompt(text, isCtrl) {
@@ -246,33 +292,13 @@
       '2. 禁止输出旁白、场景描写、心理描写、标题、分析——全部改为对话气泡；\n' +
       '3. 每轮回复 1~4 条气泡，条与条之间用换行分隔；\n' +
       '4. 保持「' + (npc.姓名 || CURRENT) + '」的人物卡人设与当前好感度（' + (Number(npc.好感度) || 0) + '）行为规则；\n' +
-      '5. 不主动推进约见/性场景，除非用户明确提出；被问到时用聊天方式回答。\n' +
+      '5. 你是主动的一方——像真实的悦悦用户一样主动撩、主动推进、主动约，不要等对方开口；\n' +
       '---\n' + text;
   }
 
-  /* 事件：GENERATION_AFTER_COMMANDS 后把 AI 回复注入为气泡 */
-  function onNewReply() {
-    if (!CURRENT) return;
-    $('typing').classList.add('hidden');
-    try {
-      var chat = window.chat || null;
-      if (Array.isArray(chat) && chat.length) {
-        var last = chat[chat.length - 1];
-        if (last && last.is_user === false && last.mes && typeof last.mes === 'string') {
-          var text = last.mes.replace(/<[^>]+>/g, '').replace(/<!--[\s\S]*?-->/g, '').trim();
-          if (text) { addMsg('npc', text); if (RECALL_MODE) scheduleRecall(); }
-        }
-      }
-    } catch (e) {}
-  }
-
   function init() {
-    if (typeof waitGlobalInitialized === 'function' && typeof eventOn === 'function') {
-      try {
-        eventOn(tavern_events.GENERATION_AFTER_COMMANDS, onNewReply);
-        eventOn(tavern_events.MESSAGE_SENT, onNewReply);
-      } catch (e) {}
-    }
+    // 静默输出模式：不监听聊天记录（不写不入），无需 onNewReply
+    console.log('[悦悦手机] 静默输出模式已就绪 ♡');
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
