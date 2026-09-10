@@ -166,7 +166,7 @@
         <select id="in-gender"><option>女性</option><option>扶她</option><option>自定义</option></select>
       </div>
     </div>
-    <div class="field"><label>种族</label><div class="opt-grid" id="race-grid"></div></div>
+    <div class="field"><label>种族 <span class="chip" style="float:right;padding:1px 8px;font-size:11px;cursor:pointer" onclick="rollRivalField('race', true)">🎲 重掷</span></label><div class="opt-grid" id="race-grid"></div></div>
     <p class="pg" id="race-warn" style="margin-top:8px"></p>
   </div>
 
@@ -224,12 +224,12 @@
         <span class="chip" id="rival-random" onclick="randomRival()" style="margin-left:auto">🎲 随机重掷宿敌</span>
       </div>
       <div id="rival-panel" class="hidden" style="margin-top:10px">
-        <div class="field" style="width:100%"><label>宿敌姓名</label><textarea id="riv-name" rows="2" style="width:100%"></textarea></div>
+        <div class="field" style="width:100%"><label>宿敌姓名 <span class="chip" style="float:right;padding:1px 8px;font-size:11px;cursor:pointer" onclick="rollRivalField('name')">🎲 重掷</span></label><textarea id="riv-name" rows="2" style="width:100%"></textarea></div>
         <div class="field" style="width:100%"><label>种族</label><textarea id="riv-race" rows="2" style="width:100%" placeholder="如：妖狐 / 魅魔 / 人类等"></textarea></div>
-        <div class="field" style="width:100%"><label>所属组织</label><textarea id="riv-org" rows="2" style="width:100%" placeholder="如：魔王军 / 女王亲卫 / 魔女结社等"></textarea></div>
-        <div class="field" style="width:100%"><label>态度预设（只读随机结果）</label><textarea id="riv-attitude" rows="2" style="width:100%" readonly></textarea></div>
-        <div class="field" style="width:100%"><label>正面/反面/混合备注</label><textarea id="riv-notes" rows="2" style="width:100%" placeholder="可自行改成其它态度"></textarea></div>
-        <div class="field" style="width:100%"><label>完整态度描述（可编辑）</label><textarea id="riv-attitude-text" rows="5" style="width:100%"></textarea></div>
+        <div class="field" style="width:100%"><label>所属组织 <span class="chip" style="float:right;padding:1px 8px;font-size:11px;cursor:pointer" onclick="rollRivalField('org')">🎲 重掷</span></label><textarea id="riv-org" rows="2" style="width:100%" placeholder="如：魔王军 / 女王亲卫 / 魔女结社等"></textarea></div>
+        <div class="field" style="width:100%"><label>态度预设（只读随机结果） <span class="chip" style="float:right;padding:1px 8px;font-size:11px;cursor:pointer" onclick="rollRivalField('attitude')">🎲 重掷</span></label><textarea id="riv-attitude" rows="2" style="width:100%" readonly></textarea></div>
+        <div class="field" style="width:100%"><label>正面/反面/混合备注 <span class="chip" style="float:right;padding:1px 8px;font-size:11px;cursor:pointer" onclick="rollRivalField('notes')">🎲 重掷</span></label><textarea id="riv-notes" rows="2" style="width:100%" placeholder="可自行改成其它态度"></textarea></div>
+        <div class="field" style="width:100%"><label>完整态度描述（可编辑） <span class="chip" style="float:right;padding:1px 8px;font-size:11px;cursor:pointer" onclick="rollRivalField('attitudeText')">🎲 整条重掷</span></label><textarea id="riv-attitude-text" rows="5" style="width:100%"></textarea></div>
       </div>
     </div>
   </div>
@@ -628,6 +628,27 @@
     { side: '魔', name: '想劝她放松', text: '她见多了魔法少女紧绷到自毁的样子，想把她从“守护”的重担里拖出来。她的方式很粗暴：日夜纠缠，让她没空再折磨自己。' },
     { side: '魔', name: '又爱又气的收藏家', text: '她把对方视作自己最珍贵的收藏品，却又舍不得真把她关进巢穴。她想要的是对方心甘情愿走进来，而不是被丝线拖进来。' }
   ];
+  var RIVAL_NAME_POOLS = {
+    人: ['澄', '凛', '铃', '薇', '芙', '静', '时雨', '千夏', '真昼', '八云', '九条'],
+    魔: ['诺莉', '绯月', '灵狐', '霜蝶', '露娜', '梦魇', '夜樱', '赫卡忒', '白夜', '夕月', '吟雪']
+  };
+  var RIVAL_RACE_POOLS = {
+    人: ['人类'],
+    魔: ['魅魔', '妖狐', '蛛魔', '吸血鬼', '花娘', '虫娘', '史莱姆娘']
+  };
+  var RIVAL_RACE_ALL = ['人类', '魅魔', '妖狐', '蛛魔', '吸血鬼', '花娘', '虫娘', '史莱姆娘'];
+  var RIVAL_ORG_POOLS = {
+    人: ['魔女结社', '临光战队', '涤罪教团', '樱狐神侍', '安保部', '无'],
+    魔: ['魔王军', '女王亲卫', '欢愉秘教', '无']
+  };
+  var RIVAL_NOTES_POOL = [
+    '相互争斗数年，彼此熟悉，几乎像老朋友',
+    '只有她能追到对方，也只有对方会等她追上来',
+    '嘴上说这次一定了结，真到关头却总会留手',
+    '对彼此的行事风格了如指掌，连对方下一步会怎么做都能猜到',
+    '这段关系早已超出单纯的敌我，却谁也不肯先承认',
+    '外人看来是死敌，只有她们自己知道这更像一场漫长的默契'
+  ];
   var PB_COST = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
   var RANK_BONUS = { 见习: 2, 正式: 3, 精英: 4, 王牌: 5 };
   var DEMON_YINHUA = { 魅魔: 60, 吸血鬼: 30, 史莱姆娘: 30, 妖狐: 35, 蛛魔: 40, 虫娘: 30, 花娘: 40 };
@@ -815,24 +836,31 @@
     if (on && (!S.rival.name || !S.rival.race || !S.rival.org || !S.rival.attitude)) randomRival();
   }
   function pickRandom(list) { return list[Math.floor(Math.random() * list.length)]; }
-  function randomRival() {
-    var pick = pickRandom(RIVAL_ATTITUDES);
-    S.rival.side = pick.side;
-    S.rival.attitude = pick.name;
-    S.rival.attitudeText = pick.text;
-    var isDemon = S.rival.side === '魔';
-    S.rival.name = pickRandom(isDemon ? ['诺莉', '绯月', '灵狐', '霜蝶', '露娜', '梦魇', '夜樱', '赫卡忒', '白夜'] : ['澄', '凛', '铃', '薇', '芙', '静', '时雨', '千夏', '真昼']);
-    S.rival.race = pickRandom(isDemon ? ['魅魔', '妖狐', '蛛魔', '吸血鬼', '花娘', '虫娘', '史莱姆娘'] : ['人类']);
-    S.rival.org = pickRandom(isDemon ? ['魔王军', '女王亲卫', '欢愉秘教', '无'] : ['魔女结社', '临光战队', '涤罪教团', '樱狐神侍', '安保部', '无']);
-    S.rival.notes = pickRandom([
-      '相互争斗数年，彼此熟悉，几乎像老朋友',
-      '只有她能追到对方，也只有对方会等她追上来',
-      '嘴上说这次一定了结，真到关头却总会留手',
-      '对彼此的行事风格了如指掌，连对方下一步会怎么做都能猜到',
-      '这段关系早已超出单纯的敌我，却谁也不肯先承认',
-      '外人看来是死敌，只有她们自己知道这更像一场漫长的默契'
-    ]);
+  function rollRivalField(field, allowCrossRace) {
+    var side = S.rival.side === '魔' ? '魔' : '人';
+    if (field === 'name') {
+      S.rival.name = pickRandom(RIVAL_NAME_POOLS[side]);
+    } else if (field === 'race') {
+      S.rival.race = pickRandom(allowCrossRace ? RIVAL_RACE_ALL : RIVAL_RACE_POOLS[side]);
+      S.rival.side = S.rival.race === '人类' ? '人' : '魔';
+    } else if (field === 'org') {
+      S.rival.org = pickRandom(RIVAL_ORG_POOLS[side]);
+    } else if (field === 'attitude' || field === 'attitudeText') {
+      var pick = pickRandom(RIVAL_ATTITUDES);
+      S.rival.side = pick.side;
+      S.rival.attitude = pick.name;
+      S.rival.attitudeText = pick.text;
+    } else if (field === 'notes') {
+      S.rival.notes = pickRandom(RIVAL_NOTES_POOL);
+    }
     syncRivalFields();
+  }
+  function randomRival() {
+    rollRivalField('attitude');
+    rollRivalField('name');
+    rollRivalField('race');
+    rollRivalField('org');
+    rollRivalField('notes');
   }
   function syncRivalFields() {
     $('riv-name').value = S.rival.name || '';
