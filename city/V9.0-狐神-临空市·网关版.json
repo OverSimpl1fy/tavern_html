@@ -3112,6 +3112,40 @@
         "maxDepth": 10,
         "markdownOnly": true,
         "promptOnly": false
+      },
+      {
+        "id": "7b695b68-1b37-4720-a5c7-f4edbedf8216",
+        "scriptName": "city-frontend-entrance-2609100754",
+        "disabled": false,
+        "runOnEdit": true,
+        "findRegex": "【首页】",
+        "trimStrings": [],
+        "replaceString": "```\n<body>\n<script>\n$('body').load('https://cdn.jsdelivr.net/gh/OverSimpl1fy/tavern_html@main/city/entrance-2609100754.html')\n</script>\n</body>\n```",
+        "placement": [
+          2
+        ],
+        "substituteRegex": 0,
+        "minDepth": null,
+        "maxDepth": null,
+        "markdownOnly": true,
+        "promptOnly": false
+      },
+      {
+        "id": "74cba5f3-6a4f-4f68-a13a-951febc7c497",
+        "scriptName": "city-frontend-status-2609102100",
+        "disabled": false,
+        "runOnEdit": true,
+        "findRegex": "<StatusPlaceHolderImpl/>",
+        "trimStrings": [],
+        "replaceString": "```\n<body>\n<script>\n$('body').load('https://cdn.jsdelivr.net/gh/OverSimpl1fy/tavern_html@main/city/status-2609102100.html')\n</script>\n</body>\n```",
+        "placement": [
+          2
+        ],
+        "substituteRegex": 0,
+        "minDepth": null,
+        "maxDepth": null,
+        "markdownOnly": true,
+        "promptOnly": false
       }
     ],
     "tavern_helper": {
@@ -3761,6 +3795,40 @@
           "maxDepth": 10,
           "markdownOnly": true,
           "promptOnly": false
+        },
+        {
+          "id": "7b695b68-1b37-4720-a5c7-f4edbedf8216",
+          "scriptName": "city-frontend-entrance-2609100754",
+          "disabled": false,
+          "runOnEdit": true,
+          "findRegex": "【首页】",
+          "trimStrings": [],
+          "replaceString": "```\n<body>\n<script>\n$('body').load('https://cdn.jsdelivr.net/gh/OverSimpl1fy/tavern_html@main/city/entrance-2609100754.html')\n</script>\n</body>\n```",
+          "placement": [
+            2
+          ],
+          "substituteRegex": 0,
+          "minDepth": null,
+          "maxDepth": null,
+          "markdownOnly": true,
+          "promptOnly": false
+        },
+        {
+          "id": "74cba5f3-6a4f-4f68-a13a-951febc7c497",
+          "scriptName": "city-frontend-status-2609102100",
+          "disabled": false,
+          "runOnEdit": true,
+          "findRegex": "<StatusPlaceHolderImpl/>",
+          "trimStrings": [],
+          "replaceString": "```\n<body>\n<script>\n$('body').load('https://cdn.jsdelivr.net/gh/OverSimpl1fy/tavern_html@main/city/status-2609102100.html')\n</script>\n</body>\n```",
+          "placement": [
+            2
+          ],
+          "substituteRegex": 0,
+          "minDepth": null,
+          "maxDepth": null,
+          "markdownOnly": true,
+          "promptOnly": false
         }
       ]
     },
@@ -3816,5 +3884,5 @@
     }
   },
   "name": "V9.0-狐神-临空市·网关版",
-  "updatedAt": "2026-09-10T00:39:21.832Z"
+  "updatedAt": "2026-09-10T01:39:42.940Z"
 }
