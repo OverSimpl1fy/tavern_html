@@ -154,6 +154,7 @@
     <button data-step="4">⑤ 起始事件</button>
     <button data-step="5">⑥ 开局背景</button>
     <button data-step="6">⑦ 最终确认</button>
+    <button data-step="7">⚙ 事件池 / 人物卡</button>
   </nav>
 
   <!-- 0 基础信息 -->
@@ -357,6 +358,17 @@
       <button class="btn-main" onclick="generate()">✧ 确认并开始临空市之旅</button>
       <span class="hint" id="gen-hint">请先设定姓名</span>
     </div>
+  </div>
+
+  <!-- 7 事件池/人物卡管理 -->
+  <div class="card step hidden" data-step="7">
+    <h3>事件池 / 人物卡检查与开关</h3>
+    <p class="hint" style="margin-bottom:8px">读取当前角色绑定的世界书条目，逐条显示启用状态（🟢 绿灯=启用，⚪=禁用）。可以在这里一键启用/禁用预设池、开场背景和独立人物卡；禁用不会删除内容。</p>
+    <div class="row" style="margin-bottom:8px">
+      <button class="mini-btn" onclick="renderPoolManager()">↻ 刷新列表</button>
+      <span class="hint" id="pool-manager-state">尚未读取</span>
+    </div>
+    <div id="pool-manager-list"></div>
   </div>
 
   <div class="foot">
@@ -851,6 +863,63 @@
     renderStarts(); renderPoolCards();
   }
 
+  /* 事件池/人物卡管理 */
+  var POOL_MANAGER_PATTERN = /临空市(预设池|主线)/;
+  function poolEntryLabel(e) { return String(e && (e.name || e.comment) || ''); }
+  async function renderPoolManager() {
+    var state = $('pool-manager-state');
+    var list = $('pool-manager-list');
+    if (!list) return;
+    if (state) state.textContent = '正在读取世界书…';
+    list.innerHTML = '';
+    try {
+      var helper = getTavernHelper();
+      if (!helper || typeof helper.getCharWorldbookNames !== 'function' || typeof helper.getWorldbook !== 'function') throw new Error('TavernHelper 不可用');
+      var names = helper.getCharWorldbookNames('current');
+      var primary = names && (names.primary || (Array.isArray(names) ? names[0] : names));
+      if (!primary) throw new Error('当前角色未绑定世界书');
+      var entries = await helper.getWorldbook(primary);
+      var rows = (Array.isArray(entries) ? entries : []).filter(function (e) { return POOL_MANAGER_PATTERN.test(poolEntryLabel(e)); });
+      if (!rows.length) { list.innerHTML = '<div class="empty">没有找到临空市预设池 / 临空市主线条目。</div>'; if (state) state.textContent = '0 条'; return; }
+      rows.sort(function (a, b) { return Number(a.order || 0) - Number(b.order || 0) || poolEntryLabel(a).localeCompare(poolEntryLabel(b), 'zh-CN'); });
+      rows.forEach(function (entry) {
+        var label = poolEntryLabel(entry);
+        var enabled = entry.enabled !== false;
+        var row = document.createElement('div');
+        row.className = 'bg';
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:6px;padding:8px 10px';
+        row.innerHTML = '<div style="flex:1;min-width:0"><div class="nm">' + (enabled ? '🟢 ' : '⚪ ') + esc(label) + '</div><div class="desc">' + (enabled ? '已启用 / 绿灯' : '已禁用') + '</div></div>' +
+          '<button class="mini-btn" data-pool-toggle="' + esc(label) + '" data-next="' + (enabled ? 'false' : 'true') + '">' + (enabled ? '禁用' : '启用') + '</button>';
+        list.appendChild(row);
+      });
+      if (state) state.textContent = rows.length + ' 条';
+      list.querySelectorAll('[data-pool-toggle]').forEach(function (btn) {
+        btn.onclick = function () { togglePoolEntry(btn.getAttribute('data-pool-toggle'), btn.getAttribute('data-next') === 'true'); };
+      });
+    } catch (err) {
+      list.innerHTML = '<div class="empty" style="color:#e0707a">读取失败：' + esc(err.message) + '</div>';
+      if (state) state.textContent = '读取失败';
+    }
+  }
+  async function togglePoolEntry(label, enabled) {
+    try {
+      var helper = getTavernHelper();
+      if (!helper || typeof helper.updateWorldbookWith !== 'function') throw new Error('TavernHelper.updateWorldbookWith 不可用');
+      var names = helper.getCharWorldbookNames('current');
+      var primary = names && (names.primary || (Array.isArray(names) ? names[0] : names));
+      if (!primary) throw new Error('当前角色未绑定世界书');
+      await helper.updateWorldbookWith(primary, function (entries) {
+        return entries.map(function (e) {
+          return poolEntryLabel(e) === label ? Object.assign({}, e, { enabled: !!enabled }) : e;
+        });
+      });
+      if (typeof toastr !== 'undefined') toastr.success((enabled ? '已启用：' : '已禁用：') + label);
+      await renderPoolManager();
+    } catch (err) {
+      if (typeof toastr !== 'undefined') toastr.error('切换失败：' + err.message);
+    }
+  }
+
   /* 宿敌 */
   function setRival(on) {
     S.rival.has = !!on;
@@ -945,12 +1014,12 @@
     });
     var prev = $('btn-prev'), next = $('btn-next');
     if (prev) prev.style.display = S.step <= 0 ? 'none' : '';
-    if (next) next.style.display = S.step >= 6 ? 'none' : '';
+    if (next) next.style.display = S.step >= 7 ? 'none' : '';
     if (S.step === 6) renderSummary();
     setTimeout(resizePanelToContent, 0);
   }
-  function goStep(n) { S.step = Math.max(0, Math.min(6, n)); renderTabs(); }
-  function nextStep() { if (S.step < 6) goStep(S.step + 1); }
+  function goStep(n) { S.step = Math.max(0, Math.min(7, n)); renderTabs(); }
+  function nextStep() { if (S.step < 7) goStep(S.step + 1); }
 
   /* 最终确认摘要 */
   function reconLineStr() {
@@ -1462,39 +1531,8 @@
       if (poolEntry.worldbookEvent) lines.push('事件锚点: ' + poolEntry.worldbookEvent);
       if (poolEntry.type) lines.push('类型: ' + poolEntry.type);
       if (poolEntry.summary) lines.push('摘要: ' + poolEntry.summary);
-      if (poolEntry.protagonistCard) {
-        lines.push('【主角人物卡（必须以此初始化，不得省略字段）】');
-        lines.push(JSON.stringify(poolEntry.protagonistCard, null, 2));
-      }
-      if (Array.isArray(poolEntry.partners) && poolEntry.partners.length) {
-        lines.push('【伙伴人物卡（必须逐张写入关系列表，保留好感度/关系标签/堕落数值/心里话/背景故事等字段）】');
-        poolEntry.partners.forEach(function (card, i) {
-          lines.push('—— 伙伴 ' + (i + 1) + ' ——');
-          lines.push(JSON.stringify(card, null, 2));
-        });
-      }
-      if (poolEntry.opening) lines.push('开场背景: ' + poolEntry.opening);
-      if (Array.isArray(poolEntry.relationships) && poolEntry.relationships.length) {
-        lines.push('【人际关系】');
-        poolEntry.relationships.forEach(function (r) {
-          if (!r || !r.name) return;
-          lines.push('· ' + r.name + '（' + (r.relation || '相关者') + '，' + (r.race || '未知') + ' / ' + (r.org || '未知') + '）：' + (r.desc || r.role || ''));
-        });
-      }
-      if (Array.isArray(poolEntry.additions) && poolEntry.additions.length) {
-        lines.push('【预设追加设定】');
-        poolEntry.additions.forEach(function (a) {
-          if (!a) return;
-          lines.push('· ' + (a.title || '追加设定') + '：' + (a.content || ''));
-        });
-      }
-      if (Array.isArray(poolEntry.info) && poolEntry.info.length) {
-        lines.push('【情报追加】');
-        poolEntry.info.forEach(function (it) {
-          if (!it) return;
-          lines.push('· ' + (it.title || '情报') + '：' + (it.content || ''));
-        });
-      }
+      if (poolEntry.opening) lines.push('开场情景: ' + poolEntry.opening);
+      lines.push('【上下文说明】主角卡、伙伴人物卡、追加设定与关系细节已放入绑定世界书的独立条目，并置于对话历史之后按需注入；本开局提示只负责情景起手，不重复展开人物卡全文。伙伴首次出现时由对应绿灯人物卡条目要求写入关系列表并设置初见/在场。')
     } else if (S.eventMode === 'late' && S.lateEvent) {
       var le = LATE_EVENTS.find(function (x) { return x.n === S.lateEvent; });
       lines.push('【后期事件直入】' + le.n + '（侵蚀度 ' + le.e + '，已完成 ' + le.c + ' 事件）');
