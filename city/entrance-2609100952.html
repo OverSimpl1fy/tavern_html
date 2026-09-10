@@ -737,13 +737,24 @@
       var primary = names && (names.primary || (Array.isArray(names) ? names[0] : names));
       if (!primary) throw new Error('当前角色未绑定世界书');
       var entries = await helper.getWorldbook(primary);
-      var entry = (Array.isArray(entries) ? entries : []).find(function (e) {
+      var matched = (Array.isArray(entries) ? entries : []).filter(function (e) {
         return String(e && (e.name || e.comment) || '').indexOf('临空市-预设事件池') >= 0;
+      }).sort(function (a, b) {
+        var ao = Number(a && a.order); var bo = Number(b && b.order);
+        if (!isNaN(ao) && !isNaN(bo) && ao !== bo) return ao - bo;
+        return String(a && (a.name || a.comment) || '').localeCompare(String(b && (b.name || b.comment) || ''), 'zh-CN');
       });
-      if (!entry) throw new Error('世界书缺少条目：临空市-预设事件池（需已导出但可禁用）');
-      var raw = entry.content;
-      var data = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      EVENT_POOL = Array.isArray(data) ? data : (data && Array.isArray(data.presets) ? data.presets : []);
+      if (!matched.length) throw new Error('世界书缺少条目：临空市-预设事件池（需已导出但可禁用）');
+      var allPresets = [];
+      matched.forEach(function (entry) {
+        var raw = entry && entry.content;
+        if (typeof raw !== 'string' || raw.trim() === '') return;
+        var data = JSON.parse(raw);
+        if (Array.isArray(data)) allPresets = allPresets.concat(data);
+        else if (data && Array.isArray(data.presets)) allPresets = allPresets.concat(data.presets);
+        else if (data && (data.id || data.name)) allPresets.push(data);
+      });
+      EVENT_POOL = allPresets;
       if ($('pool-load-status')) $('pool-load-status').textContent = '已从世界书加载';
       if ($('pool-count')) $('pool-count').textContent = EVENT_POOL.length + ' 个预设起点';
       if ($('ev-pool-state')) $('ev-pool-state').textContent = EVENT_POOL.length ? '事件池已就绪' : '事件池为空';
