@@ -24,7 +24,7 @@
       radial-gradient(1px 1px at 35% 92%, #fff, transparent), radial-gradient(1.5px 1.5px at 80% 12%, #d8a8ff, transparent);
       animation: twinkle 4s ease-in-out infinite; }
   @keyframes twinkle { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.85; } }
-  #app { max-width: 900px; margin: 0 auto; padding: 16px 18px 60px; position: relative; z-index: 1; min-height: 100vh; }
+  #app { max-width: 900px; margin: 0 auto; padding: 16px 18px 60px; position: relative; z-index: 1; min-height: 0; height: auto; }
   .head { display: flex; flex-direction: column; gap: 6px; padding: 14px 18px; margin-bottom: 8px;
     border: 1px solid rgba(157,107,255,0.35); border-radius: 12px;
     background: linear-gradient(135deg, rgba(157,107,255,0.14), rgba(214,107,255,0.06), rgba(30,15,61,0.6));
@@ -37,7 +37,8 @@
   .tabs button.active { background: linear-gradient(135deg, #7c3aed, #a855f7, #d66bff); color: #fff; border-color: #b57bff; font-weight: 600; box-shadow: 0 0 14px rgba(168,85,247,0.55); }
   .tabs button.active::after { content: '✦'; position: absolute; top: -4px; right: -2px; font-size: 9px; color: #ffd8ff; }
   .card { background: linear-gradient(160deg, #2a1750, #1f0f3d 60%, #180b2e); border: 1px solid rgba(122,74,200,0.4); border-radius: 12px; padding: 13px 15px; margin-bottom: 12px; box-shadow: 0 0 18px rgba(157,107,255,0.12), 0 4px 20px rgba(0,0,0,0.4); position: relative; }
-  .card, .bg, .opt, .field { min-width: 0; overflow-wrap: anywhere; }
+  .card, .bg, .opt, .field, .step { min-width: 0; overflow-wrap: anywhere; height: auto; max-height: none; }
+  .step { display: block; }
   .card::before { content: '✦'; position: absolute; top: 8px; right: 14px; color: rgba(216,168,255,0.35); font-size: 12px; }
   .card h3 { font-size: 13px; color: #b78bff; letter-spacing: 0.1em; margin-bottom: 10px; text-shadow: 0 0 8px rgba(157,107,255,0.5); }
   .card h3::before { content: '✧ '; color: rgba(216,168,255,0.6); }
@@ -223,16 +224,12 @@
         <span class="chip" id="rival-random" onclick="randomRival()" style="margin-left:auto">🎲 随机重掷宿敌</span>
       </div>
       <div id="rival-panel" class="hidden" style="margin-top:10px">
-        <div class="row">
-          <div class="field" style="flex:1"><label>宿敌姓名</label><input id="riv-name"></div>
-          <div class="field" style="flex:1"><label>种族</label><input id="riv-race" placeholder="如：妖狐 / 魅魔 / 人类等"></div>
-          <div class="field" style="flex:1"><label>所属组织</label><input id="riv-org" placeholder="如：魔王军 / 女王亲卫 / 魔女结社等"></div>
-        </div>
-        <div class="row">
-          <div class="field" style="flex:1"><label>态度预设（只读随机结果）</label><input id="riv-attitude" readonly></div>
-          <div class="field" style="flex:1"><label>正面/反面/混合备注</label><input id="riv-notes" placeholder="可自行改成其它态度"></div>
-        </div>
-        <div class="field"><label>完整态度描述（可编辑）</label><textarea id="riv-attitude-text" rows="3" style="width:100%"></textarea></div>
+        <div class="field" style="width:100%"><label>宿敌姓名</label><textarea id="riv-name" rows="2" style="width:100%"></textarea></div>
+        <div class="field" style="width:100%"><label>种族</label><textarea id="riv-race" rows="2" style="width:100%" placeholder="如：妖狐 / 魅魔 / 人类等"></textarea></div>
+        <div class="field" style="width:100%"><label>所属组织</label><textarea id="riv-org" rows="2" style="width:100%" placeholder="如：魔王军 / 女王亲卫 / 魔女结社等"></textarea></div>
+        <div class="field" style="width:100%"><label>态度预设（只读随机结果）</label><textarea id="riv-attitude" rows="2" style="width:100%" readonly></textarea></div>
+        <div class="field" style="width:100%"><label>正面/反面/混合备注</label><textarea id="riv-notes" rows="2" style="width:100%" placeholder="可自行改成其它态度"></textarea></div>
+        <div class="field" style="width:100%"><label>完整态度描述（可编辑）</label><textarea id="riv-attitude-text" rows="5" style="width:100%"></textarea></div>
       </div>
     </div>
   </div>
@@ -804,18 +801,26 @@
     $('rival-yes').classList.toggle('active', !!on);
     $('rival-no').classList.toggle('active', !on);
     $('rival-panel').classList.toggle('hidden', !on);
-    if (on && !S.rival.name && !S.rival.attitude) randomRival();
+    if (on && (!S.rival.name || !S.rival.race || !S.rival.org || !S.rival.attitude)) randomRival();
   }
+  function pickRandom(list) { return list[Math.floor(Math.random() * list.length)]; }
   function randomRival() {
-    var pool = RIVAL_ATTITUDES;
-    var pick = pool[Math.floor(Math.random() * pool.length)];
+    var pick = pickRandom(RIVAL_ATTITUDES);
     S.rival.side = pick.side;
     S.rival.attitude = pick.name;
     S.rival.attitudeText = pick.text;
-    if (!S.rival.name) S.rival.name = (S.rival.side === '魔') ? ['绯月', '灵狐', '霜蝶', '露娜', '梦魇', '夜樱'][Math.floor(Math.random() * 6)] : ['澄', '凛', '铃', '薇', '芙', '静'][Math.floor(Math.random() * 6)];
-    if (!S.rival.race) S.rival.race = (S.rival.side === '魔') ? ['魅魔', '妖狐', '蛛魔', '吸血鬼', '花娘', '虫娘'][Math.floor(Math.random() * 6)] : '人类';
-    if (!S.rival.org) S.rival.org = (S.rival.side === '魔') ? '魔王军' : '魔女结社';
-    if (!S.rival.notes) S.rival.notes = '相互争斗数年，彼此熟悉，几乎像老朋友';
+    var isDemon = S.rival.side === '魔';
+    S.rival.name = pickRandom(isDemon ? ['诺莉', '绯月', '灵狐', '霜蝶', '露娜', '梦魇', '夜樱', '赫卡忒', '白夜'] : ['澄', '凛', '铃', '薇', '芙', '静', '时雨', '千夏', '真昼']);
+    S.rival.race = pickRandom(isDemon ? ['魅魔', '妖狐', '蛛魔', '吸血鬼', '花娘', '虫娘', '史莱姆娘'] : ['人类']);
+    S.rival.org = pickRandom(isDemon ? ['魔王军', '女王亲卫', '欢愉秘教', '无'] : ['魔女结社', '临光战队', '涤罪教团', '樱狐神侍', '安保部', '无']);
+    S.rival.notes = pickRandom([
+      '相互争斗数年，彼此熟悉，几乎像老朋友',
+      '只有她能追到对方，也只有对方会等她追上来',
+      '嘴上说这次一定了结，真到关头却总会留手',
+      '对彼此的行事风格了如指掌，连对方下一步会怎么做都能猜到',
+      '这段关系早已超出单纯的敌我，却谁也不肯先承认',
+      '外人看来是死敌，只有她们自己知道这更像一场漫长的默契'
+    ]);
     syncRivalFields();
   }
   function syncRivalFields() {
@@ -845,6 +850,21 @@
   }
 
   /* ══════════ 渲染 ══════════ */
+  function resizePanelToContent() {
+    try {
+      var app = $('app');
+      if (document.documentElement) document.documentElement.style.height = 'auto';
+      if (document.body) document.body.style.height = 'auto';
+      if (app) app.style.height = 'auto';
+      var height = Math.max(
+        document.body ? document.body.scrollHeight : 0,
+        app ? app.scrollHeight : 0,
+        document.documentElement ? document.documentElement.scrollHeight : 0
+      );
+      if (window.frameElement) window.frameElement.style.height = height + 'px';
+      if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'city-entrance-resize', height: height }, '*');
+    } catch (e) { /* ignore resize failures in sandboxed panels */ }
+  }
   function renderTabs() {
     var btns = document.querySelectorAll('#tabs button');
     btns.forEach(function (b) { b.classList.toggle('active', Number(b.getAttribute('data-step')) === S.step); });
@@ -855,6 +875,7 @@
     if (prev) prev.style.display = S.step <= 0 ? 'none' : '';
     if (next) next.style.display = S.step >= 6 ? 'none' : '';
     if (S.step === 6) renderSummary();
+    setTimeout(resizePanelToContent, 0);
   }
   function goStep(n) { S.step = Math.max(0, Math.min(6, n)); renderTabs(); }
   function nextStep() { if (S.step < 6) goStep(S.step + 1); }
