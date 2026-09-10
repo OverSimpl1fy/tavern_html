@@ -816,19 +816,37 @@
     S.startEvent = entry.worldbookEvent || '';
     S.customStart = entry.opening || '';
     S.customBg = entry.opening || '';
-    // 预填人设（若有）
+    // 预填人设：优先使用详细主角卡，其次兼容旧 preset 结构
+    var rich = entry.protagonistCard || {};
     var pre = entry.preset || {};
-    if (pre.name) { S.name = pre.name; $('in-name').value = S.name; }
-    if (pre.age) { S.age = pre.age; $('in-age').value = S.age; }
-    if (pre.race) { S.race = pre.race; if (isDemonRace(pre.race)) { S.magic='淫魔力'; S.startCorruption.魔化度=100; } renderRaces(); renderRaceWarn(); }
-    if (pre.org) { S.org = pre.org; S.identity = pre.identity || (orgObj(pre.org) && orgObj(pre.org).ids[0]) || ''; renderOrgs(); renderIdentity(); }
-    if (pre.identity) { S.identity = pre.identity; renderIdentity(); }
-    if (pre.rank) { S.rank = pre.rank; renderIdentity(); }
-    if (pre.magic) { S.magic = pre.magic; renderIdentity(); }
-    if (pre.attrs) ATTRS.forEach(function (a) { if (pre.attrs[a] != null) S.attrs[a] = Number(pre.attrs[a]); });
-    if (pre.prof) S.prof = pre.prof.slice();
-    if (pre.persona) { S.persona.性格 = pre.persona.性格 || S.persona.性格; S.persona.外貌 = pre.persona.外貌 || S.persona.外貌; S.persona.背景故事 = pre.persona.背景故事 || ''; $('in-persona-personality').value = S.persona.性格; $('in-persona-app').value = S.persona.外貌; $('in-persona-bg').value = S.persona.背景故事; }
-    if (pre.startCorruption) for (var k in pre.startCorruption) if (pre.startCorruption.hasOwnProperty(k)) S.startCorruption[k] = pre.startCorruption[k];
+    var preName = rich['姓名'] || pre.name;
+    var preAge = rich['年龄'] || pre.age;
+    var preGender = rich['性别'] || pre.gender || '女性';
+    var preRace = rich['种族'] || pre.race;
+    var preOrg = rich['所属组织'] || pre.org;
+    var preIdentity = rich['身份'] || pre.identity;
+    var preRank = rich['职位'] || pre.rank;
+    var preMagic = rich['魔力'] || pre.magic;
+    var preAttrs = rich['属性'] || pre.attrs;
+    var preProf = rich['熟练项'] || pre.prof;
+    var preCorruption = rich['初始堕落'] || pre.startCorruption;
+    if (preName) { S.name = preName; $('in-name').value = S.name; }
+    if (preAge) { S.age = preAge; $('in-age').value = S.age; }
+    if (preGender) { S.gender = preGender; $('in-gender').value = preGender; }
+    if (preRace) { S.race = preRace; if (isDemonRace(preRace)) { S.magic='淫魔力'; S.startCorruption.魔化度=100; } renderRaces(); renderRaceWarn(); }
+    if (preOrg) { S.org = preOrg; S.identity = preIdentity || (orgObj(preOrg) && orgObj(preOrg).ids[0]) || ''; renderOrgs(); renderIdentity(); }
+    if (preIdentity) { S.identity = preIdentity; renderIdentity(); }
+    if (preRank) { S.rank = preRank; renderIdentity(); }
+    if (preMagic) { S.magic = preMagic; renderIdentity(); }
+    if (preAttrs) ATTRS.forEach(function (a) { if (preAttrs[a] != null) S.attrs[a] = Number(preAttrs[a]); });
+    if (preProf) S.prof = preProf.slice();
+    S.persona.性格 = rich['性格'] || (pre.persona && pre.persona.性格) || S.persona.性格;
+    S.persona.外貌 = rich['外貌'] || (pre.persona && pre.persona.外貌) || S.persona.外貌;
+    S.persona.背景故事 = rich['背景故事'] || (pre.persona && pre.persona.背景故事) || '';
+    $('in-persona-personality').value = S.persona.性格;
+    $('in-persona-app').value = S.persona.外貌;
+    $('in-persona-bg').value = S.persona.背景故事;
+    if (preCorruption) for (var k in preCorruption) if (preCorruption.hasOwnProperty(k)) S.startCorruption[k] = preCorruption[k];
     if (pre.loc && Array.isArray(pre.loc)) { S.loc = pre.loc.slice(); renderLocs(); }
     renderStarts(); renderPoolCards();
   }
@@ -1444,6 +1462,17 @@
       if (poolEntry.worldbookEvent) lines.push('事件锚点: ' + poolEntry.worldbookEvent);
       if (poolEntry.type) lines.push('类型: ' + poolEntry.type);
       if (poolEntry.summary) lines.push('摘要: ' + poolEntry.summary);
+      if (poolEntry.protagonistCard) {
+        lines.push('【主角人物卡（必须以此初始化，不得省略字段）】');
+        lines.push(JSON.stringify(poolEntry.protagonistCard, null, 2));
+      }
+      if (Array.isArray(poolEntry.partners) && poolEntry.partners.length) {
+        lines.push('【伙伴人物卡（必须逐张写入关系列表，保留好感度/关系标签/堕落数值/心里话/背景故事等字段）】');
+        poolEntry.partners.forEach(function (card, i) {
+          lines.push('—— 伙伴 ' + (i + 1) + ' ——');
+          lines.push(JSON.stringify(card, null, 2));
+        });
+      }
       if (poolEntry.opening) lines.push('开场背景: ' + poolEntry.opening);
       if (Array.isArray(poolEntry.relationships) && poolEntry.relationships.length) {
         lines.push('【人际关系】');
