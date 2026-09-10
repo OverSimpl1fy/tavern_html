@@ -816,6 +816,7 @@
       d.className = 'bg' + (S.poolSelected === entry.id ? ' active' : '');
       d.innerHTML = '<div class="nm">' + esc(entry.name || ('起点' + (i + 1))) + '</div>' +
         '<div class="desc">' + esc(entry.summary || entry.opening || '') + '</div>' +
+        (entry.situation && entry.situation.scene ? '<div class="desc" style="color:#cbb0ff">局势: ' + esc(entry.situation.scene) + '</div>' : '') +
         '<div class="desc" style="color:#9d6bff">' + esc(entry.type || '') + '</div>';
       d.onclick = function () { selectPoolEntry(entry); };
       wrap.appendChild(d);
@@ -1532,6 +1533,14 @@
       if (poolEntry.type) lines.push('类型: ' + poolEntry.type);
       if (poolEntry.summary) lines.push('摘要: ' + poolEntry.summary);
       if (poolEntry.opening) lines.push('开场情景: ' + poolEntry.opening);
+      var sit = poolEntry.situation || null;
+      if (sit) {
+        lines.push('【开场局势】（不是限定死的事件，是此刻正在成立的处境；按它开场，并让压力在后续持续生效）');
+        if (sit.scene) lines.push('· 当下: ' + sit.scene);
+        if (sit.belief) lines.push('· ' + (S.name || '她') + '以为: ' + sit.belief);
+        if (sit.blindspot) lines.push('· ' + (S.name || '她') + '不知道: ' + sit.blindspot);
+        if (sit.pressure) lines.push('· 压力: ' + sit.pressure);
+      }
       lines.push('【上下文说明】主角卡、伙伴人物卡、追加设定与关系细节已放入绑定世界书的独立条目，并置于对话历史之后按需注入；本开局提示只负责情景起手，不重复展开人物卡全文。伙伴首次出现时由对应绿灯人物卡条目要求写入关系列表并设置初见/在场。')
     } else if (S.eventMode === 'late' && S.lateEvent) {
       var le = LATE_EVENTS.find(function (x) { return x.n === S.lateEvent; });
