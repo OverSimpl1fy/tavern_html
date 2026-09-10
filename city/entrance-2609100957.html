@@ -166,14 +166,14 @@
         <select id="in-gender"><option>女性</option><option>扶她</option><option>自定义</option></select>
       </div>
     </div>
-    <div class="field"><label>种族 <span class="chip" style="float:right;padding:1px 8px;font-size:11px;cursor:pointer" onclick="rollRivalField('race', true)">🎲 重掷</span></label><div class="opt-grid" id="race-grid"></div></div>
+    <div class="field"><label>种族</label><div class="opt-grid" id="race-grid"></div></div>
     <p class="pg" id="race-warn" style="margin-top:8px"></p>
   </div>
 
   <!-- 0b 事件池开关（提前选择） -->
   <div class="card step" data-step="0">
     <h3>开局模式：是否开启事件池</h3>
-    <p class="hint" style="margin-bottom:8px">事件池模式会从当前角色绑定的世界书中读取条目「临空市-预设事件池」（该条目可禁用、仍随世界书导出），以池内的人设/开场背景/人际关系作为初始起点。不开启则保留手动车卡与写死起始事件。</p>
+    <p class="hint" style="margin-bottom:8px">事件池模式会从当前角色绑定的世界书中读取条目「临空市预设池」（该条目可禁用、仍随世界书导出），以池内的人设/开场背景/人际关系作为初始起点。不开启则保留手动车卡与写死起始事件。</p>
     <div class="row">
       <span class="chip" id="ev-pool-off" onclick="setEventPool(false)">🌱 手动车卡 / 传统开局</span>
       <span class="chip" id="ev-pool-on" onclick="setEventPool(true)">📖 开启事件池</span>
@@ -182,7 +182,7 @@
     </div>
     <div id="pool-file-preview" class="hidden" style="margin-top:8px">
       <div class="kv" style="font-size:12px">
-        <span class="k">事件池来源</span><span class="v">世界书条目：临空市-预设事件池</span>
+        <span class="k">事件池来源</span><span class="v">世界书条目：临空市预设池</span>
         <span class="k">加载状态</span><span class="v" id="pool-load-status">未加载</span>
         <span class="k">可用起点</span><span class="v" id="pool-count">0</span>
       </div>
@@ -224,9 +224,10 @@
         <span class="chip" id="rival-random" onclick="randomRival()" style="margin-left:auto">🎲 随机重掷宿敌</span>
       </div>
       <div id="rival-panel" class="hidden" style="margin-top:10px">
-        <div class="field" style="width:100%"><label>宿敌姓名 <span class="chip" style="float:right;padding:1px 8px;font-size:11px;cursor:pointer" onclick="rollRivalField('name')">🎲 重掷</span></label><textarea id="riv-name" rows="2" style="width:100%"></textarea></div>
+        <div class="row" style="margin-bottom:8px"><span class="chip" onclick="rollRivalIdentity()">🎲 重掷姓名 / 种族 / 组织</span></div>
+        <div class="field" style="width:100%"><label>宿敌姓名</label><textarea id="riv-name" rows="2" style="width:100%"></textarea></div>
         <div class="field" style="width:100%"><label>种族</label><textarea id="riv-race" rows="2" style="width:100%" placeholder="如：妖狐 / 魅魔 / 人类等"></textarea></div>
-        <div class="field" style="width:100%"><label>所属组织 <span class="chip" style="float:right;padding:1px 8px;font-size:11px;cursor:pointer" onclick="rollRivalField('org')">🎲 重掷</span></label><textarea id="riv-org" rows="2" style="width:100%" placeholder="如：魔王军 / 女王亲卫 / 魔女结社等"></textarea></div>
+        <div class="field" style="width:100%"><label>所属组织</label><textarea id="riv-org" rows="2" style="width:100%" placeholder="如：魔王军 / 女王亲卫 / 魔女结社等"></textarea></div>
         <div class="field" style="width:100%"><label>态度预设（只读随机结果） <span class="chip" style="float:right;padding:1px 8px;font-size:11px;cursor:pointer" onclick="rollRivalField('attitude')">🎲 重掷</span></label><textarea id="riv-attitude" rows="2" style="width:100%" readonly></textarea></div>
         <div class="field" style="width:100%"><label>正面/反面/混合备注 <span class="chip" style="float:right;padding:1px 8px;font-size:11px;cursor:pointer" onclick="rollRivalField('notes')">🎲 重掷</span></label><textarea id="riv-notes" rows="2" style="width:100%" placeholder="可自行改成其它态度"></textarea></div>
         <div class="field" style="width:100%"><label>完整态度描述（可编辑） <span class="chip" style="float:right;padding:1px 8px;font-size:11px;cursor:pointer" onclick="rollRivalField('attitudeText')">🎲 整条重掷</span></label><textarea id="riv-attitude-text" rows="5" style="width:100%"></textarea></div>
@@ -307,7 +308,7 @@
     <!-- 从零开局：可切换事件池/手动起始 -->
     <div id="start-panel">
       <div id="pool-panel" class="hidden">
-        <p class="hint" style="margin-bottom:6px">已开启事件池：从当前角色绑定的世界书条目「临空市-预设事件池」读取预设起点；选择后预填人设、开场背景与关系。</p>
+        <p class="hint" style="margin-bottom:6px">已开启事件池：从当前角色绑定的世界书条目「临空市预设池」读取预设起点；选择后预填人设、开场背景与关系。</p>
         <div class="bgs" id="pool-cards"></div>
         <button class="mini-btn" style="margin-top:8px" onclick="randomPoolEntry()">🎲 随机抽取一个起点</button>
       </div>
@@ -759,21 +760,26 @@
       if (!primary) throw new Error('当前角色未绑定世界书');
       var entries = await helper.getWorldbook(primary);
       var matched = (Array.isArray(entries) ? entries : []).filter(function (e) {
-        return String(e && (e.name || e.comment) || '').indexOf('临空市-预设事件池') >= 0;
+        var label = String(e && (e.name || e.comment) || '');
+        return label.indexOf('临空市预设池') >= 0 && label.indexOf('预设数据') >= 0;
       }).sort(function (a, b) {
         var ao = Number(a && a.order); var bo = Number(b && b.order);
         if (!isNaN(ao) && !isNaN(bo) && ao !== bo) return ao - bo;
         return String(a && (a.name || a.comment) || '').localeCompare(String(b && (b.name || b.comment) || ''), 'zh-CN');
       });
-      if (!matched.length) throw new Error('世界书缺少条目：临空市-预设事件池（需已导出但可禁用）');
+      if (!matched.length) throw new Error('世界书缺少条目：临空市预设池 · 预设数据（需已导出但可禁用）');
       var allPresets = [];
       matched.forEach(function (entry) {
         var raw = entry && entry.content;
         if (typeof raw !== 'string' || raw.trim() === '') return;
-        var data = JSON.parse(raw);
-        if (Array.isArray(data)) allPresets = allPresets.concat(data);
-        else if (data && Array.isArray(data.presets)) allPresets = allPresets.concat(data.presets);
-        else if (data && (data.id || data.name)) allPresets.push(data);
+        try {
+          var data = JSON.parse(raw);
+          if (Array.isArray(data)) allPresets = allPresets.concat(data);
+          else if (data && Array.isArray(data.presets)) allPresets = allPresets.concat(data.presets);
+          else if (data && (data.id || data.name)) allPresets.push(data);
+        } catch (parseError) {
+          /* ignore non-JSON pool entries */
+        }
       });
       EVENT_POOL = allPresets;
       if ($('pool-load-status')) $('pool-load-status').textContent = '已从世界书加载';
@@ -836,16 +842,27 @@
     if (on && (!S.rival.name || !S.rival.race || !S.rival.org || !S.rival.attitude)) randomRival();
   }
   function pickRandom(list) { return list[Math.floor(Math.random() * list.length)]; }
-  function rollRivalField(field, allowCrossRace) {
-    var side = S.rival.side === '魔' ? '魔' : '人';
-    if (field === 'name') {
-      S.rival.name = pickRandom(RIVAL_NAME_POOLS[side]);
-    } else if (field === 'race') {
-      S.rival.race = pickRandom(allowCrossRace ? RIVAL_RACE_ALL : RIVAL_RACE_POOLS[side]);
-      S.rival.side = S.rival.race === '人类' ? '人' : '魔';
-    } else if (field === 'org') {
-      S.rival.org = pickRandom(RIVAL_ORG_POOLS[side]);
-    } else if (field === 'attitude' || field === 'attitudeText') {
+  function attitudeMatchesSide(side) {
+    return RIVAL_ATTITUDES.some(function (item) { return item.side === side && item.name === S.rival.attitude; });
+  }
+  function randomAttitudeForSide(side) {
+    var list = RIVAL_ATTITUDES.filter(function (item) { return item.side === side; });
+    return list.length ? pickRandom(list) : null;
+  }
+  function rollRivalIdentity(forceSide) {
+    var side = forceSide || (Math.random() < 0.5 ? '人' : '魔');
+    S.rival.side = side;
+    S.rival.name = pickRandom(RIVAL_NAME_POOLS[side]);
+    S.rival.race = pickRandom(RIVAL_RACE_POOLS[side]);
+    S.rival.org = pickRandom(RIVAL_ORG_POOLS[side]);
+    if (!attitudeMatchesSide(side)) {
+      var attitude = randomAttitudeForSide(side);
+      if (attitude) { S.rival.attitude = attitude.name; S.rival.attitudeText = attitude.text; }
+    }
+    syncRivalFields();
+  }
+  function rollRivalField(field) {
+    if (field === 'attitude' || field === 'attitudeText') {
       var pick = pickRandom(RIVAL_ATTITUDES);
       S.rival.side = pick.side;
       S.rival.attitude = pick.name;
@@ -857,9 +874,7 @@
   }
   function randomRival() {
     rollRivalField('attitude');
-    rollRivalField('name');
-    rollRivalField('race');
-    rollRivalField('org');
+    rollRivalIdentity(S.rival.side);
     rollRivalField('notes');
   }
   function syncRivalFields() {
@@ -1152,7 +1167,7 @@
     if (poolOn) renderPoolCards();
   }
   function randomPoolEntry() {
-    if (!EVENT_POOL.length) { alert('事件池为空，请确认世界书已导出条目「临空市-预设事件池」'); return; }
+    if (!EVENT_POOL.length) { alert('事件池为空，请确认世界书已导出条目「临空市预设池」'); return; }
     var entry = EVENT_POOL[Math.floor(Math.random() * EVENT_POOL.length)];
     selectPoolEntry(entry);
   }
