@@ -172,7 +172,7 @@
   <!-- 0b 事件池开关（提前选择） -->
   <div class="card step" data-step="0">
     <h3>开局模式：是否开启事件池</h3>
-    <p class="hint" style="margin-bottom:8px">事件池模式会读取 <code>entrance/assets/event_pool.json</code>，以池内的人设/开场背景/人际关系作为初始起点，而不是使用页面写死的起始事件列表。不开启则保留手动车卡与写死起始事件。</p>
+    <p class="hint" style="margin-bottom:8px">事件池模式会从当前角色绑定的世界书中读取条目「临空市-预设事件池」（该条目可禁用、仍随世界书导出），以池内的人设/开场背景/人际关系作为初始起点。不开启则保留手动车卡与写死起始事件。</p>
     <div class="row">
       <span class="chip" id="ev-pool-off" onclick="setEventPool(false)">🌱 手动车卡 / 传统开局</span>
       <span class="chip" id="ev-pool-on" onclick="setEventPool(true)">📖 开启事件池</span>
@@ -181,7 +181,7 @@
     </div>
     <div id="pool-file-preview" class="hidden" style="margin-top:8px">
       <div class="kv" style="font-size:12px">
-        <span class="k">事件池文件</span><span class="v">entrance/assets/event_pool.json</span>
+        <span class="k">事件池来源</span><span class="v">世界书条目：临空市-预设事件池</span>
         <span class="k">加载状态</span><span class="v" id="pool-load-status">未加载</span>
         <span class="k">可用起点</span><span class="v" id="pool-count">0</span>
       </div>
@@ -310,7 +310,7 @@
     <!-- 从零开局：可切换事件池/手动起始 -->
     <div id="start-panel">
       <div id="pool-panel" class="hidden">
-        <p class="hint" style="margin-bottom:6px">已开启事件池：从 <code>entrance/assets/event_pool.json</code> 读取预设起点；选择后预填人设、开场背景与关系。</p>
+        <p class="hint" style="margin-bottom:6px">已开启事件池：从当前角色绑定的世界书条目「临空市-预设事件池」读取预设起点；选择后预填人设、开场背景与关系。</p>
         <div class="bgs" id="pool-cards"></div>
         <button class="mini-btn" style="margin-top:8px" onclick="randomPoolEntry()">🎲 随机抽取一个起点</button>
       </div>
@@ -691,7 +691,6 @@
   }
 
   /* ══════════ 职业 / 魔力 / 事件池 / 宿敌 ══════════ */
-  var EVENT_POOL_URL = './assets/event_pool.json';
   var EVENT_POOL = [];
   function orgObj(n) { return ORGS.find(function (o) { return o.n === n; }) || null; }
   function renderIdentity() {
@@ -726,20 +725,34 @@
     var pv = $('pool-file-preview'); if (pv) pv.classList.toggle('hidden', !on);
     renderStarts();
   }
+  function getTavernHelper() {
+    try { return (window.top && window.top.TavernHelper) || window.TavernHelper || null; } catch (e) { return null; }
+  }
   function loadEventPool() {
     if (!$('ev-pool-state')) return;
-    $('ev-pool-state').textContent = '正在读取事件池…';
-    fetch(EVENT_POOL_URL, { cache: 'no-cache' }).then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    }).then(function (data) {
+    $('ev-pool-state').textContent = '正在从世界书读取事件池…';
+    (async function () {
+      var helper = getTavernHelper();
+      if (!helper || typeof helper.getCharWorldbookNames !== 'function' || typeof helper.getWorldbook !== 'function') {
+        throw new Error('TavernHelper 世界书接口不可用');
+      }
+      var names = helper.getCharWorldbookNames('current');
+      var primary = names && (names.primary || (Array.isArray(names) ? names[0] : names));
+      if (!primary) throw new Error('当前角色未绑定世界书');
+      var entries = await helper.getWorldbook(primary);
+      var entry = (Array.isArray(entries) ? entries : []).find(function (e) {
+        return String(e && (e.name || e.comment) || '').indexOf('临空市-预设事件池') >= 0;
+      });
+      if (!entry) throw new Error('世界书缺少条目：临空市-预设事件池（需已导出但可禁用）');
+      var raw = entry.content;
+      var data = typeof raw === 'string' ? JSON.parse(raw) : raw;
       EVENT_POOL = Array.isArray(data) ? data : (data && Array.isArray(data.presets) ? data.presets : []);
-      if ($('pool-load-status')) $('pool-load-status').textContent = '已加载';
+      if ($('pool-load-status')) $('pool-load-status').textContent = '已从世界书加载';
       if ($('pool-count')) $('pool-count').textContent = EVENT_POOL.length + ' 个预设起点';
       if ($('ev-pool-state')) $('ev-pool-state').textContent = EVENT_POOL.length ? '事件池已就绪' : '事件池为空';
       renderPoolCards();
       if (typeof toastr !== 'undefined') toastr.success('事件池已加载：' + EVENT_POOL.length + ' 个起点');
-    }).catch(function (err) {
+    })().catch(function (err) {
       if ($('ev-pool-state')) $('ev-pool-state').textContent = '事件池加载失败（当前仍可使用手动模式）';
       if ($('pool-load-status')) $('pool-load-status').textContent = '加载失败：' + err.message;
     });
@@ -1079,7 +1092,7 @@
     if (poolOn) renderPoolCards();
   }
   function randomPoolEntry() {
-    if (!EVENT_POOL.length) { alert('事件池为空，请先放入 entrance/assets/event_pool.json'); return; }
+    if (!EVENT_POOL.length) { alert('事件池为空，请确认世界书已导出条目「临空市-预设事件池」'); return; }
     var entry = EVENT_POOL[Math.floor(Math.random() * EVENT_POOL.length)];
     selectPoolEntry(entry);
   }
