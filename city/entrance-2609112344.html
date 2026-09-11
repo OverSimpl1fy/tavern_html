@@ -1528,20 +1528,13 @@
     // 事件入口
     var poolEntry = currentPoolEntry();
     if (poolEntry) {
+      // 开局对话只承担「此刻的处境」：开场背景、追加设定、情报与人物介绍都不再抄进对话，
+      // 它们由绑定世界书的条目在 Lore 里载入。
       lines.push('【事件池起点】' + (poolEntry.name || poolEntry.id || '未命名起点'));
       if (poolEntry.worldbookEvent) lines.push('事件锚点: ' + poolEntry.worldbookEvent);
-      if (poolEntry.type) lines.push('类型: ' + poolEntry.type);
-      if (poolEntry.summary) lines.push('摘要: ' + poolEntry.summary);
-      if (poolEntry.opening) lines.push('开场情景: ' + poolEntry.opening);
       var sit = poolEntry.situation || null;
-      if (sit) {
-        lines.push('【开场局势】（不是限定死的事件，是此刻正在成立的处境；按它开场，并让压力在后续持续生效）');
-        if (sit.scene) lines.push('· 当下: ' + sit.scene);
-        if (sit.belief) lines.push('· ' + (S.name || '她') + '以为: ' + sit.belief);
-        if (sit.blindspot) lines.push('· ' + (S.name || '她') + '不知道: ' + sit.blindspot);
-        if (sit.pressure) lines.push('· 压力: ' + sit.pressure);
-      }
-      lines.push('【上下文说明】主角卡、伙伴人物卡、追加设定与关系细节已放入绑定世界书的独立条目，并置于对话历史之后按需注入；本开局提示只负责情景起手，不重复展开人物卡全文。伙伴首次出现时由对应绿灯人物卡条目要求写入关系列表并设置初见/在场。')
+      if (sit && sit.scene) lines.push('【开场情景】' + sit.scene);
+      lines.push('【上下文说明】开场背景、开场局势、追加设定、情报与全部人物卡都在绑定世界书的对应条目里，按需注入，本开局提示不重复展开。')
     } else if (S.eventMode === 'late' && S.lateEvent) {
       var le = LATE_EVENTS.find(function (x) { return x.n === S.lateEvent; });
       lines.push('【后期事件直入】' + le.n + '（侵蚀度 ' + le.e + '，已完成 ' + le.c + ' 事件）');
@@ -1552,12 +1545,17 @@
       var se = STARTS.find(function (x) { return x.n === S.startEvent; });
       lines.push('【起始事件】' + (se ? se.n : '') + '（' + (se ? se.d : '') + '）');
     }
-    lines.push('【开局背景】' + bgDesc());
-    if (S.rival.has) {
-      collectRivalFields();
-      lines.push('【宿敌】' + (S.rival.name || '未命名') + '｜' + (S.rival.race || '未知种族') + '｜' + (S.rival.org || '未知组织'));
-      lines.push('宿敌态度: ' + (S.rival.attitude || '未设定'));
-      lines.push('宿敌详情: ' + (S.rival.attitudeText || S.rival.notes || ''));
+    // 事件池开局不再重复「开局背景」与「宿敌」：前者在 Lore 的开场背景条目里，
+    // 后者属于人物介绍（人物资料一律由人物卡条目在出现时注入）。
+    // 手写开局没有配套 Lore，保留这两项以免信息丢失。
+    if (!poolEntry) {
+      lines.push('【开局背景】' + bgDesc());
+      if (S.rival.has) {
+        collectRivalFields();
+        lines.push('【宿敌】' + (S.rival.name || '未命名') + '｜' + (S.rival.race || '未知种族') + '｜' + (S.rival.org || '未知组织'));
+        lines.push('宿敌态度: ' + (S.rival.attitude || '未设定'));
+        lines.push('宿敌详情: ' + (S.rival.attitudeText || S.rival.notes || ''));
+      }
     }
     // 变量设置指令
     var vars = '';
