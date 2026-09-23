@@ -18968,19 +18968,34 @@
                   children: [
                     (0, i.jsxs)("div", {
                       className: "partner-category-bar",
-                      children: filters.map((f) =>
+                      children: [
+                        (0, i.jsx)("span", { className: "partner-category-hint", style: { color: "#6b5a4a", fontSize: "12px" }, children: "筛选：" }),
+                        ...filters.map((f) =>
                         (0, i.jsxs)(
                           "button",
                           {
+                            key: f.key,
+                            title: "只看" + f.label + "的伙伴",
                             className: "partner-category-btn" + (filter === f.key ? " active" : ""),
+                            style: {
+                              color: filter === f.key ? "#7a2b48" : "#6b5a4a",
+                              background: filter === f.key ? "#fbe6ec" : "#f6efe3",
+                              border: "1px solid " + (filter === f.key ? "#c4453d" : "#d4c5a9"),
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              lineHeight: 1.3,
+                              padding: "5px 12px",
+                              borderRadius: "999px",
+                              cursor: "pointer",
+                            },
                             onClick: () => {
                               setFilter(f.key);
                               setSelected(null);
                             },
                           },
-                          [f.label, " ", (0, i.jsx)("span", { className: "partner-category-count", children: entries.filter(([, p]) => ("present" === f.key ? Boolean(p?.在场) : "away" === f.key ? !p?.在场 : "corrupt" === f.key ? (Number(p?.堕落度 ?? 0) || 0) > 0 : true)).length })],
+                          [f.label, " ", (0, i.jsx)("span", { className: "partner-category-count", style: { fontSize: "11px", opacity: 0.75 }, children: entries.filter(([, p]) => ("present" === f.key ? Boolean(p?.在场) : "away" === f.key ? !p?.在场 : "corrupt" === f.key ? (Number(p?.堕落度 ?? 0) || 0) > 0 : true)).length })],
                         ),
-                      ),
+                      )],
                     }),
                     (0, i.jsxs)("div", {
                       className: "partner-summary-list",
@@ -28453,16 +28468,23 @@
       gap: 6px;
       padding: 5px 12px;
       font-size: 12px;
-      color: var(--theme-text-secondary);
-      background: color-mix(in srgb, var(--theme-card-border) 12%, transparent);
-      border: 1px solid var(--theme-card-border);
+      font-weight: 600;
+      line-height: 1.3;
+      color: #6b5a4a;
+      background: #f6efe3;
+      border: 1px solid #d4c5a9;
       border-radius: 999px;
       cursor: pointer;
     }
     .partner-category-btn.active {
-      color: var(--theme-text-primary);
-      border-color: var(--theme-tab-indicator, var(--theme-affection));
-      background: color-mix(in srgb, var(--theme-tab-indicator, var(--theme-affection)) 14%, transparent);
+      color: #7a2b48;
+      border-color: #c4453d;
+      background: #fbe6ec;
+    }
+    .partner-category-hint {
+      font-size: 12px;
+      color: #6b5a4a;
+      align-self: center;
     }
     .partner-category-count {
       font-size: 11px;
@@ -28472,8 +28494,10 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      max-height: 260px;
+      max-height: min(48vh, 420px);
       overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
       padding-right: 2px;
     }
     .partner-summary-card {
@@ -28713,7 +28737,7 @@
         align-items: start;
       }
       .partner-summary-list {
-        max-height: 520px;
+        max-height: min(52vh, 560px);
       }
     }
 
