@@ -910,7 +910,11 @@
       L.push('  堕落六维: ' + ($('cor-six').value.trim() || '未提供'));
       L.push('  性经验: ' + ($('cor-exp').value.trim() || '未提供'));
       L.push('  性癖及开发程度: ' + ($('cor-kink').value.trim() || '未提供'));
-      L.push('  特殊项目: ' + ($('cor-special').value.trim() || '未提供'));
+      var specialText = $('cor-special').value.trim();
+      // 特殊项目必须落成 record：与德尔菲安/命定/临空市的 schema 对齐，写成字符串会中断初始化
+      L.push('  特殊项目: ' + (specialText
+        ? '{ 开局项目: { 名字: 开局项目, 类型: 初始, 状态: 生效中, 描述: ' + specialText.replace(/\s+/g, ' ') + ', 对堕落的影响: 与六维同步 } }'
+        : '{}'));
     } else {
       L.push('【开局其它角色】');
       L.push('跳过（开局不生成额外角色，AI 不得自行补一个）。');
