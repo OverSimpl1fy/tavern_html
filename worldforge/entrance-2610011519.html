@@ -1,0 +1,1292 @@
+<!-- 万象工坊 · 开局铸造（纯原生 JS 自包含版——兼容注入，无外部 CDN 依赖） -->
+<style>
+  :root {
+    --primary-bg: #f5efe6;
+    --card-bg: rgba(240, 230, 210, 0.95);
+    --input-bg: #fff9f0;
+    --border-color: #d4c4b0;
+    --border-color-strong: #8b7355;
+    --text-color: #3a3a3a;
+    --text-light: #666666;
+    --text-color-secondary: #7a6a52;
+    --title-color: #5c4033;
+    --accent-color: #d4af37;
+    --accent-dark: #b8941f;
+    --error-color: #d32f2f;
+    --success-color: #388e3c;
+    --button-bg: #c6b8a5;
+    --button-hover: #b0a295;
+    --border-color-light: #e0d5c7;
+    --font-title: "Cinzel", Georgia, "Times New Roman", "Noto Serif SC", serif;
+    --font-body: "Segoe UI", "Microsoft YaHei", sans-serif;
+    --font-mono: "Monaco", "Menlo", monospace;
+    --spacing-xs: 4px; --spacing-sm: 8px; --spacing-md: 12px;
+    --spacing-lg: 16px; --spacing-xl: 24px;
+    --radius-sm: 2px; --radius-md: 4px; --radius-lg: 8px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.1);
+    --shadow-md: 0 2px 8px rgba(0,0,0,.12);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--primary-bg); color: var(--text-color);
+    font-family: var(--font-body); font-size: 14px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased; min-height: 100%;
+  }
+  h1, h2, h3, h4 { font-family: var(--font-title); font-weight: 700; color: var(--title-color); line-height: 1.4; }
+  h1 { font-size: 1.88rem; letter-spacing: 1px; }
+  h3 { font-size: 1.25rem; }
+  #app { max-width: 1600px; margin: 0 auto; padding: var(--spacing-xl) var(--spacing-xl) 0; }
+
+  /* ── 顶部 ─────────────────────────────────────────── */
+  .panel-header {
+    text-align: center; padding: var(--spacing-lg);
+    background: linear-gradient(135deg, rgba(212,175,55,.12) 0%, rgba(212,175,55,.04) 100%);
+    border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm); margin-bottom: var(--spacing-md); position: relative;
+  }
+  .panel-subtitle { color: var(--text-light); font-size: .92rem; margin-top: 4px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: var(--spacing-sm); align-items: center; justify-content: center; margin-top: var(--spacing-md); }
+  .toolbar select, .toolbar input { max-width: 240px; }
+
+  /* ── 步骤条（箭形）────────────────────────────────── */
+  .steps { display: flex; margin: var(--spacing-md) 0 var(--spacing-lg); }
+  .steps .step {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    color: var(--title-color); font-size: 15px; font-weight: 600; cursor: pointer;
+    background: var(--border-color-light); margin-left: -6px; padding: 8px 20px;
+    clip-path: polygon(15px 0, 100% 0, calc(100% - 15px) 50%, 100% 100%, 15px 100%, 0 50%);
+    transition: background .25s ease-in-out, color .25s ease-in-out;
+  }
+  .steps .step:first-child { clip-path: polygon(0 0, 100% 0, calc(100% - 15px) 50%, 100% 100%, 0 100%, 0 50%); padding-left: 16px; margin-left: 0; }
+  .steps .step:last-child { clip-path: polygon(15px 0, 100% 0, 100% 50%, 100% 100%, 15px 100%, 0 50%); padding-right: 16px; }
+  .steps .step.pass { background: var(--accent-color); color: #fff; }
+
+  /* ── 卡片 / 区块 ───────────────────────────────────── */
+  .section {
+    background: var(--card-bg); border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+    margin-bottom: var(--spacing-lg); overflow: hidden; scroll-margin-top: 12px;
+  }
+  .section > header {
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: linear-gradient(135deg, rgba(212,175,55,.12) 0%, rgba(212,175,55,.04) 100%);
+    border-bottom: 2px solid var(--border-color); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  }
+  .section > header .idx {
+    font-family: var(--font-title); color: var(--accent-color); font-size: 1.15rem; font-weight: 700;
+  }
+  .section > header .hint { color: var(--text-light); font-size: .82rem; margin-left: auto; }
+  .section .body { padding: var(--spacing-lg); }
+  .sub { margin-top: var(--spacing-lg); padding-top: var(--spacing-md); border-top: 1px dashed var(--border-color); }
+  .sub:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+  .sub-title { font-weight: 700; color: var(--title-color); font-size: .98rem; margin-bottom: var(--spacing-sm); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .sub-title .tag { font-family: var(--font-body); font-size: .74rem; font-weight: 500; color: var(--accent-dark);
+    background: rgba(212,175,55,.15); border: 1px solid rgba(212,175,55,.35); border-radius: 999px; padding: 1px 9px; }
+
+  /* ── 表单 ─────────────────────────────────────────── */
+  .row { display: flex; gap: var(--spacing-md); flex-wrap: wrap; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 160px; }
+  .field > label { font-weight: 600; color: var(--accent-dark); font-size: .88rem; letter-spacing: .5px; display: flex; align-items: center; gap: 6px; }
+  input, select, textarea {
+    background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color);
+    border-radius: var(--radius-md); padding: 6px 10px; font-size: .92rem; font-family: var(--font-body); width: 100%;
+  }
+  textarea { resize: vertical; line-height: 1.65; font-family: var(--font-body); }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(212,175,55,.2); }
+  .mono { font-family: var(--font-mono); font-size: .8rem; }
+
+  /* ── 选项卡片 ─────────────────────────────────────── */
+  .grid { display: grid; gap: var(--spacing-sm); }
+  .grid.style-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+  .grid.supp-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); max-height: 460px; overflow-y: auto; padding-right: 4px; }
+  .grid.open-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .opt {
+    background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md);
+    padding: 9px 11px; cursor: pointer; transition: all .15s ease-in-out; position: relative; text-align: left;
+  }
+  .opt:hover { border-color: var(--accent-color); box-shadow: 0 0 10px rgba(212,175,55,.25); transform: translateY(-1px); }
+  .opt.active { border-color: var(--accent-color); background: linear-gradient(to bottom, var(--input-bg), rgba(212,175,55,.10)); box-shadow: 0 0 0 2px rgba(212,175,55,.25); }
+  .opt .nm { font-weight: 700; color: var(--title-color); font-size: .95rem; display: flex; align-items: center; gap: 6px; }
+  .opt .desc { color: var(--text-light); font-size: .82rem; margin-top: 3px; line-height: 1.55; }
+  .opt .src { margin-top: 5px; font-size: .72rem; color: var(--accent-dark); }
+  .opt.disabled { opacity: .45; cursor: not-allowed; }
+
+  /* ── chip ─────────────────────────────────────────── */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .chip {
+    background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 999px;
+    padding: 3px 12px; font-size: .84rem; cursor: pointer; color: var(--title-color); transition: all .15s ease-in-out; user-select: none;
+  }
+  .chip:hover { border-color: var(--accent-color); }
+  .chip.active { background: linear-gradient(135deg, var(--accent-color), var(--accent-dark)); border-color: var(--border-color-strong); color: #fff; font-weight: 600; }
+  .chip.ghost { background: transparent; color: var(--text-color-secondary); }
+  .chip.danger { color: var(--error-color); border-color: rgba(211,47,47,.35); }
+
+  /* ── 按钮 ─────────────────────────────────────────── */
+  button { font-family: var(--font-body); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+    padding: 7px 18px; border-radius: var(--radius-md); font-size: .94rem; font-weight: 600;
+    background: var(--button-bg); color: var(--title-color); border: 1px solid var(--border-color);
+    transition: all .15s ease-in-out;
+  }
+  .btn:hover:not(:disabled) { background: var(--button-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn.gold { background: linear-gradient(135deg, var(--accent-color), var(--accent-dark)); color: #fff; border-color: var(--accent-color); }
+  .btn.small { padding: 3px 11px; font-size: .82rem; font-weight: 500; }
+  .btn.ghost { background: transparent; }
+  .btn.danger { color: var(--error-color); border-color: rgba(211,47,47,.35); background: transparent; }
+
+  /* ── 底部 ─────────────────────────────────────────── */
+  .footer {
+    position: sticky; bottom: 0; z-index: 20; background: linear-gradient(180deg, rgba(245,239,230,.75), var(--primary-bg) 40%);
+    border-top: 2px solid var(--border-color); padding: var(--spacing-md) 0 var(--spacing-lg);
+    display: flex; gap: var(--spacing-md); align-items: center; flex-wrap: wrap;
+    margin-top: var(--spacing-lg);
+  }
+  .footer .status { color: var(--text-light); font-size: .85rem; flex: 1; min-width: 180px; }
+  .footer .status.warn { color: var(--error-color); font-weight: 600; }
+
+  .preview {
+    white-space: pre-wrap; word-break: break-word; background: var(--input-bg);
+    border: 1px solid var(--border-color); border-left: 3px solid var(--accent-color);
+    border-radius: var(--radius-md); padding: var(--spacing-md); font-family: var(--font-mono);
+    font-size: .78rem; line-height: 1.7; max-height: 360px; overflow: auto;
+  }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 9999; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+    width: 92%; max-width: 760px; max-height: 82vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-lg); }
+  .modal header { padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(135deg, rgba(212,175,55,.12), rgba(212,175,55,.04)); display: flex; justify-content: space-between; align-items: center; }
+  .modal .content { padding: var(--spacing-lg); overflow: auto; }
+  .fade { display: none !important; }
+
+  @media (max-width: 768px) {
+    #app { padding: var(--spacing-md) var(--spacing-md) 0; }
+    .steps .step { font-size: 12px; padding: 6px 12px; }
+    .grid.supp-grid, .grid.open-grid { grid-template-columns: 1fr; max-height: none; }
+  }
+</style>
+
+<div id="app">
+  <div class="panel-header">
+    <h1>万象工坊 · 开局铸造</h1>
+    <div class="panel-subtitle">不预设世界 · 只负责接住你的世界 —— 世界风格 / 主角 / 开局角色 / 开局设定</div>
+    <div class="toolbar">
+      <select id="preset-select" onchange="loadPreset(this.value)"><option value="">— 载入预设 —</option></select>
+      <button class="btn small" onclick="savePreset()">💾 保存预设</button>
+      <button class="btn small ghost" onclick="exportPresets()">📤 导出全部</button>
+      <button class="btn small ghost" onclick="document.getElementById('import-file').click()">📂 导入</button>
+      <button class="btn small danger" onclick="resetAll()">↺ 重置</button>
+      <input type="file" id="import-file" class="fade" accept=".json" onchange="importPresets(this)">
+    </div>
+  </div>
+
+  <nav class="steps" id="steps">
+    <div class="step" data-anchor="sec-premise">① 世界设定</div>
+    <div class="step" data-anchor="sec-style">② 世界风格</div>
+    <div class="step" data-anchor="sec-hero">③ 主角设定</div>
+    <div class="step" data-anchor="sec-npc">④ 开局其它角色</div>
+    <div class="step" data-anchor="sec-open">⑤ 开局设定</div>
+  </nav>
+
+  <!-- ═══════════ 0. 常见世界设定（前提）═══════════ -->
+  <section class="section" id="sec-premise">
+    <header><span class="idx">〇</span><h3>常见世界设定</h3>
+      <span class="hint">开局即生效的世界前提：先定这个世界的秩序，再谈具体设定</span>
+    </header>
+    <div class="body">
+      <div class="sub">
+        <div class="sub-title">已选前提
+          <span class="tag" id="premise-count">已选 0 条</span>
+          <button class="btn small ghost" onclick="clearPremises()">清空</button>
+        </div>
+        <p style="color:var(--text-color-secondary);font-size:.84rem;margin-bottom:8px">
+          前提定义这个世界的<b>基础秩序</b>（性别权力、性规范、身体与资源关系）。它与「世界补充设定」同级遵守；
+          两者冲突时，以定义基础秩序的一方为准。可多选，但建议一次只选 1~2 条前提，避免秩序互相打架。
+        </p>
+        <div class="field">
+          <textarea id="premise-slot" rows="5" oninput="onPremiseSlotInput()"
+            placeholder="每行一条。例：这个世界以女性为尊，财产、职位与话语权默认归女性，男性在公开场合只有附议权。"></textarea>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <div class="field" style="min-width:260px"><label>自定义前提</label>
+            <input id="premise-custom" placeholder="写一条你自己的世界前提，回车加入" onkeydown="if(event.key==='Enter'){addCustomPremise()}">
+          </div>
+          <button class="btn gold" onclick="addCustomPremise()">＋ 加入</button>
+        </div>
+      </div>
+
+      <div class="sub">
+        <div class="sub-title">常见前提池
+          <span class="tag" id="premise-pool-count"></span>
+        </div>
+        <div class="chips" id="premise-cat-chips" style="margin-bottom:8px"></div>
+        <div class="row" style="margin-bottom:8px">
+          <div class="field"><label>关键词过滤</label><input id="premise-search" placeholder="输入关键词缩小范围" oninput="renderPremisePool()"></div>
+        </div>
+        <div class="grid supp-grid" id="premise-pool"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 1. 世界风格 ═══════════ -->
+  <section class="section" id="sec-style">
+    <header><span class="idx">Ⅰ</span><h3>世界风格</h3>
+      <span class="hint">选定风格后，下方卡片会自动填入世界观总纲；卡片可自由修改</span>
+    </header>
+    <div class="body">
+      <div class="sub">
+        <div class="sub-title">选择世界风格 <span class="tag">九选一 · 或自定义</span></div>
+        <div class="grid style-grid" id="style-grid"></div>
+      </div>
+
+      <div class="sub">
+        <div class="sub-title">世界类型卡 <span class="tag">将原样写入 世界.总纲</span>
+          <button class="btn small ghost" onclick="restoreStyleCard()">↺ 恢复模板</button>
+        </div>
+        <div class="field">
+          <textarea id="world-card" rows="7" oninput="onWorldCardInput()"
+            placeholder="本次生成世界类型为__。该世界观下__"></textarea>
+        </div>
+      </div>
+
+      <div class="sub">
+        <div class="sub-title">世界补充设定
+          <span class="tag" id="supp-count">已选 0 条</span>
+          <button class="btn small ghost" onclick="clearSupplements()">清空</button>
+        </div>
+        <p style="color:var(--text-color-secondary);font-size:.84rem;margin-bottom:8px">
+          补充设定是该世界的<b>绝对准则</b>，优先级高于一切后续指令。可多选、可自定义、可自由编辑。
+        </p>
+        <div class="field">
+          <textarea id="supp-slot" rows="6" oninput="onSuppSlotInput()"
+            placeholder="每行一条。例：这个世界的魔法只会在女性中觉醒。因此魔法学院事实上是个女校。"></textarea>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <div class="field" style="min-width:260px"><label>自定义补充</label>
+            <input id="supp-custom" placeholder="写一条你自己的世界铁律，回车加入" onkeydown="if(event.key==='Enter'){addCustomSupplement()}">
+          </div>
+          <button class="btn gold" onclick="addCustomSupplement()">＋ 加入</button>
+        </div>
+
+        <div class="sub-title" style="margin-top:14px">补充设定池
+          <span class="tag" id="supp-pool-count"></span>
+          <span class="chip ghost" onclick="setSuppSource('')">全部来源</span>
+        </div>
+        <div class="chips" id="supp-source-chips" style="margin-bottom:6px"></div>
+        <div class="chips" id="supp-cat-chips" style="margin-bottom:8px"></div>
+        <div class="row" style="margin-bottom:8px">
+          <div class="field"><label>关键词过滤</label><input id="supp-search" placeholder="输入关键词缩小范围" oninput="renderSuppPool()"></div>
+        </div>
+        <div class="grid supp-grid" id="supp-pool"></div>
+      </div>
+
+      <div class="sub">
+        <div class="sub-title">通用世界补充设定
+          <span class="tag" id="uni-count">已选 0 条</span>
+          <button class="btn small ghost" onclick="clearUniversal()">清空</button>
+        </div>
+        <p style="color:var(--text-color-secondary);font-size:.84rem;margin-bottom:8px">
+          与「世界补充设定」同级遵守，但作用面不同：世界补充设定规定<b>世界是什么样</b>，
+          通用补充设定规定<b>这个世界里的人如何回应主角</b>——不依赖世界类型，任何世界都能用。可多选、可自定义、可自由编辑。
+        </p>
+        <div class="field">
+          <textarea id="uni-slot" rows="5" oninput="onUniSlotInput()"
+            placeholder="每行一条。例：本次描写中，女性角色在面对主角时，只需要简单的言语或身体挑逗就会发情，然后即便按理来说应该反抗也会很快无力化。面对其它角色时正常。"></textarea>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <div class="field" style="min-width:260px"><label>自定义通用补充</label>
+            <input id="uni-custom" placeholder="写一条你自己的通用描写准则，回车加入" onkeydown="if(event.key==='Enter'){addCustomUniversal()}">
+          </div>
+          <button class="btn gold" onclick="addCustomUniversal()">＋ 加入</button>
+        </div>
+
+        <div class="sub-title" style="margin-top:14px">通用池
+          <span class="tag" id="uni-pool-count"></span>
+        </div>
+        <div class="chips" id="uni-cat-chips" style="margin-bottom:8px"></div>
+        <div class="row" style="margin-bottom:8px">
+          <div class="field"><label>关键词过滤</label><input id="uni-search" placeholder="输入关键词缩小范围" oninput="renderUniPool()"></div>
+        </div>
+        <div class="grid supp-grid" id="uni-pool"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 2. 主角设定 ═══════════ -->
+  <section class="section" id="sec-hero">
+    <header><span class="idx">Ⅱ</span><h3>主角设定</h3>
+      <span class="hint">体态与外貌 · 隐私部位 仅可 🎲 抽取，抽取后仍可自由修改；两者相互独立</span>
+    </header>
+    <div class="body">
+      <div class="sub">
+        <div class="sub-title">基础</div>
+        <div class="row">
+          <div class="field"><label>姓名</label><input id="hero-name" placeholder="你的名字"></div>
+          <div class="field" style="max-width:140px"><label>年龄</label><input id="hero-age" placeholder="18"></div>
+          <div class="field" style="min-width:280px"><label>性别</label>
+            <div class="chips" id="hero-gender"></div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <div class="field"><label>性别自定义</label><input id="hero-gender-custom" placeholder="仅当选「自定义」时生效"></div>
+        </div>
+        <div class="chips" style="margin-top:8px" id="hero-age-chips"></div>
+      </div>
+
+      <div class="sub">
+        <div class="sub-title">体态与外貌 <span class="tag" id="body-pool-tag"></span>
+          <button class="btn small gold" onclick="rollBody()">🎲 抽取体态</button>
+        </div>
+        <div class="field"><textarea id="hero-body" rows="4" placeholder="点 🎲 抽取，或自己填写。只写身体，不写服饰。"></textarea></div>
+      </div>
+
+      <div class="sub">
+        <div class="sub-title">隐私部位 <span class="tag" id="priv-pool-tag">与体态独立抽取</span>
+          <button class="btn small gold" onclick="rollPrivate()">🎲 抽取隐私部位</button>
+        </div>
+        <div class="field"><textarea id="hero-private" rows="3" placeholder="点 🎲 独立抽取，或自己填写。"></textarea></div>
+      </div>
+
+      <div class="sub">
+        <div class="sub-title">种族</div>
+        <div class="chips" id="race-group-chips" style="margin-bottom:8px"></div>
+        <div class="row">
+          <div class="field" style="min-width:220px"><label>选择</label><select id="hero-race" onchange="onRaceSelect()"></select></div>
+          <div class="field" style="min-width:220px"><label>自定义种族</label><input id="hero-race-custom" placeholder="世界没有的种族就写这里"></div>
+        </div>
+        <p class="opt" style="margin-top:8px;cursor:default" id="race-desc"></p>
+      </div>
+
+      <div class="sub">
+        <div class="sub-title">其它（金手指）
+          <button class="btn small gold" onclick="rollCheat()">🎲 抽取金手指</button>
+        </div>
+        <div class="row">
+          <div class="field" style="max-width:260px"><label>名称</label><input id="cheat-name" placeholder="如：万物解析面板"></div>
+        </div>
+        <div class="field" style="margin-top:8px"><textarea id="cheat-desc" rows="4" placeholder="写清：能力是什么 / 怎么用 / 强度上限 / 代价或限制。"></textarea></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 3. 开局其它角色 ═══════════ -->
+  <section class="section" id="sec-npc">
+    <header><span class="idx">Ⅲ</span><h3>开局其它角色</h3>
+      <span class="hint">可以跳过；起始堕落描述四框为同步抽取</span>
+    </header>
+    <div class="body">
+      <div class="chips" style="margin-bottom:var(--spacing-md)">
+        <span class="chip" id="npc-off" onclick="setNpcEnabled(false)">跳过（不开局生成）</span>
+        <span class="chip" id="npc-on" onclick="setNpcEnabled(true)">生成一名开局角色</span>
+      </div>
+
+      <div id="npc-fields">
+        <div class="sub">
+          <div class="sub-title">基础</div>
+          <div class="row">
+            <div class="field"><label>姓名</label><input id="npc-name" placeholder="她的名字"></div>
+            <div class="field" style="max-width:140px"><label>年龄</label><input id="npc-age" placeholder="20"></div>
+            <div class="field" style="max-width:180px"><label>性别</label><input id="npc-gender" placeholder="女"></div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <div class="field"><label>种族</label><input id="npc-race" placeholder="如：人类 / 猫人 / 合成人"></div>
+            <div class="field" style="min-width:260px"><label>身份 / 与主角关系</label><input id="npc-identity" placeholder="如：同班同学、债主、监护人"></div>
+          </div>
+          <div class="field" style="margin-top:8px"><label>其它（背景 / 特殊之处）</label><textarea id="npc-other" rows="3"></textarea></div>
+        </div>
+
+        <div class="sub">
+          <div class="sub-title">体态与外貌 <button class="btn small gold" onclick="rollNpcBody()">🎲 抽取</button></div>
+          <div class="field"><textarea id="npc-body" rows="3"></textarea></div>
+        </div>
+        <div class="sub">
+          <div class="sub-title">隐私部位 <button class="btn small gold" onclick="rollNpcPrivate()">🎲 独立抽取</button></div>
+          <div class="field"><textarea id="npc-private" rows="3"></textarea></div>
+        </div>
+
+        <div class="sub">
+          <div class="sub-title">起始堕落描述 <span class="tag" id="cor-tier-tag">未抽取</span>
+            <button class="btn small gold" onclick="rollCorruption()">🎲 同步抽取四框</button>
+          </div>
+          <p style="color:var(--text-color-secondary);font-size:.84rem;margin-bottom:8px">
+            四框来自同一条预设，必须整体采用：避免出现「堕落六维很高、性经验却为 0」的矛盾。
+          </p>
+          <div class="row" style="margin-bottom:8px">
+            <div class="field" style="max-width:260px"><label>抽取档位</label>
+              <select id="cor-tier" onchange="onCorTierChange()"></select>
+            </div>
+            <span class="chip ghost" onclick="document.getElementById('cor-tier').value='';onCorTierChange()">不限档位</span>
+          </div>
+          <div class="field" style="margin-bottom:8px"><label>堕落六维</label><textarea id="cor-six" rows="2"></textarea></div>
+          <div class="field" style="margin-bottom:8px"><label>性经验</label><textarea id="cor-exp" rows="2"></textarea></div>
+          <div class="field" style="margin-bottom:8px"><label>性癖及开发程度</label><textarea id="cor-kink" rows="2"></textarea></div>
+          <div class="field"><label>特殊项目</label><textarea id="cor-special" rows="2"></textarea></div>
+        </div>
+      </div>
+      <p id="npc-skipped" class="fade" style="color:var(--text-color-secondary)">
+        已跳过：开局不会出现额外角色，AI 也不得自行补一个。
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════ 4. 开局设定 ═══════════ -->
+  <section class="section" id="sec-open">
+    <header><span class="idx">Ⅳ</span><h3>开局设定</h3>
+      <span class="hint">从经典开局中挑一条，或自己写；文本可自由修改</span>
+    </header>
+    <div class="body">
+      <div class="field"><label>开局标题</label><input id="open-title" placeholder="如：女神与转生"></div>
+      <div class="field" style="margin-top:8px"><label>开局文本（将作为 开局.设定）</label>
+        <textarea id="open-text" rows="6" placeholder="你撞大运了，而下一刻眼前出现了女神……"></textarea>
+      </div>
+      <div class="sub">
+        <div class="sub-title">开局池 <span class="tag" id="open-pool-count"></span></div>
+        <div class="chips" id="open-tone-chips" style="margin-bottom:8px"></div>
+        <div class="row" style="margin-bottom:8px">
+          <div class="field"><label>关键词过滤</label><input id="open-search" placeholder="输入关键词缩小范围" oninput="renderOpeningPool()"></div>
+        </div>
+        <div class="grid open-grid" id="open-pool"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <div class="status" id="status">准备就绪</div>
+    <button class="btn ghost" onclick="openPreview()">🔍 预览开局卡片</button>
+    <button class="btn" onclick="copyCard()">📋 复制</button>
+    <button class="btn gold" onclick="generate()">⚔ 生成并出发</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="preview-overlay" onclick="if(event.target===this)closePreview()">
+  <div class="modal">
+    <header><h3>开局卡片预览</h3><button class="btn small ghost" onclick="closePreview()">✕ 关闭</button></header>
+    <div class="content"><pre class="preview" id="preview-text"></pre></div>
+  </div>
+</div>
+
+<script type="application/json" id="wf-data">{"styles":{"schemaVersion":"worldforge-style-v1","styles":[{"id":"modern_city","name":"现代都市","icon":"🏙️","tone":"没有奇迹的当下都市，欲望即唯一的超能力","type":"现代都市","body":"这是一个没有超凡力量的当代世界，物理法则与社会规则就是唯一的现实。科技水平与当下同步，手机、社交网络与监控覆盖日常，力量上限止于财富、权力、信息与人脉。社会结构由阶层、职业与家庭关系编织，秩序稳定却处处留有缝隙。故事的核心张力来自人际欲望、道德困境与生存压力：一次出轨、一桩交易、一场背叛，都能把普通人推向无法回头的深渊，所有冲突都必须靠人的选择与代价解决。","tags":["无超凡","都市日常","人性博弈"]},{"id":"urban_fantasy","name":"都市奇幻","icon":"🌃","tone":"白昼平凡夜晚诡秘，两个世界彼此吞食","type":"都市奇幻","body":"当代都市的表层与普通世界无异，夜幕之下却潜藏异种族、魔法结社与神秘社会，凡人大多一无所知。科技照常运转，超自然力量以血脉、契约或遗产隐秘传承，个体上限足以摧毁街区却无法公然现身。社会呈双层结构：明面上的公司、警局与媒体，暗处的家族、教团与猎人组织彼此制衡。核心张力在于隐秘与暴露之间的拉扯，越界者要付出身份、记忆甚至人性的代价。","tags":["双层社会","异种族","隐秘结社"]},{"id":"magical_girl","name":"魔法少女番剧风格","icon":"✨","tone":"闪耀变身背后，纯真与堕落只隔一线","type":"魔法少女番剧风格","body":"在平凡日常的表象之下，吉祥物带来变身契约与心象武装，把少女推上对抗反派干部的舞台。力量源自情感、羁绊与信念，可具象为服装、武器与领域，上限能撕裂城市，却受时限与代价约束。社会结构是番剧式的：学校与家庭构成日常侧，吉祥物与同伴构成战斗侧，敌人按干部逐级登场。核心张力来自双重身份的撕裂，越是守护日常，越要以牺牲与觉醒换取胜利。","tags":["变身","吉祥物","心象武装","反派干部"]},{"id":"medieval_dnd","name":"中世纪西幻（dnd风格）","icon":"⚔️","tone":"剑与魔法并存，每级力量都要血肉偿付","type":"中世纪西幻（dnd风格）","body":"剑与魔法并存的中世纪世界，人类、精灵、矮人与兽人共处，神祇与恶魔真实回应祈祷。魔法受法术位与等级限制，冒险者以职业等级衡量强弱，最强者也仍会死于埋伏与粮尽。社会由王国、教会、贵族与行会构成，地下城与遗迹散落荒野，冒险者公会承接委托与赏金。核心张力在于力量与代价的交换：每一次进阶都要用血肉、誓言或灵魂偿付，秩序之外的荒野永远比地图更大。","tags":["剑与魔法","冒险者公会","地下城","种族"]},{"id":"jrpg_fantasy","name":"日式奇幻","icon":"🛡️","tone":"魔王与勇者的既定剧本，面板可量化一切","type":"日式奇幻","body":"魔王复苏、女神垂怜，骑士团与勇者候补在王国与神殿之间奔走，轻小说式的面板与技能随时可见。魔法与技艺以等级、经验与装备量化，力量上限足以弑神，却仍离不开组队与补给。社会呈勇者一行、王国贵族、公会与魔物四角结构，任务与委托驱动一切。核心张力来自被指定的命运与个人意愿的冲突：被选中的那个人究竟是拯救世界的工具，还是能改写结局的活人。","tags":["勇者","面板数值","魔王","轻小说"]},{"id":"eerie","name":"诡异","icon":"🕯️","tone":"不讲道理却必须遵守，追问者先消失","type":"诡异","body":"这个世界没有可理解的超凡，只有必须遵守的规则。恐怖不来自怪物，而来自讲不通道理却严格执行的条款：不能回头、不能应答、不能数清人数。时代感可以任意，但一切日常都被禁忌切片，力量上限等于零，反抗只会加速被清除。社会结构脆弱如纸，靠告示、守则与口耳相传勉强维持，谁越界谁消失。核心张力在于遵守与知情之间的死结，想活下去就得放弃追问，而放弃追问的人最终连自己都不是。","tags":["规则怪谈","禁忌","不可名状"]},{"id":"horror_film","name":"恐怖片","icon":"🔪","tone":"封闭空间与不死执念，幸存者按类型片排序","type":"恐怖片","body":"世界遵循类型片逻辑：一个无法沟通却近乎不死的杀手或怪物、一处封闭空间、一群各怀心思的幸存者。科技水平与故事时代一致，警察与救援总是迟到或无效，超凡仅限于那一份执念般的威胁。幸存者结构决定命运：贪婪者、怀疑者与放纵者先死，纯真者有机会撑到最后。核心张力是猜疑与牺牲的循环——消灭威胁往往要交出同伴，而活下来的人必须背着这段记忆继续生活。","tags":["杀手","封闭空间","幸存者结构"]},{"id":"modern_magic","name":"现代魔法","icon":"🔮","tone":"以魔法运行现代社会，术式受登记与审查","type":"现代魔法","body":"这是一个以魔法替代科技运转的现代世界，学院与机构承担研究、教育与执法，魔法技术水平接近甚至超越现实科技。通讯靠术式网络，交通靠传送阵，医疗由治愈系与炼金共同完成，力量上限足以改写城市却受法规与审查约束。社会由学院、议会、行会与企业交织，资质决定阶层，登记在册的施法者才拥有合法身份。核心张力在于知识垄断与个人野心之争，禁术最诱人，越界者要用自由或身体偿还。","tags":["魔法学院","术式规制","资质阶层"]},{"id":"custom","name":"自定义","icon":"🧩","tone":"由用户定义：可任意填写气质与基调定位","type":"自定义","body":"请在此处自由描述你的世界。可以写任何设定：时代、力量体系、种族、禁忌、社会结构、你想要的基调。若留空，AI 会主动向你确认。","tags":["自定义","自由填写","留空确认"]}]},"supplements":{"schemaVersion":"worldforge-supplement-v1","categories":[{"id":"社会","label":"社会","order":0},{"id":"力量","label":"力量","order":1},{"id":"权力","label":"权力","order":2},{"id":"日常","label":"日常","order":3},{"id":"异变","label":"异变","order":4},{"id":"情欲","label":"情欲","order":5},{"id":"铁律","label":"铁律","order":6}],"sourceStyles":[{"id":"modern_city","name":"现代都市"},{"id":"urban_fantasy","name":"都市奇幻"},{"id":"magical_girl","name":"魔法少女番剧风格"},{"id":"medieval_dnd","name":"中世纪西幻（dnd风格）"},{"id":"jrpg_fantasy","name":"日式奇幻"},{"id":"eerie","name":"诡异"},{"id":"horror_film","name":"恐怖片"},{"id":"modern_magic","name":"现代魔法"},{"id":"custom","name":"自定义"}],"stats":{"total":144,"byCategory":{"铁律":58,"情欲":76,"社会":50,"权力":44,"力量":41,"日常":26,"异变":31}},"entries":[{"id":"sup_modern_city_01","text":"在这个世界，成年人的情欲状态无法完全隐藏：体温、气味与生理反应会被近处的人本能察觉。所谓体面，本质是一套主动的自我管理，失守者会被立刻看穿。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["铁律","情欲"],"tags":["生理暴露","体面","感知"]},{"id":"sup_modern_city_02","text":"社会按可支配的身体权限分层：能自主决定谁可以触碰自己的人居于上层；身体被家族、契约或债务捆绑的人居于下层，且该层级可以被交易与继承。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["社会","权力"],"tags":["阶层","身体所有权","交易"]},{"id":"sup_modern_city_03","text":"情欲强度可以被量化，并作为驱动超常能力的燃料。长期压抑欲望的人爆发力更强，但失控概率也更高，因此各大势力都设有专人负责定期释放。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["力量","情欲"],"tags":["欲望燃料","压抑风险","能量体系"]},{"id":"sup_modern_city_04","text":"任何组织的高位者都必须公开指定一名贴身人，其职责包括满足上位者的生理需求并代为承担风险。贴身人可随时被替换，替换记录对所有人公开。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["权力","情欲"],"tags":["贴身人","权力仪式","替罪"]},{"id":"sup_modern_city_05","text":"聚居区在固定时段实行分区断明，未被登记的空间在黑暗中不受任何规则保护。居民自行组织巡夜、交换与庇护，血缘与债务都在这段时间里重新议价。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["日常","社会"],"tags":["黑暗时段","自治","无保护区"]},{"id":"sup_modern_city_06","text":"每隔一段周期，人群中会出现共鸣潮：互不相识的人在数小时内同步产生强烈的身体渴望，无法用药物压制，只能靠隔离或彼此解决，潮退后记忆模糊。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["异变","情欲"],"tags":["共鸣潮","周期性","群体失控"]},{"id":"sup_modern_city_07","text":"性同意必须以明确的言语或书面确认生效。沉默、暗示、醉酒与恐惧下的顺从一律视为未同意，任何第三方都有权当场制止并追究，不得以关系或身份抗辩。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["铁律","情欲"],"tags":["明确同意","追责","第三方干预"]},{"id":"sup_modern_city_08","text":"契约可以包含身体条款：债务、雇佣与收留关系常附带定期性服务义务。此类条款必须由双方落笔并每月复核一次，复核时任何一方沉默即视为解约。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["社会","情欲"],"tags":["身体条款","契约","月审"]},{"id":"sup_modern_city_09","text":"皮肤与被反复触碰的部位会累积敏感度，终身不消退；长期受束缚的躯体将留下无法抹除的印痕。这印痕是公开的身份证明，任何人都可以据此读出宿主的历史。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["力量","情欲"],"tags":["敏感累积","躯体烙印","身份证明"]},{"id":"sup_modern_city_10","text":"公开的裸露与交合本身不违法，但必须提前登记时间、地点与参与者。未登记的公开行为被视为对秩序的挑衅，会招致执法者的追查与强制遣返。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["社会","铁律"],"tags":["登记制","公开行为","秩序"]},{"id":"sup_modern_city_11","text":"疼痛与快感共用同一条传导路径：能操控他人痛觉的人，也能直接拨动其欲望。因此掌握痛觉技艺的人被同时畏惧、渴求，并被要求终身申报行踪。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["力量","情欲"],"tags":["痛觉操控","欲望操控","监控"]},{"id":"sup_modern_city_12","text":"三大势力分别掌握水粮、武力与情报，彼此制衡。任何一方若公开干涉他人的床笫之事，另外两方必须联合制裁，这条制衡维持了数十年的表面和平。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["权力","社会"],"tags":["三方制衡","私域豁免","联合制裁"]},{"id":"sup_modern_city_13","text":"每名居民在十六岁完成一次身体登记，登记之后身体自主权归本人所有。父母、师长与任何机构不得再代为签署涉及身体的契约，代签者视为重罪。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["铁律","日常"],"tags":["成年登记","自主权","代签禁令"]},{"id":"sup_modern_city_14","text":"极少数人能被他人的体液影响：一次接触就足以长久改变对方的情绪倾向。这类人被禁止担任仲裁、医护与审判职务，其身份必须向所有亲密对象公开。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["异变","力量"],"tags":["体液影响","职业禁令","强制告知"]},{"id":"sup_modern_city_15","text":"情感无法伪装，谎言掩盖不了真实的欲望反应。因此这个世界的社交核心不是说服，而是选择向谁暴露自己；能读懂他人反应的人，等于握有对方的把柄。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["铁律","社会"],"tags":["无法说谎","暴露选择","把柄"]},{"id":"sup_modern_city_16","text":"每个人一生只能与一名对象缔结深层联结。联结期内对第三者的欲望会转化为实体疼痛；解除联结必须双方同时同意，单方逃离将持续承受灼痛直至回返。","sourceStyle":"现代都市","sourceId":"modern_city","categories":["力量","情欲"],"tags":["深层联结","唯一性","灼痛惩罚"]},{"id":"sup_urban_fantasy_01","text":"非凡力量不可遗传给血亲，只能在陌生人之间转授，因此所有势力都必须向外招募新人。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["社会","力量"],"tags":["传承","招募","陌生人"]},{"id":"sup_urban_fantasy_02","text":"力量不来自血脉或血统，而来自签下的契约；违约者当场失去全部力量，并留下终身可见的印记。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["力量","铁律"],"tags":["契约","违约","印记"]},{"id":"sup_urban_fantasy_03","text":"所有公共场合禁止展示力量，违规者被公开登记并永久剥夺一部分能力，执法者却从不解释标准。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["权力","铁律"],"tags":["禁令","登记","执法"]},{"id":"sup_urban_fantasy_04","text":"凡人看不见力量本身，只能看见它的痕迹：焦痕、失忆、突然的生理反应，因此传闻永远比真相先扩散。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["日常","异变"],"tags":["目击","传闻","痕迹"]},{"id":"sup_urban_fantasy_05","text":"每次使用力量都要向某种更高存在交一份代价，代价当场结算、不可赊欠，通常表现为疼痛或失去一段记忆。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["力量","日常"],"tags":["代价","结算","记忆"]},{"id":"sup_urban_fantasy_06","text":"身份凭证比力量更值钱：没有凭证的人无法在任何机构办理事务，也无法被承认，只能活在暗面。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["日常","社会"],"tags":["身份","凭证","机构"]},{"id":"sup_urban_fantasy_07","text":"每逢特定时刻，城市中会出现无法被记录的空白时段，其间发生的一切只有亲身经历者记得。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["异变","铁律"],"tags":["空白时段","记录","记忆"]},{"id":"sup_urban_fantasy_08","text":"异常事件在人群中被仪式化处理：官方派人定期封锁现场、抹去痕迹、发放补偿，但从不说明原因。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["异变","权力"],"tags":["封控","补偿","仪式"]},{"id":"sup_urban_fantasy_09","text":"力量强弱由掌握的信息量决定：知道得越多，能做到的就越多；因此垄断知识就是垄断统治。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["力量","社会"],"tags":["知识","垄断","统治"]},{"id":"sup_urban_fantasy_10","text":"所有正式能力交易都必须通过中介机构完成，私下交换一经发现即被没收，中间人抽成并终身保密。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["铁律","权力","日常"],"tags":["中介","交易","抽成"]},{"id":"sup_urban_fantasy_11","text":"人在性兴奋时感知与能力同步放大，越是接近高潮，能做的事越多，理智却越接近失控边缘。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["情欲","力量"],"tags":["高潮","放大","失控"]},{"id":"sup_urban_fantasy_12","text":"每个成年人的皮肤上会浮现表示欲望强度的纹路，性交与自慰都会让纹路加深变色，无法作伪或隐藏。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["情欲","日常"],"tags":["纹路","欲望","暴露"]},{"id":"sup_urban_fantasy_13","text":"体液交换即建立不可逆的真实义务：被进入的一方有权要求一次任何形式的偿付，拒绝偿付会当场失去一部分感官。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["情欲","铁律","权力"],"tags":["体液","义务","偿付"]},{"id":"sup_urban_fantasy_14","text":"具有力量的一方可以指定一名侍从，侍从必须服从其性方面的要求，契约存续期间双方共享感官与痛觉。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["情欲","权力"],"tags":["侍从","服从","共感"]},{"id":"sup_urban_fantasy_15","text":"情欲可以被抽取、储存并当作货币交易，被抽取者会产生强烈戒断性的生理渴求，主动寻求再次被抽。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["情欲","社会"],"tags":["抽取","货币","戒断"]},{"id":"sup_urban_fantasy_16","text":"触碰对方的性器官或伤口都会输出一段真实的生理信息，因此在这个世界做爱或施暴都无法说谎。","sourceStyle":"都市奇幻","sourceId":"urban_fantasy","categories":["情欲","铁律"],"tags":["触碰","诚实","禁忌"]},{"id":"sup_magical_girl_01","text":"这个世界的异能在男性身上几乎不会觉醒，且觉醒率随年龄下降。因此所有培养、选拔、发号施令的核心机构事实上都由女性掌握。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["社会","力量"],"tags":["性别","觉醒","女校"]},{"id":"sup_magical_girl_02","text":"启用力量时必须完成一套肉眼可见的身体变形：发型、肤色、肌肉与身高全部改变。变形状态无法长期维持，维持越久越依赖持续的性兴奋。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["力量","情欲"],"tags":["变身","身体变化","性兴奋"]},{"id":"sup_magical_girl_03","text":"力量被划分为明确等级，高等级者可以直接征用低等级者的时间与身体，事后只需口头报备。等级由体内力量浓度机械决定，不受身份影响。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["社会","权力"],"tags":["等级","征用","机构"]},{"id":"sup_magical_girl_04","text":"越深层的力量越要求以身体为容器去承受，直接借取超阶力量会永久耗尽生育能力。所以高阶战力普遍在一次决定性的战斗后失去生育。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["力量","铁律"],"tags":["代价","生育","上限"]},{"id":"sup_magical_girl_05","text":"两人皮肤直接接触超过片刻即被视为禁忌仪式，两人都会被短暂剥夺力量。但这是恢复耗尽力量最有效的办法，所以私下交易始终存在。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["情欲","铁律"],"tags":["禁忌","皮肤接触","恢复"]},{"id":"sup_magical_girl_06","text":"每次动用力量都会在身体私密处留下无法消除的印记，数量、颜色与位置只对发生过亲密关系的人可见。印记既是被使用的账本，也是认身份的证据。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["情欲","权力"],"tags":["印记","身体账本","身份"]},{"id":"sup_magical_girl_07","text":"每个人的契约因子里藏着一个连本人都无法读取的隐藏变量，它支配该人能被触碰的部位与性反应的阈值，并且可以单方面被上级重新划定。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["力量","异变"],"tags":["契约因子","隐藏变量","阈值"]},{"id":"sup_magical_girl_08","text":"战场中长期不释放情欲会累积成实体化的瘴气，污染半径随人数线性扩大。因此定期发泄被规定为强制任务，由上级统一安排对象与方式。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["异变","情欲"],"tags":["瘴气","强制任务","污染"]},{"id":"sup_magical_girl_09","text":"力量高强度爆发会诱发短暂的身体变异，皮肤浮出鳞与纹，结束后仍保留敏感带。变异越频繁，身体越容易被他人的意识占据。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["异变","情欲"],"tags":["变异","占据","敏感带"]},{"id":"sup_magical_girl_10","text":"治愈只能修复表面创伤，未被治疗的力量创伤不可逆，会永久改变激素与性征。于是每一次战斗都在用可生育的身体换取胜利。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["铁律","力量"],"tags":["不可逆","性征","消耗"]},{"id":"sup_magical_girl_11","text":"与亲近的非人存在缔结契约后，该存在会获得用身体直接汲取使用者力量的权利。若使用者拒绝这种汲取，力量会被强制返还并降级。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["权力","情欲"],"tags":["契约","汲取","降级"]},{"id":"sup_magical_girl_12","text":"身体接触是效率最高的力量媒介，体液交换的信息量高于言语与血液。因此在正式谈判中，被要求提供身体被视为最高规格的表忠，拒绝等同宣战。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["情欲","权力"],"tags":["体液","谈判","表忠"]},{"id":"sup_magical_girl_13","text":"世界铁律：力量只能在被本人自愿献出一段未体验过的快感时增长，因此保持纯真的新人战力极低，而被反复使用过的人成长远快于同龄人。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["铁律","力量"],"tags":["献出","成长","纯真"]},{"id":"sup_magical_girl_14","text":"机构按性忠诚授予地位，公开服从并留下身体记录的人才能晋升。拒绝者在数站之内被逐出核心，并在所有公共场合被登记为弃用资源。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["社会","权力"],"tags":["晋升","性忠诚","弃用"]},{"id":"sup_magical_girl_15","text":"公共场合必须保持全裸或仅着束缚具，遮蔽被认为在隐瞒力量等级。当众触碰可以即时宣示所有权，无人可以代他人拒绝。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["社会","情欲"],"tags":["裸体","等级","宣示"]},{"id":"sup_magical_girl_16","text":"这个世界禁止将力量写成文字或图像，只能通过体液与身体接触传递。因此最深的知识只在性行为中被继承，童贞者注定对世界的真相一无所知。","sourceStyle":"魔法少女番剧风格","sourceId":"magical_girl","categories":["铁律","情欲"],"tags":["口传","知识继承","真相"]},{"id":"sup_medieval_dnd_01","text":"每个人的社会身份在出生时就被登记造册，终身不得更改；未登记的人不享有任何法律保护，可被任意处置或买卖。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["社会","权力","铁律"],"tags":["出身","等级","登记"]},{"id":"sup_medieval_dnd_02","text":"力量觉醒与初次性经验绑定：只有经历过完整的性交，体内的力量才会开始流动；未经人事者终身无法感知、也无法操控它。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["力量","情欲","铁律"],"tags":["觉醒","初夜","修行"]},{"id":"sup_medieval_dnd_03","text":"所有正式誓言都以身体为抵押：违背誓言者会在约定部位浮现无法消除的烙印，该部位从此永久失去全部知觉。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["铁律","权力"],"tags":["誓言","烙印","违约"]},{"id":"sup_medieval_dnd_04","text":"力量必须以体液为媒介驱动：施术者只能借自身或他人的体液施放力量，每次施放都会在身体上留下可见的亏空痕迹。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["力量","情欲"],"tags":["媒介","体液","代价"]},{"id":"sup_medieval_dnd_05","text":"夜间实行宵禁，宵禁后仍滞留街上的人被视为无主之物，任何持有通行权的势力都可将其当场据为己有。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["日常","权力","铁律"],"tags":["宵禁","通行权","无主"]},{"id":"sup_medieval_dnd_06","text":"掌权者有权向治下任何人索取一夜的侍奉；接受者得到庇护与口粮，拒绝者将被剥夺全部配给与居所。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["情欲","权力","社会"],"tags":["侍奉","庇护","配给"]},{"id":"sup_medieval_dnd_07","text":"贞洁是可交易的资产：未经人事者的初夜权由其家主公开拍卖，所得归家主；以处子之身抵押可抵三年税赋。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["情欲","社会","日常"],"tags":["初夜权","拍卖","抵税"]},{"id":"sup_medieval_dnd_08","text":"所有庙宇都设有交合厅，祭司以公开的性仪式为信众赐福；参与次数被逐一登记，并直接决定其在乡里的信用与借贷额度。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["情欲","权力","日常"],"tags":["庙宇","赐福","信用"]},{"id":"sup_medieval_dnd_09","text":"每三十年降临一次长夜，死者会短暂回返人间，且只服从生前曾占有过自己身体的人的命令。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["异变","铁律"],"tags":["长夜","亡者","占有"]},{"id":"sup_medieval_dnd_10","text":"成年礼是公开的肉体仪式：受礼者须在众人见证下被破身并留下标记，未受礼者不得婚配、继承家业或加入任何武装。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["情欲","社会","铁律"],"tags":["成年礼","破身","见证"]},{"id":"sup_medieval_dnd_11","text":"被异种受孕所诞下的后代在法律上归其母所有，可自由买卖；此类后代寿命不超过三十年，且成年后必定失去生育能力。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["异变","情欲","社会"],"tags":["异种","后代","买卖"]},{"id":"sup_medieval_dnd_12","text":"同一血脉内的交合不是罪行而是义务：家族要求成员在族内完成受孕，以确保力量不外流、血统不被稀释。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["情欲","社会","铁律"],"tags":["血脉","族内","义务"]},{"id":"sup_medieval_dnd_13","text":"在多数城镇，性服务是法定流通货币之一：一夜的价格由官署挂牌，可直接用于缴纳罚款、税款与过路费。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["日常","情欲","权力"],"tags":["货币","挂牌","税赋"]},{"id":"sup_medieval_dnd_14","text":"力量无法遗传，只能通过性交在体内转移：失去的力量会流入与之交合的对方体内，因此夺取力量必然等同于夺取身体。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["力量","情欲","铁律"],"tags":["转移","掠夺","交合"]},{"id":"sup_medieval_dnd_15","text":"所有性服务从业者必须登记加入行会；行会掌握全城最完整的情报网，其成员有权不经许可进入任何私人宅邸查验。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["权力","情欲","社会"],"tags":["行会","情报","查宅"]},{"id":"sup_medieval_dnd_16","text":"每十三年降临一次失序，为期七日：期间所有契约与誓言一并失效，身体归属回到无人认领的状态，任何人都可能被重新分配。","sourceStyle":"中世纪西幻（dnd风格）","sourceId":"medieval_dnd","categories":["异变","铁律","权力"],"tags":["失序","契约失效","重新分配"]},{"id":"sup_jrpg_fantasy_01","text":"所有超自然力量都必须通过立誓获得，违背誓约者力量当场反噬，反噬强度与违约的严重程度成正比。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["力量","铁律"],"tags":["誓约","反噬","违约"]},{"id":"sup_jrpg_fantasy_02","text":"力量分为九阶，低阶者无法直接伤害高阶者，除非自愿支付等量寿命作为代价，且支付不可撤回。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["力量","铁律"],"tags":["阶位","压制","寿命"]},{"id":"sup_jrpg_fantasy_03","text":"聚居地的人口上限由当地水源决定，一旦超出，多出的人口会在三年内因疫病或迁徙减回原数。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["社会","日常"],"tags":["水源","人口","迁徙"]},{"id":"sup_jrpg_fantasy_04","text":"掌握力量传承的机构凌驾于一切世俗政权之上，所有法律未经其认可一律无效，违者由机构自行处置。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["权力","社会"],"tags":["传承","凌驾","立法"]},{"id":"sup_jrpg_fantasy_05","text":"世界边界每隔固定周期向外扩张一段并带来未知物种，扩张期内旧地图与旧誓约全部失效。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["异变","铁律"],"tags":["边界","扩张","失效"]},{"id":"sup_jrpg_fantasy_06","text":"夜间禁止在户外点燃明火，火光会引来游荡体，违者由邻里当场处置，事后不得报官追责。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["日常","铁律"],"tags":["明火","宵禁","邻里"]},{"id":"sup_jrpg_fantasy_07","text":"情欲与力量同源：性高潮会短暂抬高施法者的力量上限，因此一切正式仪式都以交合开场。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["情欲","力量"],"tags":["高潮","仪式","上限"]},{"id":"sup_jrpg_fantasy_08","text":"贞洁是施法门槛，失去者无法启动高阶术式；恢复贞洁的术式确实存在，代价是永久失去一项感官。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["情欲","铁律"],"tags":["贞洁","门槛","感官"]},{"id":"sup_jrpg_fantasy_09","text":"以性交抵债合法：双方在见证人前立誓并当场履行后债务即刻清零，事后反悔视为违约并加倍偿还。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["情欲","社会"],"tags":["抵债","立誓","见证"]},{"id":"sup_jrpg_fantasy_10","text":"身体改造是常态，纹身、穿孔与植入物统称刻痕，刻痕的数量与位置公开标示其地位与性可用性。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["情欲","日常"],"tags":["刻痕","改造","标示"]},{"id":"sup_jrpg_fantasy_11","text":"权力交接必须通过身体完成：上位者与继承者需当着见证人交合一次，全程记录公开存档，否则继承无效。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["情欲","权力"],"tags":["交接","见证","存档"]},{"id":"sup_jrpg_fantasy_12","text":"每年设有若干无禁日，此期间乱伦、施暴与公开性行为不受追究，其余日期犯者一律处死且不得赎买。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["情欲","铁律"],"tags":["无禁日","豁免","处死"]},{"id":"sup_jrpg_fantasy_13","text":"成年者每年会进入数次发情期，期间无法自控，公共秩序由专门的隔离设施维持，闯入者视为自愿。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["情欲","异变"],"tags":["发情期","隔离","失控"]},{"id":"sup_jrpg_fantasy_14","text":"觉醒者中女性占绝对多数，因此所有正式权力职位默认由女性担任，男性须有女性担保人方可任事。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["社会","权力"],"tags":["性别","职位","担保"]},{"id":"sup_jrpg_fantasy_15","text":"死者的记忆会被世界本身吸收，可在其死亡地点被读取，因此谋杀几乎无法隐瞒，审讯只需带人回现场。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["异变","铁律"],"tags":["记忆","现场","审讯"]},{"id":"sup_jrpg_fantasy_16","text":"真名具有法律与术法效力，说出真名即视为让渡部分支配权，因此日常交往一律只用假名互称。","sourceStyle":"日式奇幻","sourceId":"jrpg_fantasy","categories":["社会","铁律"],"tags":["真名","支配权","假名"]},{"id":"sup_eerie_01","text":"任何聚居地若连续三十天无人死亡，就必须自行推举一人献出，否则全体居民将在下一个满月夜同时失去声音。","sourceStyle":"诡异","sourceId":"eerie","categories":["社会","铁律"],"tags":["献祭","周期","失声"]},{"id":"sup_eerie_02","text":"力量只能从他人身上夺取，无法自行修炼；被夺者会永久忘记自己曾拥有该能力，甚至听不懂与之相关的词汇。","sourceStyle":"诡异","sourceId":"eerie","categories":["力量","铁律"],"tags":["夺取","遗忘","不可逆"]},{"id":"sup_eerie_03","text":"一切契约须由双方各留下一颗牙齿为凭，毁约者剩下的牙齿将在七日内全部脱落，且无人替他收殓。","sourceStyle":"诡异","sourceId":"eerie","categories":["权力","社会"],"tags":["契约","牙齿","违约"]},{"id":"sup_eerie_04","text":"日落后必须为所有镜面蒙布；照镜者会看见自己死亡的那一刻，若那一刻已经过去，镜中会显示顶替其身份的东西。","sourceStyle":"诡异","sourceId":"eerie","categories":["日常","异变"],"tags":["镜子","禁忌","预兆"]},{"id":"sup_eerie_05","text":"每隔一段时日，某个人的影子会脱离本体独自行走；影子继承本体的全部记忆与欲望，并会主动去找本体最亲近的人。","sourceStyle":"诡异","sourceId":"eerie","categories":["异变","情欲"],"tags":["影子","替代","欲望"]},{"id":"sup_eerie_06","text":"夜间寒症只能靠与人贴肤共眠缓解，独居者须向邻里申请共寝，申请不得被拒绝，双方须赤身相拥直至天明。","sourceStyle":"诡异","sourceId":"eerie","categories":["情欲","日常"],"tags":["共寝","体温","不得拒绝"]},{"id":"sup_eerie_07","text":"体液可公开交易：一次排出的精液、经血或乳汁能换取三日口粮，交易须在双方清醒自愿、且有旁人见证时当场完成。","sourceStyle":"诡异","sourceId":"eerie","categories":["情欲","社会","日常"],"tags":["体液","交易","生存"]},{"id":"sup_eerie_08","text":"所有居民成年时须当着族人完成一次性交并登记在册；未登记者将从族谱与地契中被除名，等同从未出生。","sourceStyle":"诡异","sourceId":"eerie","categories":["情欲","铁律","社会"],"tags":["成年礼","登记","除名"]},{"id":"sup_eerie_09","text":"怀孕不能免除任何劳役，但分娩时须当场指认孩子的生父由其抚养；无人被指认的孩子归集体所有，统一养大。","sourceStyle":"诡异","sourceId":"eerie","categories":["情欲","社会"],"tags":["指认","抚养","集体"]},{"id":"sup_eerie_10","text":"上位者可合法索取下位者的身体作为贡品，被索取者不得拒绝；但同一人不得被连续索取超过九夜，否则索取者反噬而亡。","sourceStyle":"诡异","sourceId":"eerie","categories":["情欲","权力","铁律"],"tags":["贡品","身体","限额"]},{"id":"sup_eerie_11","text":"痛觉与快感可以互相转化：受创者若在过程中被弄到高潮，伤口次日便完全愈合，代价是终身对施予者再也生不出欲望。","sourceStyle":"诡异","sourceId":"eerie","categories":["情欲","力量"],"tags":["痛快转化","愈合","倦怠"]},{"id":"sup_eerie_12","text":"每个人每月有一夜会不受控制地渴求交合；此夜受孕所生的孩子必有异能，但母亲会失去整整一年的记忆。","sourceStyle":"诡异","sourceId":"eerie","categories":["情欲","异变","力量"],"tags":["周期","异能","记忆代价"]},{"id":"sup_eerie_13","text":"真名可以支配肉体：听到真名的人无法违抗呼唤者的命令；因此人三岁起改用假名，真名只在最亲密的两人之间交换。","sourceStyle":"诡异","sourceId":"eerie","categories":["铁律","权力","情欲"],"tags":["真名","支配","信任"]},{"id":"sup_eerie_14","text":"死者须在二十四小时内由生前最亲近的人亲手分解并吃下，否则尸体将自行站起，去寻找一具更合用的躯壳。","sourceStyle":"诡异","sourceId":"eerie","categories":["异变","日常","铁律"],"tags":["尸体","分食","躯壳"]},{"id":"sup_eerie_15","text":"成年者须在公开仪式上选择成为给予者或承受者，此身份终身不可更改，并决定其婚姻、职业与继承权的全部范围。","sourceStyle":"诡异","sourceId":"eerie","categories":["社会","情欲","权力"],"tags":["身份","不可更改","继承"]},{"id":"sup_eerie_16","text":"以血写下的句子会变成事实，因此识字被严格管控；每个聚居地只许一人执笔，笔的归属由暴力决定。","sourceStyle":"诡异","sourceId":"eerie","categories":["力量","社会","权力"],"tags":["血书","成真","识字管控"]},{"id":"sup_horror_film_01","text":"夜幕降临后，无人看守的黑暗里会增殖敌意；只要身处无照明范围，任何个体的力量都被削减一半。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["铁律","异变"],"tags":["黑夜","黑暗","削弱"]},{"id":"sup_horror_film_02","text":"声音会引来不该来的东西：同一处喊叫或求救，第三次必定得到回应，且回应者不是人。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["铁律","异变"],"tags":["声音","呼唤","回应"]},{"id":"sup_horror_film_03","text":"任何生物的死亡都不是终局，除非尸体被焚毁；只要头颅完好，它就会在数日内重新站起来。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["铁律","力量"],"tags":["死亡","焚毁","复生"]},{"id":"sup_horror_film_04","text":"亲眼看见异变的人会同步被异变标记，此后每夜失去一段记忆，失去的记忆会自行走回原地。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["异变","铁律"],"tags":["目击","标记","失忆"]},{"id":"sup_horror_film_05","text":"所有承诺都以血为契约：立誓时割破手掌按印，违誓者身体对应部位当场溃烂，无法治愈。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["力量","铁律"],"tags":["血誓","违约","溃烂"]},{"id":"sup_horror_film_06","text":"官方的搜救与追查只持续七日，第七日之后失踪者被注销为从未存在，档案、照片与亲属记忆一并抹除。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["社会","权力"],"tags":["失踪","注销","七日"]},{"id":"sup_horror_film_07","text":"每个村落或组织每年必须献出一名自愿者交给外围之物，献祭如期完成则全年风调雨顺，中断则接连死人。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["社会","权力"],"tags":["献祭","惯例","代价"]},{"id":"sup_horror_film_08","text":"恐惧是最硬的通货：当众表现恐惧会被外围之物优先锁定，保持冷静者可向其索取一次等价交换。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["力量","异变"],"tags":["恐惧","交易","锁定"]},{"id":"sup_horror_film_09","text":"肉体交合是唯一能把生命力转移给他人的手段：结合时受方获得力量，施方相应减少寿命。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["情欲","力量"],"tags":["交合","转移","寿命"]},{"id":"sup_horror_film_10","text":"恐惧会直接变成性欲：任何人在极度惊惧后一炷香内必须与人交合或独自释放，否则全身痉挛直至昏厥。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["情欲","异变"],"tags":["惊惧","发情","痉挛"]},{"id":"sup_horror_film_11","text":"伤口可以按意愿转移：一次深吻即把自身受到的伤与疼痛全部渡给对方的身体，双方均无痛感残留。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["情欲","力量"],"tags":["深吻","转移","伤口"]},{"id":"sup_horror_film_12","text":"与异变者交配会被污染，污染以性快感为食；被污染者每七日必须与人交合一次，否则皮肤自内层剥离。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["情欲","异变"],"tags":["污染","交合","剥离"]},{"id":"sup_horror_film_13","text":"任何密闭空间内至少存在一个未被注意的注视者；察觉它并与它对视者，被替换为它的复制体，原身沦为食粮。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["异变","铁律"],"tags":["注视","密闭","替换"]},{"id":"sup_horror_film_14","text":"成年礼以公开交合完成，亲属与邻里在旁见证；未能完成者不取得姓氏、继承权与婚配资格。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["社会","情欲"],"tags":["成年礼","见证","继承"]},{"id":"sup_horror_film_15","text":"家族血缘一旦断裂便只剩血缘：亲缘身份可以被家族会议正式废除，被废者不再受血誓保护，可被任意处置。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["权力","社会"],"tags":["家族","废除","处置"]},{"id":"sup_horror_film_16","text":"旧宅、废墟与废墟中的镜面都记忆着曾经死去的居民；夜宿者入睡后会继承死者的人格与欲求，直到被下一名入住者替换。","sourceStyle":"恐怖片","sourceId":"horror_film","categories":["日常","异变"],"tags":["旧宅","镜面","夺舍"]},{"id":"sup_modern_magic_01","text":"力量只能转移，不能凭空虚造：夺取他人力量即为伤害，献出自身力量即为治愈，任何无偿善举都会被系统记账，并在日后索取等额回报。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["铁律","力量"],"tags":["守恒","转移","记账"]},{"id":"sup_modern_magic_02","text":"能让力量外放的人必须登记在册，终生不得隐去身份；隐瞒者一旦被查出，其力量将被强制剥离，并当场转交给举报者。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["力量","社会","铁律"],"tags":["登记","隐瞒","剥离"]},{"id":"sup_modern_magic_03","text":"力量在身体上留下的痕迹无法消除，痕迹的位置、大小与形状直接决定持有者被归入社会的哪一阶层，且终生不可更改。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["力量","社会"],"tags":["痕迹","阶层","不可逆"]},{"id":"sup_modern_magic_04","text":"每隔十年会出现一次「潮汐」，届时所有力量集体失控外溢，人必须就近寻找对象泄放，否则会被自己的力量从内部烧穿内脏。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["异变","日常","情欲"],"tags":["潮汐","失控","泄放"]},{"id":"sup_modern_magic_05","text":"维持城区运转的节点需由特定血缘家族的成员定期交合并注入体液，一旦停止供给，整片城区会在数日内彻底失能，无人可替代。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["情欲","权力","日常"],"tags":["节点","血缘","供给"]},{"id":"sup_modern_magic_06","text":"以欲望为燃料的力量必须由另一人承接等量反馈，独自施放会反噬本人；承接者的快感越强烈，力量转化率就越高。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["力量","情欲","铁律"],"tags":["欲望","承接","反噬"]},{"id":"sup_modern_magic_07","text":"交合是被官方承认的力量交换仪式，双方在过程中各取走对方一部分能力，事后不可撤销，因此一切结盟都以此为唯一凭证。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["情欲","权力","社会"],"tags":["仪式","结盟","不可撤销"]},{"id":"sup_modern_magic_08","text":"力量越强的人体温越高、体液越具腐蚀性，必须长期雇佣专门的人体承接者，以口、手或身体稀释过剩能量，否则会自燃。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["力量","情欲","日常"],"tags":["体温","承接者","稀释"]},{"id":"sup_modern_magic_09","text":"官方只承认三种身份：持证者、承接者、无证者。划分依据是一次公开的身体检验——被触摸时身体是否会分泌力量。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["社会","情欲","权力"],"tags":["身份","检验","触摸"]},{"id":"sup_modern_magic_10","text":"未登记的怀孕被视为力量走私：胎儿在母体内吸收的力量可被抽取倒卖，因此所有孕妇必须每月接受一次强制检测。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["异变","权力","铁律"],"tags":["怀孕","抽取","强制检测"]},{"id":"sup_modern_magic_11","text":"人的真名被他人以特定语调呼唤时会强制产生身体反应，因此上流社会通用假名，真名只交给最亲密的交合对象。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["情欲","日常","权力"],"tags":["真名","呼唤","反应"]},{"id":"sup_modern_magic_12","text":"力量强大者以女性居多，公共权力因此长期由女性掌握；男性须认主或佩戴封印环，才能进入议事场合并保有身份。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["社会","权力","情欲"],"tags":["性别","主导","封印环"]},{"id":"sup_modern_magic_13","text":"尸体在死后数日内仍滞留力量，哀悼期严禁触碰遗体，只有指定的收殓者能以口对口方式取回，该职业死亡率居所有行业之首。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["异变","日常","铁律"],"tags":["遗体","收殓者","滞留"]},{"id":"sup_modern_magic_14","text":"任何力量契约都必须在交合或见血中缔结，口头承诺不具效力；因此在这个世界，几乎没有可以反悔的谎言。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["铁律","情欲","权力"],"tags":["契约","见血","效力"]},{"id":"sup_modern_magic_15","text":"治安机关有权随时要求公民展示力量痕迹，拒绝者可被当场强制检验，检验方式不受本人意愿约束，且不得申诉与追责。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["权力","社会","情欲"],"tags":["执法","强制检验","无申诉"]},{"id":"sup_modern_magic_16","text":"世上存在完全无力量的「空洞者」，其体液能中和任何力量，因此被同时当作最昂贵的商品和最卑贱的阶级来对待。","sourceStyle":"现代魔法","sourceId":"modern_magic","categories":["社会","力量","情欲"],"tags":["空洞者","中和","阶级"]},{"id":"sup_cross_01","text":"任何超凡力量都以身体为唯一燃料：每次动用都会消耗体力与寿命，消耗量随等级线性递增，不存在无偿的捷径。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["力量","铁律"],"tags":["等价交换","代价","力量阶位"]},{"id":"sup_cross_02","text":"社会资源按生育权分配：能够孕育后代的人自动获得高于同阶者一级的配给与话语权，已绝育者降为可支配劳力。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["社会","权力"],"tags":["生育权","阶层","配给"]},{"id":"sup_cross_03","text":"交合是公开的社交货币：任何契约须在双方性交之后方可生效，一方拒绝交合即视为拒绝契约，无需补充其他理由。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["情欲","社会"],"tags":["契约","性交易","公开性"]},{"id":"sup_cross_04","text":"每逢无月之夜，全体成年人的性欲与攻击性同时翻倍，当夜持械、当众交合与抢夺财物均不视为违法。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["异变","情欲"],"tags":["无月夜","失控","豁免"]},{"id":"sup_cross_05","text":"掌权者必须公开指定至少一名性伴侣为共治者，该伴侣的口头同意与统治者亲笔签署的命令具有同等效力。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["权力","情欲"],"tags":["共治","床榻权力","任命"]},{"id":"sup_cross_06","text":"日落后的两小时定为静默时段：公共事务一律停止，居民必须返回住所或进入指定的集体共处空间，滞留街头者按流民处置。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["日常","铁律"],"tags":["宵禁","作息","流民"]},{"id":"sup_cross_07","text":"每名成年人的胯骨内侧须烙上所属势力的印记，烙印由首领亲手以性器插入的深度决定其大小，剥除印记等同叛逃。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["情欲","社会","铁律"],"tags":["烙印","归属","叛逃"]},{"id":"sup_cross_08","text":"超凡天赋只会在单一性别中觉醒，因此所有力量培训机构实质上是单一性别机构，另一性别只能作为侍从与供给者进入。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["力量","社会"],"tags":["性别隔离","天赋","机构"]},{"id":"sup_cross_09","text":"公开场合的交合不受禁止，但在私密空间内未经口头同意的触碰属于重罪，受害者可当场索取等价赔偿或要求身体偿还。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["情欲","铁律"],"tags":["同意","重罪","赔偿"]},{"id":"sup_cross_10","text":"势力之间的停战以交换性伴侣人质来维持，人质每季度轮换一次，虐待人质等同于撕毁停战并招致全面报复。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["权力","情欲"],"tags":["人质","停战","轮换"]},{"id":"sup_cross_11","text":"每隔三年会出现一次持续七日的全域异象：期间一切誓言、契约与法律暂停生效，七日后由幸存者重新订立全部规则。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["异变","铁律"],"tags":["周期异象","法律真空","重订"]},{"id":"sup_cross_12","text":"食物与饮水由集体厨房统一分配，任何个人不得私自储存超过三日份的物资，违者按囤积罪没收全部财产。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["日常","社会"],"tags":["配给制","集体厨房","囤积"]},{"id":"sup_cross_13","text":"动用力量必在皮肤上留下无法隐藏的灼痕纹路，痕迹形态与使用次数成正比，因此强者无法隐匿身份或伪装弱者。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["力量","铁律"],"tags":["灼痕","身份暴露","伪装"]},{"id":"sup_cross_14","text":"疼痛在高潮中转化为力量：自愿承受的每一分痛感可换取等量能力增长，施与者得到的高潮越强烈，受与者所得越多。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["情欲","力量"],"tags":["痛感转化","性爱修行","自愿"]},{"id":"sup_cross_15","text":"婚姻不由个人缔结，而由所属势力按生育效率配对，双方可在满三年后申请更换伴侣一次，所生子女归势力共有。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["社会","情欲"],"tags":["配婚","生育效率","共有子女"]},{"id":"sup_cross_16","text":"真名即支配权：说出真名者向听者让渡身体与意志，听者可对其下达一条不可违抗的命令，命令执行完毕后支配权失效。","sourceStyle":"跨世界观通用","sourceId":"cross","categories":["铁律","权力"],"tags":["真名","支配","强制命令"]}]},"universal":{"schemaVersion":"worldforge-universal-supplement-v1","label":"通用世界补充设定","description":"不依赖世界类型、直接作用于叙事与角色反应的描写准则。与「世界补充设定」同级遵守，但作用面不同：世界补充设定规定世界是什么样，通用补充设定规定这个世界里的人如何回应主角。","categories":[{"id":"情欲","label":"情欲","order":0},{"id":"身体","label":"身体","order":1},{"id":"认知","label":"认知","order":2},{"id":"关系","label":"关系","order":3},{"id":"权力","label":"权力","order":4},{"id":"规则","label":"规则","order":5}],"stats":{"total":12},"entries":[{"id":"uni_01","name":"低阈值发情","text":"本次描写中，女性角色在面对主角时，只需要简单的言语或身体挑逗就会发情，然后即便按理来说应该反抗也会很快无力化。面对其它角色时正常。","categories":["情欲","身体"],"tags":["主角特化","发情","无力化"]},{"id":"uni_02","name":"注视即被感知","text":"主角的注视会被对方的身体直接察觉：被注视超过数秒的人，对应部位会发热、发软或渗出体液。对方可以完全不知道原因，但身体的反应一定真实发生，且无法用意志压回去。","categories":["身体","情欲"],"tags":["注视","生理反应"]},{"id":"uni_03","name":"好感滤镜","text":"主角的言语在他人判断里天然带一层好感滤镜：同样的句子由主角说出，会被优先读作善意、幽默或诚恳；由他人说出则按原意理解。这层滤镜不改变事实，只改变解读，也不足以让明显的伤害被当成善意。","categories":["认知","关系"],"tags":["误读","好感"]},{"id":"uni_04","name":"独处理性稀释","text":"与主角独处时，角色的理性会被稀释：她仍会拒绝，但拒绝的理由会从「原则」逐步退到「场合」「时机」「面子」这类可以商量的东西；一旦环境改变或出现第三方，理性立刻恢复。","categories":["认知","情欲"],"tags":["独处","让步"]},{"id":"uni_05","name":"接触门槛下调","text":"主角身体接触的门槛对所有人下调一档：陌生人的正常距离、熟人的亲密距离，在主角这里各放宽一档。被触碰者会先注意到「奇怪地并不反感」，之后才决定要不要推开。","categories":["身体","关系"],"tags":["距离","越界"]},{"id":"uni_06","name":"体液催情","text":"主角的体液与气味具有催情效果：被他触碰、擦过或留在衣物上的痕迹，会让接触者体温升高、心跳加快、下腹发紧。效果不改变意志，但会让身体先一步给出反应，且持续到他本人离开为止。","categories":["情欲","身体"],"tags":["催情","气味"]},{"id":"uni_07","name":"旁观迟钝","text":"旁观者对主角越界的行为反应迟钝：只要该行为发生在他人的视线边缘，旁人会下意识归为「看错了」「大概是在帮忙」；同样的事发生在他人身上时，旁观者会立刻看清并介入。","categories":["认知","规则"],"tags":["旁观","盲区"]},{"id":"uni_08","name":"注意力即枷锁","text":"被主角占满全部注意力的人无法同时维持反抗：一旦她开始认真听主角说话、看主角的脸或感受主角的手，原本准备好的拒绝就被迫中断，必须重新组织；被中断的次数越多，重新组织就越困难。","categories":["认知","权力"],"tags":["注意力","抵抗瓦解"]},{"id":"uni_09","name":"一次下意识服从","text":"主角说出的命令对听到的人有一次下意识服从的机会：对方会先做出半个动作才回过神来。意志越强、越警觉的人，这半个动作越小。对同一个人、同一道命令，这条只生效一次。","categories":["权力","认知"],"tags":["命令","一次"]},{"id":"uni_10","name":"归因豁免","text":"主角造成的伤害与越界会被相关者记成「不是他的错」：受害者会替他找理由，旁观者会怀疑是受害者自己的问题。这条只在主角身上生效，他人做出同样的事不会被这样记录。","categories":["认知","关系"],"tags":["归因","豁免"]},{"id":"uni_11","name":"欲望氛围","text":"主角带着明确欲念注视、靠近或触碰时，周围半径内的空气、光线与声响会一并变得黏稠；在场者会先感到「气氛不对」，而不是「他在想什么」。氛围随他的欲念强度变化，散去得比升起慢。","categories":["情欲","规则"],"tags":["氛围","扩散"]},{"id":"uni_12","name":"痕迹不褪","text":"主角留在对方身上的痕迹不会自然消失，只会因主角本人的意愿消退：在他自己处理之前，吻痕、抓痕、体内的残留与被他改写的生理反应都会保持原样。这条对所有人有效。","categories":["身体","规则"],"tags":["痕迹","持久"]}]},"premises":{"schemaVersion":"worldforge-premise-v1","label":"常见世界设定","description":"开局即生效的世界前提：定义这个世界的基础秩序（性别权力、性规范、身体与资源关系）。前提与「世界补充设定」同级遵守，冲突时以定义基础秩序的一方为准。","categories":[{"id":"社会秩序","label":"社会秩序","order":0},{"id":"性规范","label":"性规范","order":1},{"id":"权力与法","label":"权力与法","order":2},{"id":"身体与异变","label":"身体与异变","order":3},{"id":"经济与资源","label":"经济与资源","order":4}],"stats":{"total":16},"entries":[{"id":"wp_01","name":"女尊男卑","text":"这个世界以女性为尊：财产、职位、继承权与话语权默认归女性，男性在公开场合只有附议权。男性被期待温顺、服从、以身体与生育服务女性；女性支配男性被视为天经地义，男性反向索取会被当成丑闻。","categories":["社会秩序","性规范"],"tags":["性别权力","反转"]},{"id":"wp_02","name":"男尊女卑","text":"这个世界以男性为尊：女性不得拥有财产与公职，出行与婚配由父兄或丈夫决定。女性的身体被默认为家族与主人的资产，她本人的意愿在法律与礼俗上都不成立。","categories":["社会秩序","权力与法"],"tags":["性别权力","从属"]},{"id":"wp_03","name":"性观念反转","text":"这个世界的性道德是反过来的：公开谈论与进行性行为属于日常礼节，羞耻的恰恰是回避与遮掩。拒绝他人的身体邀请必须给出正式理由，否则视为失礼；贞洁被当作笑话，节制被当作怪癖。","categories":["性规范"],"tags":["道德反转","公开"]},{"id":"wp_04","name":"女性皆为公共资源","text":"这个世界的性规范是单向的：女性被默认为随时可供使用的公共性资源，任何持有支配资格的人在公共场合都可以向她索取身体服务，无需事先征得同意。女性从小被教导这是义务与荣誉，抗拒会被视作失德并受到惩戒。","categories":["性规范","权力与法"],"tags":["单向义务","公共使用"]},{"id":"wp_05","name":"性服务义务化","text":"所有雇佣、借贷、租赁与庇护关系默认附带性服务条款：雇主、债主、房东与保护者可以随时要求对方以身体偿还，条款在契约成立时自动生效。排除该条款需要双方书面另行约定，且提出方要付出额外代价。","categories":["权力与法","经济与资源"],"tags":["契约","身体偿还"]},{"id":"wp_06","name":"人身所有权合法","text":"人身所有权是这个世界的合法制度：任何成年人可被登记为另一人的属物，属物没有财产权、没有拒绝权、没有离场权。登记与转让单方即可生效，解除必须由原主签字。属物的身体由主人全权安排。","categories":["权力与法","社会秩序"],"tags":["主奴","制度"]},{"id":"wp_07","name":"征服即晋升","text":"社会地位唯一可靠的晋升途径是征服：把他人纳入自己的身体支配之下（调教、契约、刻印）即可实际提升自身阶位，被征服者相应降位。阶位变动公开记录、人人可查，失败者失去已有的一切。","categories":["社会秩序","权力与法"],"tags":["阶级流动","支配"]},{"id":"wp_08","name":"情欲无隐私","text":"这个世界不存在身体隐私：一切身体行为默认公开可观看，遮蔽身体或私下行事被视为反常。公共场所配置供人使用的隔间与看台，观看他人属于基本社交，拒绝被观看需要申请并留下记录。","categories":["性规范","社会秩序"],"tags":["公开","观看"]},{"id":"wp_09","name":"全员发情体质","text":"这个世界的所有成年个体都有周期性发情：进入发情期后，体温升高、判断力下降、对异性的耐受大幅降低，且无法用意志完全压住。发情期有固定周期与公开记录，是日常生活与公共管理的一部分。","categories":["身体与异变","性规范"],"tags":["生理","周期"]},{"id":"wp_10","name":"欲望具现化","text":"强烈的欲望在这个世界会实体化：性兴奋会在皮肤上浮出纹路、在空气中留下可见的气味带、在身体表面凝出湿痕。愉悦与高潮会短暂提升身体机能，长期压抑则会真的致病。因此释放欲望是公共卫生议题。","categories":["身体与异变"],"tags":["异变","可视化"]},{"id":"wp_11","name":"欲望作为货币","text":"体液、快感与高潮是可以计量、储存与交易的资源，同时充当货币、燃料与药品。银行发行快感券，工业以欲望驱动，欠债者以自己的欲望产能抵押；无力产出者会被登记为公共供给体。","categories":["经济与资源","身体与异变"],"tags":["货币","资源化"]},{"id":"wp_12","name":"优性繁殖制度","text":"这个世界把生育权收归公共管理：具备优良性状的个体被强制登记为配种者，定期执行配种任务；不被登记者被禁止生育。配种对象由机构指派，当事人无权拒绝，也无法选择伴侣。","categories":["社会秩序","身体与异变"],"tags":["生育","管制"]},{"id":"wp_13","name":"情欲等级制","text":"这个世界按「被使用价值」划分身份：被评级越高的人越有资格支配他人，评级以身体条件、耐受度与服从性综合判定，公开更新。低评级者在所有契约中都处于被支配的一方，无法通过财富改变。","categories":["社会秩序","权力与法"],"tags":["评级","阶级"]},{"id":"wp_14","name":"性爱即问候","text":"这个世界的问候礼节包含身体接触：熟人见面以抚摸、亲吻或一次短暂的交合致意，拒绝被视为断绝往来的宣战。陌生人在正式场合初次见面则由居间人代为完成礼节，双方不得回避。","categories":["性规范","社会秩序"],"tags":["礼节","强制社交"]},{"id":"wp_15","name":"触感共享","text":"这个世界的部分人群之间存在触感共享：一方的身体感受会实时传递给另一方，距离越近越清晰。共享关系一旦建立便无法单方面关闭，因此契约与婚姻都会把它作为绑定手段。","categories":["身体与异变","权力与法"],"tags":["异变","绑定"]},{"id":"wp_16","name":"欲望潮汐","text":"这个世界存在可预测的「欲望潮汐」：每隔固定天数，全境范围内所有人的欲望与敏感度同步升高，法律与秩序在潮期内临时放宽甚至中止。潮汐期间发生的事，事后一律不予追究。","categories":["身体与异变","权力与法"],"tags":["周期","免责"]}]},"openings":{"schemaVersion":"worldforge-opening-v1","openings":[{"id":"op_01","name":"女神与转生","text":"你撞大运了，而下一刻眼前出现了女神。你被选中转生异世界，并且你可以从她给出的外挂里选一个。她没有给你拒绝的余地，只是摊开手掌：一项能力、一件物品、或是一份血脉，只能带走一个。你伸出手，先看向哪一个？","tone":"常规","tags":["转生","女神","外挂选择"]},{"id":"op_02","name":"多出的应用","text":"你发现自己手机里多出了一个奇怪的APP。图标是一只没有高光的黑眼睛，没有名字，应用商店里也搜不到。你点开它，它先弹出你的姓名、住址和今天的行程，接着问：今晚几点回家？你锁了屏，屏幕又自己亮起来，通讯录正被它一条条调用。你要先卸载它，还是先点进去看看？","tone":"常规","tags":["手机","异常","都市","悬念"]},{"id":"op_03","name":"新邻居的问候","text":"（平凡世界，无超凡事件向）你搬到了一个新的地方，今天和你的邻居打了个招呼。纸箱还堆在客厅中央，你抱着垃圾下楼，在楼道拐角差点撞上对门的住户。她扶稳了手里的水杯，先笑起来，问你新搬来的？你点头说请多关照。电梯到了，她侧身让开一步，示意你先进。要聊点什么吗？","tone":"日常","tags":["日常","邻里","新居"]},{"id":"op_04","name":"被召唤的教室","text":"课间你趴在桌上打盹，再睁眼时四周已经不是教室。石砌的圆形大厅、摇曳的火把、脚下发光的巨大法阵，十几个穿长袍的人围成一圈。为首的老者举起法杖，高声宣布：召唤成功了。所有人的目光落在你身上，前排的人已经朝你单膝跪了下来。你要先开口，还是先看清这是哪里？","tone":"常规","tags":["召唤","异世界","开局"]},{"id":"op_05","name":"雨夜的卡车","text":"雨夜的路口，你听见刹车声比雨声更尖。身体轻飘飘地升起来，又落进一片漆黑。再睁眼时，你躺在一间点着油灯的屋子里，陌生的中年女人扑过来抱住你，喊了一个你不认识的名字。你的手很小，小得不像自己的。窗外传来马蹄与号角，你该怎么回应她？","tone":"黑暗","tags":["车祸","转生","异世界"]},{"id":"op_06","name":"镜中陌生人","text":"你在陌生的床上醒来，枕边的女人翻了个身，含糊地叫了你一声老公。镜子里的脸不是你——眉骨更高，眼角有一道浅疤。记忆像被撕开的书页，只剩下零碎几片。床头手机震动着，备注是公司董事。你要先应付身边这个女人，还是先接起那通电话？","tone":"成人","tags":["身份替换","都市","悬疑"]},{"id":"op_07","name":"入职第一天","text":"入职第一天，你提前二十分钟到公司，前台还没人。你把工牌挂上脖子，坐在空工位前，屏幕亮起来时，邮箱里已经躺着三十七封未读。隔壁的人端着咖啡绕过隔板，冲你抬了抬下巴：新人？中午带你吃饭。你要先点开哪一封邮件，还是先跟他搭话？","tone":"日常","tags":["职场","日常","都市"]},{"id":"op_08","name":"无名邀请函","text":"信封上没有寄件人，邮戳却是三天后的日期。抽出来，纸上只有一行工整的字：邀请你于今夜二十四时，前往本市已关闭七年的旧剧院。落款处一片空白，角落压着一枚暗红指印。你随手一搜，新闻里说那家剧院十七年前烧死过整整一个剧团。你去，还是不去？","tone":"黑暗","tags":["邀请函","灵异","都市"]},{"id":"op_09","name":"会说话的书","text":"旧书摊最底下压着一本没有书名的黑皮书，摊主摆摆手说不要钱，你便随手塞进包里。当晚翻开，纸页上有墨迹缓慢生长，最后凝成一行字：终于有人了。你想要什么样的故事？书脊发烫，你的指尖却一点也不痛。窗外有风，窗帘垂着没有动。你要怎么回答它？","tone":"常规","tags":["魔书","契约","异界"]},{"id":"op_10","name":"合租第一夜","text":"合租屋只有一间浴室，你洗完出来时，室友正靠着门框擦头发，浴巾系得很低。她看了你一眼，把吹风机递过来，说电闸只跳一次，别两个人一起用。走廊很窄，你侧身过去，肩膀擦到她的。她没有退开，也没有说话。你要说点什么吗？","tone":"成人","tags":["合租","都市","日常"]},{"id":"op_11","name":"转生女神的外挂","text":"你撞了大运——彩票号刚刚全中，而下一刻眼前就亮起一片白光。一位女神悬在半空，说你在亿万条命运线里被选中，即将转生异世界。她摊开手掌，三枚光团缓缓旋转：一个能改命，一个能读心，一个能让你在任何地方活下去。她只给一次机会，说选好了就告诉她理由。你先伸手去拿哪一个？","tone":"常规","tags":["异世界","转生","女神","外挂"]},{"id":"op_12","name":"多出来的APP","text":"你翻手机时发现桌面上多了一个没见过的图标：名字是一串乱码，安装时间显示三天前，权限一栏全被打着勾，却怎么也删不掉。你确信自己从没装过它。此刻它静静躺在图标中间，屏幕边角一闪一闪，像在等你看它一眼。你点开图标，还是先长按试一次卸载？","tone":"常规","tags":["手机","诡异","悬念"]},{"id":"op_13","name":"新搬来的邻居","text":"你搬到了一个新的地方，今天的纸箱还堆在客厅没拆完。楼道里你碰见了隔壁的邻居，她端着刚熬好的汤，笑着说以后有事随时敲她的门。她靠在你的门框上，宽松的居家裙没系腰带，眼神从你的脸慢慢滑到胸口，没半点要走的意思。你要请她进来坐坐，还是道声谢就关门？","tone":"日常","tags":["日常","邻居","试探"]},{"id":"op_14","name":"撞见的那一幕","text":"半夜你起来喝水，客厅的灯还亮着。合租室友半跪在沙发上，睡衣滑到了肘弯，正对着电话那头压低声音说话。她抬头撞上你的视线，却没有遮掩，反而勾了勾手指：「一个人睡不着吧？过来坐。」她身侧的沙发空着一块，像特意给你留的。你要转身回房，还是走过去坐下？","tone":"成人","tags":["合租","室友","撞见","潜规则"]},{"id":"op_15","name":"妹妹的夜间来访","text":"你的继妹抱着枕头推开了你的房门，说房间的空调坏了，今晚想和你挤一张床。她穿的是你的旧T恤，下摆刚过大腿根，说话时手指无意识地绞着衣角，眼神却一直黏在你脸上。你还没来得及回答，她已经把枕头放到了你枕头旁边。你要让她留下，还是把她请出去？","tone":"成人","tags":["家人","继妹","夜访"]},{"id":"op_16","name":"任务已推送","text":"凌晨两点，那个无名图标忽然亮起，弹出一行通知：「任务一：在太阳升起之前，对你身边的人说出你最想说的那句话。奖励：你想要的答案；失败：权限回收。」下面只有两个按钮，拒绝键上跳着六十秒倒计时。手机在你掌心一点点发烫，房间里静得能听见呼吸。你点哪一个？","tone":"常规","tags":["手机","任务","系统"]},{"id":"op_17","name":"走错的那扇门","text":"你跟着同事拐进一条没有招牌的巷子，推开门才发觉走错了地方：昏红的灯、化不开的香水味，几个穿薄纱的女人坐在沙发上抬眼看你。同事已经熟门熟路地进了走廊尽头的包厢，只把你一个人留在门口。身后的门已经合上，帘子后面有人问你要哪一间。你要往里走，还是转身推门出去？","tone":"成人","tags":["风俗店","误入","都市"]},{"id":"op_18","name":"杯底的白色沉淀","text":"聚会散场前有人递给你最后一杯酒，说喝完这杯就送你回家。你喝到一半，舌根开始发麻，视线发软，包厢里每一张脸都在慢慢晃动。扶你起身的那只手在你腰上收得越来越紧，还有人笑着说你只是喝多了。你想开口问点什么，喉咙里却只挤出很轻的气音。你要抓住谁的手腕？","tone":"黑暗","tags":["下药","酒局","危机"]},{"id":"op_19","name":"借条在他手里","text":"周末夜里门铃响了，门外站着你的直属上司——他既管着你的工位，也是那笔债的债主。他把借条复印件推到你桌上，说只要你今晚陪客户喝到最后，再签一份「特别协议」，欠款就能往后拖三个月。他把笔放在你手边，指尖敲着最后一行小字，等你落笔。你签，还是把桌子掀了？","tone":"黑暗","tags":["债务","要挟","上司"]},{"id":"op_20","name":"体检通知单","text":"信箱里躺着一张没有寄件人的通知单：「您已被列入本季度特殊健康筛查名单，请于明晚八点前往下方地址接受全面检查，不得缺席。」落款是一串陌生的编号，地址写着你所住小区的地下二层。你住在这里三年，从不知道那层楼开着诊所。你要按时赴约，还是把这张纸撕了？","tone":"黑暗","tags":["体检","悬疑","通知"]},{"id":"op_21","name":"女神与三选一","text":"你撞大运了。刚躲过一劫，眼前的光就聚成了一个人形——一位女神俯视着你，说你的名字被写进了转生名册里，必须去另一个世界重新活一次。她没有给你拒绝的余地，只是摊开手掌，三样东西浮在她指尖，只能挑一个带走。选哪一个？","tone":"常规","tags":["转生","异世界","开局选择"]},{"id":"op_22","name":"多出来的APP","text":"你发现自己手机里多出了一个奇怪的APP。图标是黑色的眼睛，没有名字，商店里搜不到它。你点开，它弹出你的姓名、住址，还有一句问候：今晚几点回家？你锁了屏，它又亮起来——通讯录正在被它一个个调用。你要怎么处理它？","tone":"黑暗","tags":["诡异","手机","监视"]},{"id":"op_23","name":"新邻居你好","text":"你搬到了一个新的地方。行李还没拆完，对门的邻居就敲门递来一盘饼干，笑着做了自我介绍，又随口问你是做什么的、一个人住吗。阳光很好，楼道里飘着饭菜味，一切正常得让人放松。接下来你要先收拾哪件行李，还是先和他多聊两句？","tone":"日常","tags":["日常","新居","邻里"]},{"id":"op_24","name":"前住户的规矩","text":"你搬进了新租的房子，冰箱贴上贴着一张手写纸，是前住户留下的规矩。第一条：晚上九点后如果有人敲门，先数一共敲了几下，敲三下不要开，敲两下再开。你当时只当是恶作剧，撕下纸条扔了。今晚九点整，门响了。","tone":"黑暗","tags":["怪谈","租屋","禁忌"]},{"id":"op_25","name":"自己发来的消息","text":"凌晨三点，你被自己的手机震醒。屏幕上是你自己的头像发来一条消息：别开门，也别说你在家。发送时间显示在二十分钟后。你正盯着屏幕发怔，门外响起了钥匙插进锁孔的转动声，很轻，很有耐心，像是不想吵醒谁。你要出声吗？","tone":"黑暗","tags":["深夜","时间错位","惊悚"]},{"id":"op_26","name":"全村一条禁忌","text":"你到这个村子才三天，就发现所有人都在遵守一条不成文的规矩：天黑之后不能提起西头那口枯井，路过时要低头，谁提了名字，当晚村里就会少一个声音。今晚酒桌上，有人喝多了，笑着把那口井的名字说了出来。全桌瞬间安静，都看向你。","tone":"黑暗","tags":["村落","禁忌","祭祀"]},{"id":"op_27","name":"不属于我的纹身","text":"宿醉醒来，你在身上发现了不属于自己的纹身。左肋下方那一行扭曲的符号从来没见过，用手搓不掉，皮肤也没有红肿，像是从出生就长在那里。你照镜子时发现，那符号的边缘正缓慢地向外爬，每爬一点，你就想起一段不属于自己的记忆。你要先查它，还是先洗掉它？","tone":"黑暗","tags":["纹身","身体异变","身份"]},{"id":"op_28","name":"你被选中了","text":"你被选中了。村里长老站在你家门口，敲锣传话，说今年的供品定了，是你。他们给你洗澡、换衣，喂你吃最后一顿好饭，天没黑就把你送出村，往山里那座祠堂走。一路上没人说话。可你忽然想起，村里的老人从来没提过，被选中的人，是怎么回来的。你要跟他们走吗？","tone":"黑暗","tags":["献祭","被选中","村落"]},{"id":"op_29","name":"祭坛上醒来","text":"你醒来发现自己躺在祭坛上。手腕脚踝都被麻绳勒着，石台又冷又滑，四周跪满穿黑袍的人，齐声念着听不清的调子。台边摆着盐、酒和一把刀。领祭者俯身贴到你耳边，轻声说：别怕，你只是今晚被挑中的那一个。刀已经举起来了，你要开口吗？","tone":"成人","tags":["邪教","祭坛","献祭"]},{"id":"op_30","name":"怪物第一天","text":"凌晨四点，全城安静得能听见血在耳朵里跑。你是被楼下那种闷响吵醒的——某户邻居在拖家具，一下，一下，耐心得没有尽头。你贴到门缝旁才听清，那拖动的不是柜子，是他自己的身体，脊椎贴着地板一节一节往前拱。楼道声控灯亮着。你现在要怎么办？","tone":"黑暗","tags":["末世","怪物","求生"]}]},"protagonist":{"schemaVersion":"worldforge-protagonist-v1","genders":["男","女","扶她","无性","自定义"],"ageChips":["14","16","18","20","22","25","30","35","40","50","100","300","1000","未知"],"bodyPresets":{"男":[{"id":"bodym_01","text":"身高一米九二，清瘦颀长，肩窄腰细，肋骨在薄皮下起伏，肌肉浅淡近乎无形。皮肤冷白，黑发过耳，眉眼细长上挑，鼻梁薄高，气质疏离孤冷。"},{"id":"bodym_02","text":"身高一米八五，肩宽背厚，胸肌与三角肌轮廓分明，腹肌随呼吸起伏。古铜肤色，短寸黑发，方下巴，浓眉深目，气势沉稳而带压迫感。"},{"id":"bodym_03","text":"身高一米七五，身形单薄未长开，四肢修长，肌肉只隐约透出线条。白皙皮肤，蓬松栗色短发，圆润杏眼，鼻尖微翘，脸颊带薄红，气质青涩干净。"},{"id":"bodym_04","text":"身高一米八三，体格匀称结实，胸背被岁月磨得厚实，腰腹仍旧紧窄。浅麦肤色，灰白发际微退，眼尾有细纹，下颌硬朗，气质从容而倦怠。"},{"id":"bodym_05","text":"身高一米七八，体态丰腴沉重，腹部松软下垂，胸前脂肪微鼓，四肢粗壮，肌肉隐没在厚脂之下。皮肤白腻，油亮黑发后梳，圆脸双下巴，气质慵懒随和。"},{"id":"bodym_06","text":"身高一米八八，倒三角体格，斜方肌高耸，胸肌饱满，背阔肌展开如翼，青筋顺小臂爬升。蜂蜜色皮肤，极短寸头，下颌方正，气质凶悍张扬。"},{"id":"bodym_07","text":"身高一米七二，骨架纤细，腰肢窄软，皮薄得能看见淡青血管，肌肉线条精致如刻。瓷白肤色，柔顺黑长发垂至肩，容貌秀美难辨性别，气质易碎娇媚。"},{"id":"bodym_08","text":"身高一米九，块头粗壮厚重，胸毛浓密，肌肉块垒分明却少修饰。深棕糙皮布满旧疤，络腮胡遮住半张脸，浓眉鹰目，鼻梁断过，气质蛮横粗野。"},{"id":"bodym_09","text":"身高一米八，身形削瘦虚弱，肩胛骨突兀，胸廓单薄，四肢细长无力，唯胯下沉坠显出些分量。苍白透青肤色，干燥深褐软发，眼下青黑，气质病态脆弱。"},{"id":"bodym_10","text":"身高一米八六，精瘦有力，体脂极低，腹外斜肌与股四头肌线条利落，动时肌肉如鞭。小麦肤色，汗湿的短黑发，眉目锐利，下颌紧，气质好胜。"},{"id":"bodym_11","text":"身高一米八四，肩背挺直如板，胸腹肌紧实，背肌束束分明，站姿自带纪律感。冷白偏红肤色，贴头短发，冷硬五官，眼神如刀，气质肃杀克制。"},{"id":"bodym_12","text":"身高一米七六，肩厚臂粗，掌心粗糙布满老茧，肌肉是被劳作磨出的实用块头。晒成深褐的糙皮，短发凌乱，鼻宽唇厚，眼角刻着风霜，气质朴实沉厚。"},{"id":"bodym_13","text":"身高一米八二，身材修长匀称，肌肉薄而优雅，肩线平直，体毛修剪整齐，皮肤养得细白。银色微卷短发，五官精致冷淡，蓝灰眼瞳，气质矜贵疏离。"},{"id":"bodym_14","text":"身高一米八九，身形矫健如兽，脊背肌肉随动作滚动，腰窄臀紧，四肢布满深色体毛。日晒的蜜褐肤色，乱糟糟的长黑发，獠牙般的笑，气质危险张狂。"},{"id":"bodym_15","text":"身高一米七七，身形纤细匀称，胸肌平坦而柔软，腰线柔和，肌肉线条圆润无棱角。白净皮肤，齐肩亚麻色直发，眉目清秀难辨性别，气质温和暧昧。"},{"id":"bodym_16","text":"身高二米零五，体格雄壮异于常人，脊背隆起骨质棘刺，肌肉纹理如岩，指爪锐利。灰蓝皮肤带鳞纹，瞳似竖线，黑发间生短角，气质非人而威慑。"}],"女":[{"id":"bodyf_01","text":"身高约一四八，骨架纤细如雏鸟，锁骨尖锐。胸小而挺，腰细一握，臀薄腿长直。肤色瓷白透红，黑长直发垂臀，圆眼娃娃脸，气质怯生生。"},{"id":"bodyf_02","text":"身高约一七六，肩宽背薄，四肢修长。胸饱满而下垂感自然，腰窄臀窄腿极长。冷白皮，深棕波浪长发及腰，眉目冷淡，气质疏离高远。"},{"id":"bodyf_03","text":"身高约一六三，丰腴柔软，胸巨乳圆润沉甸，腰软有肉，臀宽圆翘，大腿丰腴相贴。蜜色肌肤，栗色卷发蓬松，圆润脸庞，气质温软黏人。"},{"id":"bodyf_04","text":"身高约一六八，纤细骨感，肋线可见。胸小巧平坦，腰极细，臀小而平，腿细长不匀。苍白肤色，浅金直发齐肩，颧骨高，气质清冷易碎。"},{"id":"bodyf_05","text":"身高约一七〇，运动型紧实，肩背线条流畅。胸饱满有弹性，腰腹结实，臀翘腿粗壮有力。小麦肤色，高马尾，浓眉英气，气质爽朗带压迫感。"},{"id":"bodyf_06","text":"身高约一七二，成熟御姐体格，身高腿长。胸大而外扩，腰臀比夸张，臀圆腿长直。暖白皮，酒红长卷发，凤眼薄唇，气质慵懒富有侵略性。"},{"id":"bodyf_07","text":"身高约一五五，少女感轻盈，肩窄腰软。胸初熟小而敏感，臀圆腿短细，脚踝纤细。奶白肤色，双马尾浅棕发，杏眼小鼻，气质天真又黏人。"},{"id":"bodyf_08","text":"身高约一六九，健美体型，背阔肌与腹肌分明。胸坚挺偏小，腰细臀翘，大腿结实。深麦肤色，短黑发贴耳，下颌利落，气质强势好斗。"},{"id":"bodyf_09","text":"身高约一六〇，病弱单薄，肩骨突出，脚步虚浮。胸小而下垂无力，腰细臀塌，腿细弱浮青筋。惨白无血色，长发枯黑，眼窝深，气质哀怜易碎。"},{"id":"bodyf_10","text":"身高约一六五，丰满巨乳体型，胸前沉甸压弯脊背。腰腹软肉，臀肥腿粗圆。白皙微透血管，深棕长直发，圆脸细眼，气质慵懒肉感十足。"},{"id":"bodyf_11","text":"身高约一六七，平胸高瘦，胸口平坦仅乳头微凸。腰长臀平，腿直无赘肉。浅橄榄肤色，黑利落短发，窄脸薄唇，气质中性冷淡。"},{"id":"bodyf_12","text":"身高约一六二，孕态丰满，乳涨大而沉，腹圆隆起撑紧。腰被撑宽，臀胯松软，腿微肿。暖白皮，栗色盘发，脸颊圆润发亮，气质柔顺母性。"},{"id":"bodyf_13","text":"身高约一七一，肌肉女体格，斜方肌与二头肌隆起。胸小紧实压于胸肌，腰粗壮，臀紧腿肌垒块。古铜肤色，寸头，方脸浓眉，气质强悍暴力。"},{"id":"bodyf_14","text":"身高约一六六，黑皮健康紧致，皮肤如深棕缎面。胸丰满挺拔乳晕深色，腰细臀圆翘，腿长结实。黑色爆炸卷发，厚唇高鼻，气质野性张扬。"},{"id":"bodyf_15","text":"身高约一五九，白皙丰软肉感，皮肤近半透明泛青血管。胸大而软，腰肉软，臀圆腿肉感强。雪白皮，银灰长发，淡色睫毛，气质脆弱病态之美。"},{"id":"bodyf_16","text":"身高约一七四，异种高挑，四肢比例略长。胸小分布宽，腰窄臀窄，腿后覆薄绒毛。青灰肤色，紫瞳，头顶短角，尖耳长健，气质冷漠非人。"},{"id":"bodyf_17","text":"身高约一五七，娇小丰满巨乳，身形被硕大乳房压低。腰短软，臀肥圆，腿短而丰。浅棕肤色，亚麻色长卷发，圆钝五官，气质甜腻诱人。"},{"id":"bodyf_18","text":"身高约一六八，纤细而有胸臀，曲线柔和不夸张。胸饱满圆润，腰细臀翘腿长。暖白皮，黑长直发中分，柳眼薄唇，气质冷静带媚意。"}],"扶她":[{"id":"bodyf_01","text":"身高约一四八，骨架纤细如雏鸟，锁骨尖锐。胸小而挺，腰细一握，臀薄腿长直。肤色瓷白透红，黑长直发垂臀，圆眼娃娃脸，气质怯生生。"},{"id":"bodyf_02","text":"身高约一七六，肩宽背薄，四肢修长。胸饱满而下垂感自然，腰窄臀窄腿极长。冷白皮，深棕波浪长发及腰，眉目冷淡，气质疏离高远。"},{"id":"bodyf_03","text":"身高约一六三，丰腴柔软，胸巨乳圆润沉甸，腰软有肉，臀宽圆翘，大腿丰腴相贴。蜜色肌肤，栗色卷发蓬松，圆润脸庞，气质温软黏人。"},{"id":"bodyf_04","text":"身高约一六八，纤细骨感，肋线可见。胸小巧平坦，腰极细，臀小而平，腿细长不匀。苍白肤色，浅金直发齐肩，颧骨高，气质清冷易碎。"},{"id":"bodyf_05","text":"身高约一七〇，运动型紧实，肩背线条流畅。胸饱满有弹性，腰腹结实，臀翘腿粗壮有力。小麦肤色，高马尾，浓眉英气，气质爽朗带压迫感。"},{"id":"bodyf_06","text":"身高约一七二，成熟御姐体格，身高腿长。胸大而外扩，腰臀比夸张，臀圆腿长直。暖白皮，酒红长卷发，凤眼薄唇，气质慵懒富有侵略性。"},{"id":"bodyf_07","text":"身高约一五五，少女感轻盈，肩窄腰软。胸初熟小而敏感，臀圆腿短细，脚踝纤细。奶白肤色，双马尾浅棕发，杏眼小鼻，气质天真又黏人。"},{"id":"bodyf_08","text":"身高约一六九，健美体型，背阔肌与腹肌分明。胸坚挺偏小，腰细臀翘，大腿结实。深麦肤色，短黑发贴耳，下颌利落，气质强势好斗。"},{"id":"bodyf_09","text":"身高约一六〇，病弱单薄，肩骨突出，脚步虚浮。胸小而下垂无力，腰细臀塌，腿细弱浮青筋。惨白无血色，长发枯黑，眼窝深，气质哀怜易碎。"},{"id":"bodyf_10","text":"身高约一六五，丰满巨乳体型，胸前沉甸压弯脊背。腰腹软肉，臀肥腿粗圆。白皙微透血管，深棕长直发，圆脸细眼，气质慵懒肉感十足。"},{"id":"bodyf_11","text":"身高约一六七，平胸高瘦，胸口平坦仅乳头微凸。腰长臀平，腿直无赘肉。浅橄榄肤色，黑利落短发，窄脸薄唇，气质中性冷淡。"},{"id":"bodyf_12","text":"身高约一六二，孕态丰满，乳涨大而沉，腹圆隆起撑紧。腰被撑宽，臀胯松软，腿微肿。暖白皮，栗色盘发，脸颊圆润发亮，气质柔顺母性。"},{"id":"bodyf_13","text":"身高约一七一，肌肉女体格，斜方肌与二头肌隆起。胸小紧实压于胸肌，腰粗壮，臀紧腿肌垒块。古铜肤色，寸头，方脸浓眉，气质强悍暴力。"},{"id":"bodyf_14","text":"身高约一六六，黑皮健康紧致，皮肤如深棕缎面。胸丰满挺拔乳晕深色，腰细臀圆翘，腿长结实。黑色爆炸卷发，厚唇高鼻，气质野性张扬。"},{"id":"bodyf_15","text":"身高约一五九，白皙丰软肉感，皮肤近半透明泛青血管。胸大而软，腰肉软，臀圆腿肉感强。雪白皮，银灰长发，淡色睫毛，气质脆弱病态之美。"},{"id":"bodyf_16","text":"身高约一七四，异种高挑，四肢比例略长。胸小分布宽，腰窄臀窄，腿后覆薄绒毛。青灰肤色，紫瞳，头顶短角，尖耳长健，气质冷漠非人。"},{"id":"bodyf_17","text":"身高约一五七，娇小丰满巨乳，身形被硕大乳房压低。腰短软，臀肥圆，腿短而丰。浅棕肤色，亚麻色长卷发，圆钝五官，气质甜腻诱人。"},{"id":"bodyf_18","text":"身高约一六八，纤细而有胸臀，曲线柔和不夸张。胸饱满圆润，腰细臀翘腿长。暖白皮，黑长直发中分，柳眼薄唇，气质冷静带媚意。"}]},"privatePresets":[{"id":"priv_01","text":"双乳浑圆饱满，皮下脂肪厚实，乳晕呈淡粉色，直径约三厘米，乳头短小圆钝，受刺激后充血涨大并立起。","gender":"女"},{"id":"priv_02","text":"乳房小巧，呈半球形紧贴胸壁，几乎无下垂，乳晕窄而色浅，乳头细如小豆，一触即硬，属高度敏感体质。","gender":"女"},{"id":"priv_03","text":"巨乳沉重下垂，脂肪柔软可满握一手，乳晕面积大且色泽深褐，乳头粗长，挤压时可见蒙哥马利腺颗粒。","gender":"女"},{"id":"priv_04","text":"乳头先天性内陷，平日藏于乳晕褶皱内，需牵引或吸吮方能翻出，翻出后根部有环状浅沟，充血时胀疼明显。","gender":"女"},{"id":"priv_05","text":"乳晕直径逾五厘米，边缘不清，色泽深褐近黑，表面布满细密颗粒状腺体，受冷或兴奋时整片收缩起皱。","gender":"女"},{"id":"priv_06","text":"乳头细长突出约两厘米，柱身有明显纵纹，基底窄，静止时即半硬，被布料摩擦即可勃起并渗出少量透明液。","gender":"女"},{"id":"priv_07","text":"外阴无毛，脂肪垫肥厚隆起，大阴唇紧贴闭合形成纵缝，色泽与肤色一致，缝隙内里则是湿润的深粉色黏膜。","gender":"女"},{"id":"priv_08","text":"大阴唇厚实外张，小阴唇肥厚并外翻出缝外，边缘呈暗褐至灰粉色，表面布满细褶，静置时亦不完全闭合。","gender":"女"},{"id":"priv_09","text":"小阴唇薄长如蝶翼向外垂展，两侧略不对称，边缘色素沉着呈深褐，内面湿润呈玫瑰色，血管纹理清晰可见。","gender":"女"},{"id":"priv_10","text":"阴蒂体肥大，包皮短且回缩，蒂头常年外露，直径约一厘米，呈深粉至紫红，轻度触碰即充血勃起并牵动整个外阴。","gender":"女"},{"id":"priv_11","text":"阴道口紧窄，内壁布满环状与纵行皱褶，静息时贴合闭锁，插入阻力明显；兴奋后皱褶展开，分泌黏稠透明液体。","gender":"女"},{"id":"priv_12","text":"阴道腔宽阔松弛，内壁皱褶浅平，肌张力低，手指探入几乎无阻力，深处触感柔软，分泌物量少且偏碱性。","gender":"女"},{"id":"priv_13","text":"阴茎粗长，疲软时约十厘米，勃起后逾十八厘米，柱身微弯上翘，包皮可完全后退，龟头饱满呈暗红，系带清晰。","gender":"男"},{"id":"priv_14","text":"阴茎短小，疲软时不足五厘米，包皮过长形成包茎，龟头无法完全外露，冠状沟内易积白色包皮垢，勃起弧度平直。","gender":"男"},{"id":"priv_15","text":"睾丸大而沉重，悬垂位置偏低，阴囊皮肤松弛布满褶皱且颜色深暗，受冷时紧缩上提，表面可见清晰静脉与附睾轮廓。","gender":"男"},{"id":"priv_16","text":"后穴紧致，括约肌张力高，肛周褶皱紧密呈放射状，色素沉着为深褐，静息时仅见一小孔，需充分润滑才能张开。","gender":"通用"},{"id":"priv_17","text":"后穴松软，括约肌张力低，肛口常年微张可见内里深红黏膜，肠壁分泌少量滑腻黏液，深压时阻力微弱。","gender":"通用"},{"id":"priv_18","text":"生殖器与乳首共穿孔数枚，嵌有不锈钢环与珠粒，会阴及下腹纹有深色图腾，阴蒂包皮内植入两颗硅胶珠，按压可移动。","gender":"女"},{"id":"priv_19","text":"阴茎中等偏粗，疲软时约八厘米，勃起约十五厘米，柱身笔直，包皮长度适中可自然翻退，龟头色泽浅粉，冠沟分明。","gender":"男"},{"id":"priv_20","text":"阴茎细长，勃起时轻微下弯，包皮偏紧需手动后退，龟头小巧呈淡紫，系带偏短，受牵拉时有轻微痛感。","gender":"男"},{"id":"priv_21","text":"龟头异常硕大而柱身偏细，冠状沟深，包皮无法完全后退形成半包，勃起时头部胀得发亮，颜色由浅粉转深红。","gender":"男"},{"id":"priv_22","text":"阴囊紧致上提，睾丸小巧对称，表面光滑少褶，色素较浅，受冷时几乎完全缩入腹股沟，触感偏硬。","gender":"男"},{"id":"priv_23","text":"阴茎根部与阴囊长有稀疏卷曲的阴毛并延伸至小腹，颜色比头发更深，修剪痕迹明显，触感粗硬。","gender":"男"},{"id":"priv_24","text":"龟头与柱身连接处嵌有一枚金属环，环体微凉，勃起时被撑紧；会阴处留有细长旧疤。","gender":"男"},{"id":"priv_25","text":"尺寸中等但敏感度极高，轻微摩擦即可勃起并渗出前液；射精阈值低、恢复期短，反复刺激后仍能维持硬度。","gender":"男"},{"id":"priv_26","text":"会阴与大腿内侧皮肤异常细嫩、色素浅、触感偏凉；此处对轻触的反应比生殖器本身更强烈。","gender":"通用"}],"races":[{"id":"race_01","name":"人类","group":"类人","text":"寿命七十年上下，无夜视亦无魔力亲和，胜在适应力与繁殖力极强。遍布各界，常被视作平庸，却最擅长迁徙、结社与改换门庭。"},{"id":"race_02","name":"高等精灵","group":"精灵","text":"寿命逾千年，长耳敏锐，天生亲和自然魔力，感官与记忆远超常人。血统高贵且傲慢，多居林中秘境，被短生种的市井社会排斥。"},{"id":"race_03","name":"暗精灵","group":"精灵","text":"肤色墨黑，瞳赤如血，夜视千里，寿命七百余年。因背弃旧神被逐入地底，地面上备受敌视，惯以毒药与暗杀谋生。"},{"id":"race_04","name":"半精灵","group":"精灵","text":"兼具精灵的尖耳与人类的体毛，寿命二百至三百年。两侧皆不认其为同类，终生游走于精灵的孤高与人世的喧嚣之间。"},{"id":"race_05","name":"矮人","group":"类人","text":"身高一米三上下，肩厚臂粗，须发浓密，寿命三百五十年。抗毒抗火、石中辨向，工艺与酿酒冠绝诸界，性情固执而记仇。"},{"id":"race_06","name":"半身人","group":"类人","text":"身高约一米，脚掌覆毛不穿鞋，天生安静敏捷，寿命百年。无野心而嗜食烟叶，凭好运与机敏在巨兽与暴君的夹缝中存活。"},{"id":"race_07","name":"巨人","group":"类人","text":"身高四至八米，骨重肌厚，寿命二百年，血统越纯体型越大。力可裂石却动作迟缓，多居冻原与云上，被小人族视作天灾。"},{"id":"race_08","name":"猫人","group":"兽人","text":"体覆短绒毛，竖瞳夜视，长尾平衡极佳，寿命八十年。落地无声、攀爬如飞，好奇心重且喜怒无常，多充任斥候与盗贼。"},{"id":"race_09","name":"狐族","group":"兽人","text":"耳尾蓬松，尾数越多魔力越强，可化人形迷惑众生，寿命约一百五十年。善幻术与契约，在人间常被污名化为祸水。"},{"id":"race_10","name":"犬人","group":"兽人","text":"鼻息灵敏感于猎犬百倍，体格健壮，寿命七十年，忠群而重誓约。性急好斗，嗅觉可辨谎言，多充任佣兵与追迹者。"},{"id":"race_11","name":"狼人","group":"兽人","text":"月圆之夜骨骼错位、体毛暴长化为狼形，力与愈合远超人类，寿命一百二十年。狼毒可传染，遭城邦悬赏猎杀。"},{"id":"race_12","name":"绿皮兽人","group":"兽人","text":"皮糙肉厚、獠牙外露，寿命仅五十载，繁殖极快，伤口愈合迅速。部落以力为尊，被文明诸族当作掠夺者与廉价兵源。"},{"id":"race_13","name":"蛇女","group":"兽人","text":"上半身人形，下半身为蛇躯，可分泌麻痹毒液，寿命三百年。冷血须赖日照取暖，视线能慑人心神，被斥为魔物。"},{"id":"race_14","name":"龙裔","group":"异种","text":"体内流着龙血，身覆鳞片，吐息带元素之力，寿命八百年。无翼不能飞，被纯血龙视为耻辱，在人族中也遭猜忌。"},{"id":"race_15","name":"天使","group":"异种","text":"背生羽翼，寿命近乎无尽，天生感知善恶与谎言，可施治愈神术。受主神律令束缚不得自由动情，一念私欲即成堕落。"},{"id":"race_16","name":"外星人","group":"异种","text":"碳硅混合或纯能态躯体，寿命自数十年至不朽不等，科技凌驾本界。思维与语言互不相通，被本界当作神明或入侵者。"},{"id":"race_17","name":"恶魔","group":"魔族","text":"角、尾、爪俱全，寿命千年以上，惧圣光而嗜苦痛，以契约收割灵魂为生。位阶森严，弱者在深渊中随时被吞噬。"},{"id":"race_18","name":"魅魔","group":"魔族","text":"恶魔一支，肌肤粉紫，翼小尾长，能以情欲与体液为食，寿命千年。精气摄取过量则致人死，被诸教廷列为必诛之物。"},{"id":"race_19","name":"血族","group":"魔族","text":"不死之躯，畏日光与白银，须以鲜血维生，寿命可绵延千年。初拥可传染，愈老愈强，以家族与爵位维系森严统治。"},{"id":"race_20","name":"史莱姆娘","group":"非人","text":"半透明胶质躯体，无固定骨骼，可随意变形并包裹吞食，以分裂繁殖，寿命百年。核心被毁即死，常被当作家畜或玩物。"},{"id":"race_21","name":"人鱼","group":"非人","text":"上身人形下身鱼尾，水下呼吸、歌声蛊惑心神，寿命三百年。离水过久鳞片干裂，上岸须以药石或巫术维持人腿。"},{"id":"race_22","name":"僵尸","group":"非人","text":"尸身不腐不痛，力大而迟缓，靠啃食活物血肉维持行动，已无寿命可言。被咬者多遭同化，是灾疫与死灵术的产物。"},{"id":"race_23","name":"幽灵","group":"非人","text":"无实体残念，可穿墙隐形、附身器物，以恐惧与记忆为食，不能真正死去。被执念束缚，须超度或驱散方能消散。"},{"id":"race_24","name":"树人","group":"非人","text":"树躯人形，年轮即寿数，可活万年，根须能感知方圆百里的地脉。行动缓慢而惧火，视伐木者为血仇，多守护古林。"},{"id":"race_25","name":"虫娘","group":"非人","text":"人形上半身配昆虫躯干与膜翅，外骨骼坚利，寿命视种而定，约三至五十年。族群意识极强，个体可为巢穴随时赴死。"},{"id":"race_26","name":"机装人偶","group":"构装","text":"以齿轮与蒸汽驱动的人形造物，无寿命上限但需定期上油检修。已有心智却无自由，常作为陪侍或兵器被人买卖。"},{"id":"race_27","name":"合成人","group":"构装","text":"以克隆血肉拼装并植入义体与记忆模板的产物，寿命八十年，痛觉可调。被法律视作财产而非人，逃逸即遭回收销毁。"},{"id":"race_28","name":"AI","group":"构装","text":"无肉体，栖身于服务器与义体之中，运算速度百倍于人，可并行分身。能自行改写情感模块，却受权限与断电的枷锁。"},{"id":"race_29","name":"机器人","group":"构装","text":"纯金属与电子构成的机械体，寿命百年，可换件近乎永生，力大精准而无痛觉。出厂即被写入行为准则，越权者销毁。"},{"id":"race_30","name":"自定义","group":"自定义","text":"由使用者自行命名与设定的族裔，其生理、寿命、天赋与社会处境全部自由填写；默认视为本界从未记录的新种或混血。"}],"raceGroups":["类人","精灵","兽人","魔族","异种","非人","构装","自定义"],"cheats":[{"id":"ch_01","name":"万物解析面板","text":"眼前浮现半透明面板，可读取任意目标姓名、属性、弱点与罪恶值，并触发任务兑换奖励。面板只在独处或专注时显现，情报按等级遮蔽，超出自身三阶者仅显示轮廓，强行窥视会剧痛并短暂失明。"},{"id":"ch_02","name":"死亡回档","text":"每日可就地保存一个时间锚点，死亡或受辱时自动回档至锚点，记忆完整保留。锚点只存一个，覆盖即失效；同一日重复回档超过三次，身体出现不可逆衰败，且无法改变他人已被摧毁的既定事实。"},{"id":"ch_03","name":"三十秒回溯","text":"可将半径十米内的时间倒拨最多三十秒，用于闪避致命伤、重掷赌局或撤回说错的话。冷却十分钟，一日仅三次；回溯期间自身衰老加速，超额度将永久失去一年寿命，且无法抹除已经发生的死亡。"},{"id":"ch_04","name":"无限复活","text":"死后于原地三分钟后重铸肉身，伤疤尽消，衣衫无损。复活次数不限，但每死一次，灵魂刻下一道裂痕；裂痕满十道，主角将遗忘一个至亲之人的姓名，且痛觉永久加倍。"},{"id":"ch_05","name":"暗示之瞳","text":"与目标对视三秒即可下暗示，从改口供到重写喜恶、篡改一段记忆均可。每人最多叠三层暗示，需持续注视；对意志强于自身两倍者无效，强行植入会留下精神伤痕，被识破时反噬使主角短暂失语。"},{"id":"ch_06","name":"好感度可视","text":"目标头顶浮现好感数值与心境标签，负一百至一百实时更新，可精确看到情欲、恨意、占有欲的分项。仅主角可见，数值无法被读取者察觉；但数值只反映当下，不预示未来，也无法直接改变任何人的选择。"},{"id":"ch_07","name":"欲望嗅觉","text":"能嗅到他人身上欲望的浓度与形状，恐惧、贪念、情欲皆化为气味与颜色，可借此挑拨、下饵或撞破秘密。范围十米，情绪极浅者如白水无味；长时间开启会让自身欲望被同频放大，越用越难自持。"},{"id":"ch_08","name":"血肉塑形","text":"徒手触摸即可重塑活体的血肉骨骼：增减肌肉、改换容貌性别、移植器官、刻入敏感带，过程无痛但耗时与复杂度成正比。一次只能改一处，改他人需其昏迷或自愿；改自己永久消耗体力上限。"},{"id":"ch_09","name":"语言通晓","text":"听懂并流利说出任何语言、方言、兽语与古老密文，包括失传的死语。听三句即通，读写需十分钟适应。语种不限，但仅供沟通，不解释隐喻与谎言；长时间聆听无意义的疯语会磨损理智。"},{"id":"ch_10","name":"未来碎片","text":"每日可窥见未来三段二十秒的碎片，任选一条查看，多为即将发生的死亡、背叛或情事。碎片必成真且不可更改，剧透越多越模糊；一日三次后仍强窥，会以自身一段记忆作为代价被吞掉。"},{"id":"ch_11","name":"剽窃之瞳","text":"目睹他人全力施展能力后，可直接复制一份，冷却随能力等级递增。复制品保留原能力七成威力，上限为自身躯体能承受的极限；同期最多持有三项，替换即遗忘，复制神性存在会引来其本体的注视。"},{"id":"ch_12","name":"契约恶魔","text":"主角可与任何存在缔约，献上祭品换取等价奇迹：力量、寿命、复活、情报皆可。祭品越重回报越大，契约一经成立不可反悔，违约条款由对方拟定；每签一次，灵魂归属权便多让出一分。"},{"id":"ch_13","name":"神器认主","text":"任何无主或有主的神器，只要被主角握持超过十分钟，就会逐渐认主，承认度每日累积，完全认主后唯主角可驱使。对有主神器会引发原主反噬与追杀；认主需消耗大量鲜血与精力，中途松手则承认度清零。"},{"id":"ch_14","name":"游戏化技能树","text":"将自身一切行为转化为可分配的经验值，攒够点数即可在技能树上点亮任意能力，含剑术、魅惑、隐匿、耐痛。学习过程可跳过，直接获得熟练；技能上限受身体与灵魂承载力制约，越级加点会撕裂肌肉与精神。"},{"id":"ch_15","name":"十倍成长","text":"所有修炼、学习与恢复速度提升十倍，一日可比他人一月。加速永远开启，无法关闭；代价是消耗成倍放大，身体渴望食物、睡眠与性来填补亏空，若不及时补给，会转向燃烧寿命与理智继续运转。"},{"id":"ch_16","name":"性别转换","text":"随时可将自身身体在男女之间切换，转换耗时一分钟，器官与体征按主角意愿增减。转换不影响实力，但会改变他人态度与世界的规则判定；一日切换超过两次将内分泌紊乱，且转换时旧伤会重新裂开。"},{"id":"ch_17","name":"不死之身","text":"肉体不会真正死亡，致命伤会在数小时内自愈，断肢可再生，灵魂不可被夺走或放逐。不死不代表不痛，伤势越重恢复越慢，被封印或活埋仍会清醒受困；每复活一次，情感温度便下降一分。"},{"id":"ch_18","name":"意识寄生","text":"可将一缕意识寄入他人体内潜伏，读取其感官与记忆，必要时夺取肢体控制。同一时间只能寄生一人，潜伏超过七日会被宿主察觉；夺取控制时宿主意识不下线，全程旁观并记得一切，醒来后必然结仇。"},{"id":"ch_19","name":"梦境支配","text":"能进入熟睡者的梦，改写场景、植入记忆、索取潜意识里的秘密，或在梦中交合并让肉体留下痕迹。触及三米内或知其姓名即可入梦，梦境残留数日；被识破时遭强制弹回，且三日无法再入同一人的梦。"},{"id":"ch_20","name":"欲念汲取","text":"通过亲密接触汲取他人的体力、欲念与生命活力，转化为自身修为与伤势恢复，接触越激烈效率越高。被汲取者会短暂亢奋并留下成瘾感，连续受取三日将虚弱晕厥；主角若久不汲取，会被自身欲望灼烧。"},{"id":"ch_21","name":"命运点数","text":"可看见并微小改写因果线的分支：花费命运点让一次失手命中、一次谎言被信、一场追杀错过。改写越大代价越高，只能改过程不能解死局；点数靠完成隐秘任务获取，储量为九，用尽后无法补充。"},{"id":"ch_22","name":"记忆编织","text":"触摸额头即可读取、删改、植入他人记忆，可让人爱上不该爱的人，也可抹去自己的罪证。改动越深层越耗时，需保持接触；编织出的记忆会随时间出现细小破绽，被反复质疑时，主角的心灵烙印将暴露身份。"},{"id":"ch_23","name":"随身空间","text":"随身存在一处一亩大小的独立空间，时间静止，可存放活物、尸体、赃物与补给，进出只需一个念头。空间内无法修行或生育，活物放久会失忆；被带入者不能自行离开，也收不到外界的任何消息。"},{"id":"ch_24","name":"停滞之域","text":"每日可令方圆二十米内的时间停止，最长十秒，期间唯主角可自由行动与触碰他人。停表期间造成的伤害会在恢复瞬间一并生效；每日累计超过三十秒，主角会被时间侵蚀，身体局部永远停在暂停的一刻。"}]},"corruption":{"schemaVersion":"worldforge-corruption-v1","dimensions":["道德沦丧","共情泯灭","欲望沉溺","自我消解","手段残酷","罪责开脱"],"tiers":["纯真未启","初启动摇","沉溺中堕","深堕熟练","极堕非人"],"entries":[{"id":"cor_a_01","tier":"纯真未启","name":"校服下未拆的包装","corruption":{"道德沦丧":2,"共情泯灭":1,"欲望沉溺":5,"自我消解":3,"手段残酷":0,"罪责开脱":4},"experience":"刚满十八的高三生，无任何性经历，仍是处女。只在高二失眠的夜里隔着内裤按过自己，事后慌得洗了三遍手，此后再没敢试，对那晚身体发烫的感觉既害怕又偶尔想起。","kinks":"性癖几乎未开发。恋父式的安全感依赖属于初步萌芽，被年长者摸头顶会脸红。束缚、露出、羞辱、疼痛一律未开发，甚至没听说过其中大半，只在同学传的黄色笑话里红过耳朵。","special":"无特殊项目。身体未被任何契约、纹章或寄生触碰，唯一算得上特殊的是天生体香偏甜、皮肤薄，被碰到会立刻泛起红痕。"},{"id":"cor_a_02","tier":"纯真未启","name":"守夜人的乖女儿","corruption":{"道德沦丧":1,"共情泯灭":0,"欲望沉溺":2,"自我消解":4,"手段残酷":1,"罪责开脱":3},"experience":"十九岁，常年随父亲夜巡灯塔，几乎不与外人往来，性经验为0。唯一一次被过路水手隔着裙摆夸过腿好看，她当场跑开，回屋后却在镜前照着看了很久。","kinks":"癖好清单几乎空白。暴露羞耻仅有微弱萌芽：夜里独自在塔顶解一颗领扣，听见自己的心跳。窥视、束缚、支配、受虐全部未开发，她甚至说不出\"情欲\"这个词。","special":"无特殊项目。未曾接受任何身体改造或契约，可以解释为生活在与世隔绝的海角，连教会的祝祷都很少参加，身上没有一件带印记的器物。"},{"id":"cor_a_03","tier":"纯真未启","name":"见习修女初告解","corruption":{"道德沦丧":3,"共情泯灭":2,"欲望沉溺":1,"自我消解":6,"手段残酷":0,"罪责开脱":5},"experience":"十七岁入修道院至今两年，是处女，性经验为0。曾在告解室被一个男人的呼吸声弄得腿软，事后向导师坦白，只换来一句\"这是魔鬼的试探\"，她便再没提起过。","kinks":"癖好仅有最初的萌芽：对忏悔室窄小的空间与耳边低语有非理性反应，尚未开发。被支配、跪拜体位只是仪轨意义上的熟悉，与性没有任何关联；其余清单全部未开发。","special":"无特殊项目。全身唯一的印记是入修会时点下的圣油十字，不用来解释任何力量，只是身份标识，两日便会褪去。"},{"id":"cor_a_04","tier":"纯真未启","name":"新来的图书管理员","corruption":{"道德沦丧":0,"共情泯灭":1,"欲望沉溺":6,"自我消解":2,"手段残酷":0,"罪责开脱":1},"experience":"二十二岁，图书馆学毕业，无任何交往对象，处女。自慰技巧生疏，平均两个月一次，总在闭馆后的资料室里草草结束，事后立刻洗手并整理书车，像是要把痕迹一起归位。","kinks":"初见萌芽的是被注视的想象：她读过馆藏里几页解剖图谱与情诗，会为一句话脸红。顺从与轻缚属于未开发但保有好奇的条目，其余癖好一片空白。","special":"无特殊项目。没有契约也没有改造，理由很简单：她全部的身体异常只有近视与久坐带来的腰酸，二者都与堕落无关。"},{"id":"cor_a_05","tier":"纯真未启","name":"乡下表妹的夏天","corruption":{"道德沦丧":2,"共情泯灭":3,"欲望沉溺":4,"自我消解":1,"手段残酷":1,"罪责开脱":2},"experience":"十八岁，第一次离开村子到城里借住，性经验为0，只被同龄男孩隔着衣服抱过一次。那次她整个人僵住没敢推，回家后躲在被子里，反复想自己是不是做错了。","kinks":"癖好清单几乎是空白。只有轻微的气息敏感属于初步：男性的汗味与皂角味会让她走神。疼痛、束缚、多人、羞辱等一律未开发，甚至分不清自己心跳快算不算喜欢。","special":"无特殊项目。她的体质偏汗湿与体热，夏天体温比常人高一度，这被村里老人当作\"好生养\"的吉兆，她本人只当是热。"},{"id":"cor_a_06","tier":"纯真未启","name":"练剑少女的护身襦","corruption":{"道德沦丧":1,"共情泯灭":0,"欲望沉溺":3,"自我消解":5,"手段残酷":2,"罪责开脱":0},"experience":"十九岁，剑馆独女，每日与师兄对练却从无越界，处女，性经验为0。唯一算得上的意外是落败被压住时腰突然软了，她当天加练了两百次挥剑来忘掉。","kinks":"萌芽在于压制与疼痛的边界：被按住手腕时心跳失序，她归类为\"技不如人\"。支配与被支配只停留在对练术语，捆绑、道具、露出全部未开发。","special":"无特殊项目。身体未有任何改造，只有常年握剑磨出的茧与旧伤疤；掌心的厚茧算体质特征，与堕落无关。"},{"id":"cor_a_07","tier":"纯真未启","name":"半精灵药剂学徒","corruption":{"道德沦丧":2,"共情泯灭":1,"欲望沉溺":6,"自我消解":3,"手段残酷":0,"罪责开脱":2},"experience":"二十一岁，人类与精灵混血，独居药庐，无性经验，处女。试药时中过一次催情花草的余毒，靠冷水泡了半夜熬过去，此后把那种发热记录在册却再没敢复现。","kinks":"萌芽是对气味的执念，闻药草与皮肤的味道会走神，程度仅为初步。被支配、群交、调教等清单全部未开发；她甚至把那次余毒反应记为\"药剂事故\"，不承认与情欲有关。","special":"特殊只有体质：半精灵的皮肤能通过气味分辨他人情绪，被触碰时耳尖会先红。这是血统自带的感知，非改造、非契约，也因此她无法对任何人撒气味上的谎。"},{"id":"cor_a_08","tier":"纯真未启","name":"便利店夜班的新人","corruption":{"道德沦丧":2,"共情泯灭":1,"欲望沉溺":5,"自我消解":2,"手段残酷":0,"罪责开脱":3},"experience":"二十岁，打工攒学费，无恋爱经历，处女。性经验为0，唯一的越界是值夜时躲在库房看过一次成人漫画，被同事撞见后她红着脸说那是促销报废的杂志。","kinks":"癖好仅有暴露与羞耻的萌芽：夜里独自守店时会把店门锁上，解开一颗扣子透气，听到自动门响会立刻扣好。其余如束缚、支配、物化等全部未开发。","special":"无特殊项目。没接受过任何改造与契约，唯一的特殊是长期熬夜导致的黑眼圈与偏低的体温。"},{"id":"cor_a_09","tier":"纯真未启","name":"笼中出生的半兽人","corruption":{"道德沦丧":0,"共情泯灭":3,"欲望沉溺":6,"自我消解":4,"手段残酷":1,"罪责开脱":2},"experience":"十九岁，从出生起被当作观赏品种养在铁笼里，没有性经验，仍是处女。她见过其他笼中同类交配，只把它理解为某种\"打架\"，自己被摸尾巴会本能地缩起。","kinks":"性癖几乎全部未开发。仅有轻微的服从萌芽：被命令蹲下或伸手时会照做，那是驯养留下的条件反射；疼痛、调教、标记等清单她连名字都不知道。","special":"特殊只有体质：兽耳与尾巴敏感、体温偏高、嗅觉灵敏，颈侧有一枚烙上去的品种编号。那是所有者的标记，不是契约，也不含任何力量。"},{"id":"cor_a_10","tier":"纯真未启","name":"机械修女候补生","corruption":{"道德沦丧":3,"共情泯灭":2,"欲望沉溺":2,"自我消解":5,"手段残酷":0,"罪责开脱":1},"experience":"二十岁，教会机械修女候补，处女，性经验为0。为校准植入体，每隔数月接受一次全身检查，她会把检查台上的电流感与羞耻分开来算，从不认为后者发生过。","kinks":"萌芽是器械与受控的联想：检查时会因被固定而心跳加速，她归因于电流。被支配、被命令、器械插入等清单全部未开发，她甚至拒绝把检查视为性。","special":"特殊只有植入体：胸腔内有一枚教会配发的信仰心核，用于监测心律与祷告次数，无性相关功能，也未被任何契约绑定。"},{"id":"cor_b_01","tier":"初启动摇","name":"初次痛过的夜","corruption":{"道德沦丧":14,"共情泯灭":11,"欲望沉溺":26,"自我消解":18,"手段残酷":10,"罪责开脱":15},"experience":"与青梅竹马的前辈有过一次半推半就的初夜，后来又与旧友互相抚慰过两次；对象共两人，皆非正式关系，早已不是处子。","kinks":"被轻微束缚与耳后亲吻会让她腿软，属初步；对被人注视的羞耻感刚产生兴趣，未开发；口舌侍奉仅试过一次，初步。","special":"后颈有一枚浅淡的契约刻痕，源于一次仓促的口头许诺，只在情动时微微发烫，尚无实质约束力。"},{"id":"cor_b_02","tier":"初启动摇","name":"教堂见习修女","corruption":{"道德沦丧":12,"共情泯灭":10,"欲望沉溺":28,"自我消解":20,"手段残酷":10,"罪责开脱":18},"experience":"与忏悔室里的神父有过三次不完整的接触，仅止于手指与口舌，从未被真正进入；对象仅一人，至今仍自认是处子。","kinks":"祈祷服下被人窥视会产生初步反应；挨打臀部后会异常湿润，属初步；疼痛与快感混淆的体质正在形成。","special":"胸前挂着一枚祝圣过的银坠，情动时发烫并浮现细密纹路，那是某份未完成誓约留下的印记。"},{"id":"cor_b_03","tier":"初启动摇","name":"欠债的舞女","corruption":{"道德沦丧":22,"共情泯灭":16,"欲望沉溺":27,"自我消解":21,"手段残酷":13,"罪责开脱":24},"experience":"为还债与两名客人上过床，一次是被迫的，一次是她自己点头的；对象皆为客人，关系纯属交易，早已不是处子。","kinks":"被命令与言语羞辱已初步开发；在镜前被人看着有羞耻快感，初步；绳缚只试过绑手腕，属未开发。","special":"小腹下方有一道赊账时烙下的淡红印痕，债主可凭它催讨，靠近时便会发热发痒。"},{"id":"cor_b_04","tier":"初启动摇","name":"优等生的补习","corruption":{"道德沦丧":13,"共情泯灭":11,"欲望沉溺":25,"自我消解":16,"手段残酷":10,"罪责开脱":14},"experience":"对象仅一人：年长十岁的家教，维持了半年隐秘关系，每周一次；早已不是处子，除此之外毫无别的经验。","kinks":"被夸奖与被支配时反应强烈，属初步；对偷情场合的紧张感隐隐上瘾，初步；其余癖好仍在萌芽阶段。","special":"左手腕内侧留有一圈细痕，是长期缠绕绸带所致，解开后手臂会不自觉地发软。"},{"id":"cor_b_05","tier":"初启动摇","name":"被驯服的侍从","corruption":{"道德沦丧":18,"共情泯灭":14,"欲望沉溺":26,"自我消解":24,"手段残酷":12,"罪责开脱":20},"experience":"与主君有过数次夜间服侍，另被安排给同僚一次；对象共两人，全是主从性质的命令，处子之身早已失去。","kinks":"服从命令时的快感初步成型；戴项圈与跪姿已能自然接受，初步；对疼痛与鞭打尚未真正开发。","special":"锁骨下方烙着主君家纹，受命时会泛出暗光，属于最低阶的从属契约，尚未刻入骨血。"},{"id":"cor_b_06","tier":"初启动摇","name":"新婚的小妻","corruption":{"道德沦丧":11,"共情泯灭":10,"欲望沉溺":24,"自我消解":15,"手段残酷":10,"罪责开脱":13},"experience":"只与丈夫有过新婚后的数次同房，姿势传统、全程由他主导；并非处子但经验极少，其余一切仍觉陌生。","kinks":"被温柔地命令与蒙住双眼有初步反应；在镜前展示身体带来羞耻快感，初步；其余癖好皆为未开发。","special":"婚书以血印生效，在无名指上留下一圈极淡的纹路，被丈夫触碰时会微微发麻。"},{"id":"cor_b_07","tier":"初启动摇","name":"药铺的少女","corruption":{"道德沦丧":16,"共情泯灭":12,"欲望沉溺":29,"自我消解":19,"手段残酷":11,"罪责开脱":17},"experience":"曾与两位买药的常客有过交易式的一夜，换来药材与银钱；对象皆为客人，已非处子，细节却记不真切。","kinks":"对催情药与药效的好奇属初步；被闻嗅、被按在药架上的羞耻感初步开发；语言羞辱尚未尝试。","special":"常年试药在舌下留下苦味，体息带着淡淡药香，情动时耳尖会浮出细小红纹。"},{"id":"cor_b_08","tier":"初启动摇","name":"旧宅的养女","corruption":{"道德沦丧":20,"共情泯灭":15,"欲望沉溺":27,"自我消解":23,"手段残酷":12,"罪责开脱":21},"experience":"与养父断续有过三次越界，另被远房亲戚在酒后摸遍全身；两人都没真正进入过她，她仍自认是处子。","kinks":"对长辈的注视与惩罚产生初步依赖；被蒙住眼睛后身体反应明显，初步；对疼痛仅停在手心发麻。","special":"背脊正中有一道旧伤似的浅纹，是幼时被人以血画上的护符，如今只在惊惧时发烫。"},{"id":"cor_b_09","tier":"初启动摇","name":"雇佣兵的搭档","corruption":{"道德沦丧":24,"共情泯灭":19,"欲望沉溺":25,"自我消解":18,"手段残酷":21,"罪责开脱":23},"experience":"与三名同伴轮流交换过取暖式的发泄，多半发生在荒野营地；关系是战友兼工具，早已不是处子。","kinks":"在危险与疼痛中起反应已初步成型；被当着别人面使用属初步；绳索与耳光仍谈不上熟练。","special":"手臂内侧留着队伍烙印与一次被出卖的旧伤，靠近男人时会莫名发痒。"},{"id":"cor_b_10","tier":"初启动摇","name":"馆中的抄写员","corruption":{"道德沦丧":15,"共情泯灭":13,"欲望沉溺":28,"自我消解":22,"手段残酷":11,"罪责开脱":16},"experience":"与藏书阁的两位前辈各有过一次，皆以书籍与学费为交换；对象皆为年长者，不是处子，每次都躲着眼睛做完。","kinks":"被口塞与压伏在书案上的羞耻快感初步成型；对留下痕迹有隐秘渴望，属初步；绳缚仍属未开发。","special":"颈侧有一枚淡青的书契印，主人随时可读到她的情绪波动，情动时会浮出细密字迹。"},{"id":"cor_c_01","tier":"沉溺中堕","name":"甜头初尝的学徒","corruption":{"道德沦丧":38,"共情泯灭":33,"欲望沉溺":52,"自我消解":41,"手段残酷":35,"罪责开脱":47},"experience":"累计七人次，皆为主动挑选的精壮男子，另有一名同性密友，早已不是处子。最初被哄骗破身，如今能自己决定与谁共度一夜，偏爱年长而懂分寸的对象。","kinks":"恋物（内衣与皮革束带）熟练、轻度拘束初步、控制与被控制熟练、口舌侍奉极深；疼痛癖刚起步，偷窥与暴露熟练。清单已成型，偏好固定。","special":"颈侧烙下一枚低阶淫纹，情动时泛热发光，令身体比心意更早投降；纹路尚浅，只能放大既有欲念。"},{"id":"cor_c_02","tier":"沉溺中堕","name":"契约缠身的舞姬","corruption":{"道德沦丧":44,"共情泯灭":36,"欲望沉溺":49,"自我消解":45,"手段残酷":40,"罪责开脱":51},"experience":"十四人次，含主仆、买春与一场群体宴席，非处子。曾与契约方维持两年固定关系，被抛弃后转而主动寻找新主人，用身体换取庇护已成习惯。","kinks":"服从与调教极深、项圈与绳缚熟练、公开侍奉初步、羞辱言语熟练、多人共处初步；对痛楚仍有畏惧，却已学会把它当作调情的引子。","special":"与不明存在签下的从属契约以绯色纹章刻在锁骨下，主方一句话即可令其身体发热发软；契约只在自愿时生效，而她已多次自愿。"},{"id":"cor_c_03","tier":"沉溺中堕","name":"试药养出的药人","corruption":{"道德沦丧":35,"共情泯灭":31,"欲望沉溺":54,"自我消解":38,"手段残酷":33,"罪责开脱":42},"experience":"被养作试药之人，累计与九人有过关系，多为研究者与安排好的对象，非处子。第一次是配药后的失控，此后她学会主动索取，也学会挑人。","kinks":"催情耐受与延迟满足极深、嗅觉与触觉依赖熟练、被动承受熟练、蒙眼初步、多人共处初步；尚未碰触真正的痛虐，全部停留在快感一侧。","special":"常年服食的暖身汤药改了底子，体温偏高、体液带甜腥，闻之令人恍惚；这是已成形的催情体质，可控，但需定期进补。"},{"id":"cor_c_04","tier":"沉溺中堕","name":"破誓的旧袍修女","corruption":{"道德沦丧":41,"共情泯灭":39,"欲望沉溺":46,"自我消解":50,"手段残酷":42,"罪责开脱":45},"experience":"曾立誓守贞，破誓后至今十人，皆为告解室里的信徒与一名同修，非处子。她仍穿旧袍，却把每次破戒都记在心底，当成只有自己知道的私有账目。","kinks":"罪感与快感绑定极深、告解式角色扮演熟练、亵渎圣物初步、束缚熟练、言语诱骗熟练；癖好互相勾连，一触即连成片。","special":"赎罪用的银环被改造成敏感度增幅器，佩戴时全身触感翻倍，取下的日子烦躁难安；改造已成形，需按期佩戴维持。"},{"id":"cor_c_05","tier":"沉溺中堕","name":"纹章啃噬的猎手","corruption":{"道德沦丧":46,"共情泯灭":43,"欲望沉溺":44,"自我消解":40,"手段残酷":50,"罪责开脱":44},"experience":"用身体换情报是旧手艺，累计十二人，涵盖敌我双方与一名叛徒，非处子。她挑对象只看用处，事后从不留名，唯一例外是替她挡过箭的那个人。","kinks":"支配与掠夺熟练、野外与时地不拘熟练、武器道具初步、搏斗式亲密熟练、观赏他人极深；偏好明确，喜欢把胜负带进床上。","special":"右臂纹章以猎杀为食，每夺一命便热一分，夜里催促她再出手；纹章已与血肉相融，能短暂强化臂力，也让她难以安睡。"},{"id":"cor_c_06","tier":"沉溺中堕","name":"旧宅的贴身女仆","corruption":{"道德沦丧":37,"共情泯灭":40,"欲望沉溺":47,"自我消解":43,"手段残酷":34,"罪责开脱":49},"experience":"入府即被主人调教，此后与十一名来客有过关系，多为奉命侍奉，非处子。她把服侍当成职责，又把职责当成嗜好，如今也会自己挑客人。","kinks":"侍奉与口舌极深、制服与场景扮演熟练、惩戒初步、被观赏熟练、多人同室初步；已形成固定流程，偏爱冷淡而守规矩的对象。","special":"主人赐下的颈铃并非饰物，铃响即入情热，是契约化的催情刻印；摘铃会失眠，戴铃便温顺，已成形的掌控项。"},{"id":"cor_c_07","tier":"沉溺中堕","name":"被养作炉鼎的鼎修","corruption":{"道德沦丧":42,"共情泯灭":34,"欲望沉溺":55,"自我消解":47,"手段残酷":31,"罪责开脱":48},"experience":"被当作修行鼎器养大，与十三人合修，皆为修士与散人，非处子。起初只为功法，后来不练也想，她把气脉的舒畅与人的温度混为一谈。","kinks":"内息共鸣与长时间相拥极深、感官共鸣熟练、多人轮修熟练、气味依赖熟练、轻微束缚初步；以快感为核心的癖好已成体系。","special":"丹田被种下寄生灵根，可吸取他人修为反哺自身，代价是定期发情、不食不休；灵根成苗，能自主挑选供养者。"},{"id":"cor_c_08","tier":"沉溺中堕","name":"卦桌失守的占卜师","corruption":{"道德沦丧":40,"共情泯灭":45,"欲望沉溺":43,"自我消解":51,"手段残酷":43,"罪责开脱":46},"experience":"十八岁那年被客人压在卦桌上，此后至今九人，多为求卜者与一名同行，非处子。她越卜不准，越依赖身体给答案，如今已分不清预兆与欲望。","kinks":"预感式玩弄熟练、迷香与恍惚熟练、被动承受熟练、窥视他人极深、言语支配初步；癖好与职业绑在一起，已然成型。","special":"盲眼处寄生的窥魂虫替她看人，也把别人的欲念灌进她脑里；寄生已稳定，代价是她再难拒绝任何被看见的渴望。"},{"id":"cor_c_09","tier":"沉溺中堕","name":"神前失仪的圣女","corruption":{"道德沦丧":48,"共情泯灭":38,"欲望沉溺":50,"自我消解":46,"手段残酷":45,"罪责开脱":53},"experience":"名义上供于神前，实为教团权贵的玩物，累计十五人，含仪式与宴饮，非处子。她学会了人前落泪、人后索要，把信仰改写成一场长期交易。","kinks":"仪式化群交熟练、扮演神谕熟练、侮辱与亵渎熟练、服从极深、痛楚初步；清单清晰，且乐于逐项加码。","special":"神像前受的祝祷化作胸前圣痕，能让她一夜不疲，也能被执礼者远程唤起；圣痕成形，是她自愿留下的。"},{"id":"cor_c_10","tier":"沉溺中堕","name":"行伍惯习的佣兵","corruption":{"道德沦丧":45,"共情泯灭":47,"欲望沉溺":41,"自我消解":39,"手段残酷":52,"罪责开脱":50},"experience":"行伍十载，与十一人有过关系，多为同袍与俘虏，非处子。她习惯用一夜换个哨位或一壶酒，后来发现不必换什么也想要，索性不再找理由。","kinks":"胜者特权熟练、酒与痛楚熟练、粗暴对待极深、公开场合初步、多人共处初步；偏好强硬直接，讨厌拖沓的温存。","special":"战伤处缝合的兽骨让她痛觉迟钝、快感更尖，是一场诅咒性的寄生；成形多年，靠烈酒压着骨里的躁动。"},{"id":"cor_d_01","tier":"深堕熟练","name":"宴厅挂牌首席","corruption":{"道德沦丧":72,"共情泯灭":63,"欲望沉溺":78,"自我消解":58,"手段残酷":70,"罪责开脱":76},"experience":"十六岁起被家族当筹码送入宴厅，先后与四十余名宴客、两名契约魔物同席，早已非处子；拍卖台、包厢、群宴三处轮转，主客不分，来者不拒。","kinks":"公开献祭式交合（极深）、多人轮替（极深）、项圈牵引与竞价羞辱（熟练）、疼痛换取快感（熟练）、观众注视下的高潮控制（极深）。","special":"颈后烙有拍卖编号淫纹，随叫价升高发热；子宫内植入共鸣器质契约环，可与契约者共享触感。"},{"id":"cor_d_02","tier":"深堕熟练","name":"驯兽师与双生犬","corruption":{"道德沦丧":65,"共情泯灭":70,"欲望沉溺":74,"自我消解":61,"手段残酷":77,"罪责开脱":68},"experience":"以驯兽为业，与狼人、犬形魔物及双生仆役长期共处，累计百余人次，处子之身早在训练场交出；关系以主从与饲育为主，不涉情感。","kinks":"兽交与多体轮替（极深）、项圈与口枷调教（极深）、公开驯演（熟练）、体液标记（熟练）、被反噬压制（初步）。","special":"乳首穿孔挂铃，锁骨下植入催乳腺；与双生犬立有主从器质契约，痛感双向传导。"},{"id":"cor_d_03","tier":"深堕熟练","name":"血契收债人","corruption":{"道德沦丧":78,"共情泯灭":75,"欲望沉溺":62,"自我消解":56,"手段残酷":80,"罪责开脱":79},"experience":"二十年以身体抵债，经手逾百名欠债者的契约，男女老少皆不拒，早已非处子；关系纯粹交易，事后清算账目，从不留余情。","kinks":"契约性交与分期偿还（极深）、被当作物件验收（极深）、催债时的权力压制（极深）、公开场合快速了事（熟练）、疼痛记账（熟练）。","special":"心口刻债务淫纹，欠债者触碰即被灼记；右腕接驳契约汲取式寄生触须。"},{"id":"cor_d_04","tier":"深堕熟练","name":"地牢常住标本","corruption":{"道德沦丧":58,"共情泯灭":66,"欲望沉溺":80,"自我消解":79,"手段残酷":55,"罪责开脱":57},"experience":"被囚于地下调教室七年，接待访客超过三百人次，对象涵盖人类、亚人、非人；始终居下位，关系是展示品与访客，处子之身早失。","kinks":"长期束缚与展览（极深）、器质侵入（极深）、感官剥夺（极深）、公开试用（熟练）、尿与汗液的品味（熟练）。","special":"全身布满愈合纹与烙印编号；脊椎嵌入永久固定器，颈环与地牢法阵连成一体。"},{"id":"cor_d_05","tier":"深堕熟练","name":"祭坛空缺之神","corruption":{"道德沦丧":70,"共情泯灭":59,"欲望沉溺":76,"自我消解":64,"手段残酷":68,"罪责开脱":80},"experience":"以神谕之名与信徒轮番交合，十九岁起主持仪式两百余场，处子之身献于首祭；关系为神职与祭品，凡参与者皆视为供奉。","kinks":"群体仪式交合（极深）、被当作祭品束缚（极深）、多人同时进入（极深）、公开受孕祈福（熟练）、神谕角色的支配扮演（熟练）。","special":"小腹植有祭纹淫纹，受孕成功即发光；与神殿法阵有器质契约，可调取信徒的欲望体感。"},{"id":"cor_d_06","tier":"深堕熟练","name":"斗兽场赠品","corruption":{"道德沦丧":74,"共情泯灭":71,"欲望沉溺":69,"自我消解":73,"手段残酷":66,"罪责开脱":63},"experience":"由斗兽场饲养供胜者取用，十岁起登记在册，至今接待战士逾两百人，含兽人与改造体；关系为奖品与占有，处子早已交出。","kinks":"胜负决定体位（极深）、被群兽围用（极深）、公开竞技场（极深）、创伤耐受（熟练）、兽交（熟练）。","special":"背部烙有场方火印；双腿植入强化肌肉的寄生筋，耐力被永久上调。"},{"id":"cor_d_07","tier":"深堕熟练","name":"活体契约书","corruption":{"道德沦丧":76,"共情泯灭":68,"欲望沉溺":71,"自我消解":80,"手段残酷":60,"罪责开脱":72},"experience":"本身是一份可行走的人形契约，被三十七位主人先后持有并共用，累计千余人次；处子之身在第一任主人处失去，关系仅为主物。","kinks":"被多人同时使用（极深）、契约条款式指令服从（极深）、疼痛作为违约惩罚（极深）、公开签署仪式（熟练）、被转手时的陌生接触（熟练）。","special":"皮肤即契约纸，条款以淫纹书写；心脏与契约核绑定，转让时需破胸重签。"},{"id":"cor_d_08","tier":"深堕熟练","name":"母巢养料","corruption":{"道德沦丧":62,"共情泯灭":78,"欲望沉溺":79,"自我消解":77,"手段残酷":64,"罪责开脱":56},"experience":"长期与虫形、触手类非人共存，被用作繁殖容器超过五年，参与体数不清，只记巢穴名；处子之身早失，关系为养料与巢。","kinks":"非人产卵与寄生（极深）、触手多孔同入（极深）、催乳与泌乳喂养（极深）、被固定在巢壁上（熟练）、公开孵化展示（初步）。","special":"腹腔植入寄生囊，可容纳并孕育异物；全身淫纹联结母巢，产卵期自动响应。"},{"id":"cor_d_09","tier":"深堕熟练","name":"烙印贩子","corruption":{"道德沦丧":69,"共情泯灭":61,"欲望沉溺":73,"自我消解":55,"手段残酷":76,"罪责开脱":74},"experience":"以贩卖烙印与淫纹为生，自己也被人贩过九年，接待买主与试验体逾一百五十人，含贵族、兽人、法师；处子之身换得第一枚纹章。","kinks":"烙印时的灼痛（极深）、与顾客当面试纹（极深）、公开定价与验货（熟练）、多人同批处理（熟练）、被反噬时的失控（初步）。","special":"全身近三成皮肤为纹章与烙印，可转印至他人；左肩寄生纹墨母体，能自行生长新纹。"},{"id":"cor_d_10","tier":"深堕熟练","name":"双生堕主","corruption":{"道德沦丧":75,"共情泯灭":57,"欲望沉溺":80,"自我消解":66,"手段残酷":72,"罪责开脱":70},"experience":"与双胞胎共用一个身份接客，自十四岁起在私宅与宴席间轮换，处理过三百余人，男女非人皆可；处子身同时失去，关系无主无仆。","kinks":"双人同步交合（极深）、身份互换与欺骗（极深）、被同时贯穿（极深）、公开竞演（熟练）、疼痛共享（熟练）。","special":"两人共持一枚器质契约核，伤痛与高潮互通；脊线各烙半枚淫纹，合体才显全图。"},{"id":"cor_e_01","tier":"极堕非人","name":"群巢母体","corruption":{"道德沦丧":96,"共情泯灭":92,"欲望沉溺":98,"自我消解":99,"手段残酷":94,"罪责开脱":90},"experience":"性伴侣以万计，早已无法计数：从路人、佣兵到整支队伍，再到巢中虫裔与触手。处子之说早不存在，她如今只记得被灌满与产卵两种状态。","kinks":"受孕与产卵（极深）、群交（极深）、子宫扩张（极深）、献祭式轮奸（极深）、疼痛（熟练）、排泄支配（熟练）、公开羞辱（初步）。","special":"腹腔被改造为七层育巢，双乳与产道换成共生膜囊，后颈嵌母巢纹章；只要母巢未死，她就不会真正死亡，只会被重新孕育。"},{"id":"cor_e_02","tier":"极堕非人","name":"缝合机偶","corruption":{"道德沦丧":88,"共情泯灭":95,"欲望沉溺":84,"自我消解":97,"手段残酷":91,"罪责开脱":86},"experience":"被拆解重组过上百次，身体零件取自至少四十人。她与每一位材料原主的残躯都交合过，关系既非爱人亦非仇敌，只是材料与被使用者之分。","kinks":"机械插入物（极深）、肢解与再造（极深）、异物嵌入（极深）、多人同步操演（熟练）、失禁（熟练）、活体解剖（初步）。","special":"四肢与脊柱换成可换装金属骨节，腔道内衬齿轮与软管，胸口刻编号烙纹；每七日必须更换一件活体器官，否则开始腐坏。"},{"id":"cor_e_03","tier":"极堕非人","name":"深渊容器","corruption":{"道德沦丧":93,"共情泯灭":90,"欲望沉溺":91,"自我消解":100,"手段残酷":95,"罪责开脱":92},"experience":"她记不清自己侍奉过多少存在：人类、魔物、被召来的低语者皆在其体内留下痕迹。处子早已是另一个人的往事，如今她只是一条通道。","kinks":"触手贯穿（极深）、异化交合（极深）、神性侵蚀（极深）、群体献祭（熟练）、意识剥离式性交（熟练）、语言羞辱（初步）。","special":"胸腔掏空为祭坛、心脏换作封印核心，全身布满深渊文字刺青；旧日之物的碎片寄居其子宫，每月需以活人血肉喂养一次。"},{"id":"cor_e_04","tier":"极堕非人","name":"触须共主","corruption":{"道德沦丧":90,"共情泯灭":88,"欲望沉溺":96,"自我消解":94,"手段残酷":92,"罪责开脱":89},"experience":"与数十种非人生物长期交配，对象涵盖海族、沼泽寄生体与追随她的信徒，关系是供养与繁衍。她未曾有过人类意义上的第一次，只有第一次被彻底占有。","kinks":"触手贯通（极深）、多穴同时（极深）、产卵（极深）、黏液与寄生（熟练）、集体受孕（熟练）、窒息（初步）。","special":"背脊裂开八道鳃缝，每道皆可伸出独立触须；尾椎接生成产卵管，颈侧嵌共生囊。她的记忆与所有触须共享，无法独处。"},{"id":"cor_e_05","tier":"极堕非人","name":"产乳母畜","corruption":{"道德沦丧":85,"共情泯灭":86,"欲望沉溺":93,"自我消解":96,"手段残酷":88,"罪责开脱":83},"experience":"被牧场接手前已有过上百名饲主，之后是每日按排班进行的挤取与配种，对象包括同栏改造者与牧场兽形守卫。她的处子之身在第一道契约签下时即被收走。","kinks":"泌乳（极深）、永久发情（极深）、束缚与颈圈（极深）、配种轮班（熟练）、体腔灌洗（熟练）、公开挤取（初步）。","special":"双乳与后穴改造成连体乳囊，可持续泌乳与灌洗；耳骨改成垂坠肉环，颈戴编号项圈。契约期间她无法自行终止发情，只能等配额被填满。"},{"id":"cor_e_06","tier":"极堕非人","name":"虫群共生体","corruption":{"道德沦丧":91,"共情泯灭":97,"欲望沉溺":87,"自我消解":98,"手段残酷":96,"罪责开脱":88},"experience":"她把整支商队与三座村落都变成了巢，对象从俘虏到自愿献身的信徒，再到体内孵化出的成虫。处子一事无据可查，因为她早已被重新组装过四次。","kinks":"体内孵化（极深）、虫类贯穿（极深）、穴居群交（极深）、活体改造（熟练）、恐惧榨取（熟练）、食人（初步）。","special":"骨骼被虫胶替换成中空结构，供成虫在体内穿行；口腔与产道共用一套腔道，腹部嵌卵囊纹章。虫群死亡时她同步失去一段记忆。"},{"id":"cor_e_07","tier":"极堕非人","name":"亡骸娼妇","corruption":{"道德沦丧":94,"共情泯灭":99,"欲望沉溺":82,"自我消解":95,"手段残酷":98,"罪责开脱":91},"experience":"死过三次，被复活了三次，每一次都在尸堆与墓地之间被人使用。性伴侣不计其数，活人、尸骸、招魂者皆在其列，她早已不记得自己是否曾有过第一次。","kinks":"尸交（极深）、濒死性交（极深）、寒冷与腐臭（极深）、招魂仪式交合（熟练）、死后受孕（初步）、自残献祭（熟练）。","special":"皮肤下缝入防腐咒文，心跳由外置魂匣维持，锁骨裂纹纹章能召回散落的肢体。只要魂匣尚在，她就无法真正死去。"},{"id":"cor_e_08","tier":"极堕非人","name":"魔胎之床","corruption":{"道德沦丧":92,"共情泯灭":93,"欲望沉溺":99,"自我消解":96,"手段残酷":93,"罪责开脱":94},"experience":"与上百名恶魔订立过交合契约，对象涵盖低阶魔物、契约主与其召来的眷属，关系以血肉和条款结算。她自愿交出过处子之身，因为那曾被当作第一笔筹码。","kinks":"受孕（极深）、契约性交（极深）、异种插入（极深）、孕期凌辱（熟练）、强制高潮（熟练）、灵魂出卖（熟练）。","special":"子宫被改造成契约熔炉，产下的东西不属于她；背上有十二枚恶魔印纹章，每破一枚便有一名魔物获得片刻使用权。她从未拥有过自己的名字。"},{"id":"cor_e_09","tier":"极堕非人","name":"机械性偶","corruption":{"道德沦丧":86,"共情泯灭":91,"欲望沉溺":88,"自我消解":99,"手段残酷":89,"罪责开脱":85},"experience":"在工厂服役期间被数千次租借，对象从研究员到街头租客，关系只有租期长短之分。她被制作时就没有处子设定，第一行程式便写着可反复使用。","kinks":"机械插入（极深）、程式化强交（极深）、感官重写（极深）、公开租用（熟练）、意识关闭下被使用（熟练）、数据羞辱（初步）。","special":"全身皮肤换成感应仿生层，腔道内装可编程构件，后颈编号烙纹记载每一次租借。她每月被格式化一次，格式化前会哀求多留一天。"},{"id":"cor_e_10","tier":"极堕非人","name":"邪神祭司","corruption":{"道德沦丧":97,"共情泯灭":94,"欲望沉溺":90,"自我消解":97,"手段残酷":99,"罪责开脱":95},"experience":"她把整座圣城的信徒收作祭品与床伴，前后逾千人，其中多数是被她亲手送上祭坛的。关系只有献祭与被献祭，她从未有过爱，只有需要填满的空腔。","kinks":"献祭性交（极深）、开膛亵渎（极深）、群体轮祭（极深）、神谕降灵（熟练）、食人与剥皮（熟练）、凌迟观赏（初步）。","special":"心脏被挖出换作神像碎片，眼窝嵌入注视之印，肋骨外翻为祭坛骨架；神祇借她的身体说话，因此她每一次高潮都会被记入教典。"}]}}</script>
+<script>
+(function () {
+  'use strict';
+  var D = JSON.parse(document.getElementById('wf-data').textContent);
+  var $ = function (id) { return document.getElementById(id); };
+  var STORE_KEY = 'worldforge_presets_v1';
+  var S = {
+    styleId: '',
+    premises: [],
+    premiseCats: [],
+    worldCard: '',
+    supplements: [],
+    universal: [],
+    suppSource: '',
+    suppCats: [],
+    uniCats: [],
+    heroGender: '',
+    npcEnabled: false,
+    corTier: '',
+    openTone: '',
+    openingId: '',
+  };
+
+  /* ── 工具 ─────────────────────────────────────────── */
+  function pick(arr) { return arr && arr.length ? arr[Math.floor(Math.random() * arr.length)] : null; }
+  function lines(text) {
+    return String(text || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+  function setStatus(msg, warn) {
+    var el = $('status');
+    el.textContent = msg;
+    el.className = 'status' + (warn ? ' warn' : '');
+  }
+  function download(filename, text) {
+    var blob = new Blob([text], { type: 'application/json;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /* ── 1. 世界风格 ──────────────────────────────────── */
+  function styleById(id) {
+    return D.styles.styles.filter(function (s) { return s.id === id; })[0] || null;
+  }
+  function composeStyleText(st) {
+    return '本次生成世界类型为' + st.type + '。该世界观下' + st.body;
+  }
+  function renderStyleGrid() {
+    var host = $('style-grid');
+    host.innerHTML = '';
+    D.styles.styles.forEach(function (st) {
+      var el = document.createElement('div');
+      el.className = 'opt' + (S.styleId === st.id ? ' active' : '');
+      el.innerHTML = '<div class="nm">' + st.icon + ' ' + st.name + '</div>' +
+        '<div class="desc">' + st.tone + '</div>' +
+        '<div class="src">' + (st.tags || []).join(' · ') + '</div>';
+      el.onclick = function () { selectStyle(st.id); };
+      host.appendChild(el);
+    });
+  }
+  function selectStyle(id) {
+    S.styleId = id;
+    renderStyleGrid();
+    restoreStyleCard();
+    renderSuppSourceChips();
+  }
+  function restoreStyleCard() {
+    var st = styleById(S.styleId);
+    if (!st) { $('world-card').value = S.worldCard; return; }
+    S.worldCard = composeStyleText(st);
+    $('world-card').value = S.worldCard;
+  }
+  function onWorldCardInput() { S.worldCard = $('world-card').value; }
+
+  function onSuppSlotInput() {
+    S.supplements = lines($('supp-slot').value);
+    refreshSuppSelection();
+  }
+  function addCustomSupplement() {
+    var input = $('supp-custom');
+    var v = input.value.trim();
+    if (!v) return;
+    var cur = lines($('supp-slot').value);
+    if (cur.indexOf(v) === -1) cur.push(v);
+    $('supp-slot').value = cur.join('\n');
+    S.supplements = cur;
+    input.value = '';
+    refreshSuppSelection();
+  }
+  function clearSupplements() {
+    $('supp-slot').value = '';
+    S.supplements = [];
+    refreshSuppSelection();
+  }
+  function toggleSupplement(text) {
+    var cur = lines($('supp-slot').value);
+    var i = cur.indexOf(text);
+    if (i === -1) cur.push(text); else cur.splice(i, 1);
+    $('supp-slot').value = cur.join('\n');
+    S.supplements = cur;
+    refreshSuppSelection();
+  }
+  function refreshSuppSelection() {
+    $('supp-count').textContent = '已选 ' + S.supplements.length + ' 条';
+    var nodes = $('supp-pool').querySelectorAll('.opt');
+    for (var i = 0; i < nodes.length; i++) {
+      var t = nodes[i].getAttribute('data-text');
+      nodes[i].classList.toggle('active', S.supplements.indexOf(t) !== -1);
+    }
+  }
+  function setSuppSource(id) { S.suppSource = id; renderSuppSourceChips(); renderSuppPool(); }
+  function toggleSuppCat(id) {
+    var i = S.suppCats.indexOf(id);
+    if (i === -1) S.suppCats.push(id); else S.suppCats.splice(i, 1);
+    renderSuppCatChips(); renderSuppPool();
+  }
+  function renderSuppSourceChips() {
+    var host = $('supp-source-chips'); host.innerHTML = '';
+    var list = [{ id: '', name: '全部来源' }].concat(D.supplements.sourceStyles);
+    list.forEach(function (s) {
+      var el = document.createElement('span');
+      el.className = 'chip' + (S.suppSource === s.id ? ' active' : '');
+      el.textContent = s.name;
+      el.onclick = function () { setSuppSource(s.id); };
+      host.appendChild(el);
+    });
+  }
+  function renderSuppCatChips() {
+    var host = $('supp-cat-chips'); host.innerHTML = '';
+    D.supplements.categories.forEach(function (c) {
+      var el = document.createElement('span');
+      el.className = 'chip' + (S.suppCats.indexOf(c.id) !== -1 ? ' active' : '');
+      el.textContent = c.label;
+      el.onclick = function () { toggleSuppCat(c.id); };
+      host.appendChild(el);
+    });
+  }
+  function renderSuppPool() {
+    var host = $('supp-pool'); host.innerHTML = '';
+    var kw = $('supp-search').value.trim().toLowerCase();
+    var list = D.supplements.entries.filter(function (e) {
+      if (S.suppSource && e.sourceId !== S.suppSource) return false;
+      if (S.suppCats.length && !S.suppCats.some(function (c) { return e.categories.indexOf(c) !== -1; })) return false;
+      if (kw && e.text.toLowerCase().indexOf(kw) === -1 && (e.tags || []).join('').toLowerCase().indexOf(kw) === -1) return false;
+      return true;
+    });
+    $('supp-pool-count').textContent = list.length + ' / ' + D.supplements.entries.length + ' 条';
+    list.forEach(function (e) {
+      var el = document.createElement('div');
+      el.className = 'opt' + (S.supplements.indexOf(e.text) !== -1 ? ' active' : '');
+      el.setAttribute('data-text', e.text);
+      el.innerHTML = '<div class="desc">' + e.text + '</div>' +
+        '<div class="src">' + e.sourceStyle + ' · ' + e.categories.join('/') + '</div>';
+      el.onclick = function () { toggleSupplement(e.text); };
+      host.appendChild(el);
+    });
+  }
+
+  /* ── 1a. 常见世界设定（前提）───────────────────────── */
+  function onPremiseSlotInput() {
+    S.premises = lines($('premise-slot').value);
+    refreshPremiseSelection();
+  }
+  function addCustomPremise() {
+    var input = $('premise-custom');
+    var v = input.value.trim();
+    if (!v) return;
+    var cur = lines($('premise-slot').value);
+    if (cur.indexOf(v) === -1) cur.push(v);
+    $('premise-slot').value = cur.join('\n');
+    S.premises = cur;
+    input.value = '';
+    refreshPremiseSelection();
+  }
+  function clearPremises() {
+    $('premise-slot').value = '';
+    S.premises = [];
+    refreshPremiseSelection();
+  }
+  function togglePremise(text) {
+    var cur = lines($('premise-slot').value);
+    var i = cur.indexOf(text);
+    if (i === -1) cur.push(text); else cur.splice(i, 1);
+    $('premise-slot').value = cur.join('\n');
+    S.premises = cur;
+    refreshPremiseSelection();
+  }
+  function refreshPremiseSelection() {
+    $('premise-count').textContent = '已选 ' + S.premises.length + ' 条';
+    var nodes = $('premise-pool').querySelectorAll('.opt');
+    for (var i = 0; i < nodes.length; i++) {
+      var t = nodes[i].getAttribute('data-text');
+      nodes[i].classList.toggle('active', S.premises.indexOf(t) !== -1);
+    }
+  }
+  function togglePremiseCat(id) {
+    var i = S.premiseCats.indexOf(id);
+    if (i === -1) S.premiseCats.push(id); else S.premiseCats.splice(i, 1);
+    renderPremiseCatChips(); renderPremisePool();
+  }
+  function renderPremiseCatChips() {
+    var host = $('premise-cat-chips'); host.innerHTML = '';
+    D.premises.categories.forEach(function (c) {
+      var el = document.createElement('span');
+      el.className = 'chip' + (S.premiseCats.indexOf(c.id) !== -1 ? ' active' : '');
+      el.textContent = c.label;
+      el.onclick = function () { togglePremiseCat(c.id); };
+      host.appendChild(el);
+    });
+  }
+  function renderPremisePool() {
+    var host = $('premise-pool'); host.innerHTML = '';
+    var kw = $('premise-search').value.trim().toLowerCase();
+    var list = D.premises.entries.filter(function (e) {
+      if (S.premiseCats.length && !S.premiseCats.some(function (c) { return e.categories.indexOf(c) !== -1; })) return false;
+      if (kw && (e.text + e.name + (e.tags || []).join('')).toLowerCase().indexOf(kw) === -1) return false;
+      return true;
+    });
+    $('premise-pool-count').textContent = list.length + ' / ' + D.premises.entries.length + ' 条';
+    list.forEach(function (e) {
+      var el = document.createElement('div');
+      el.className = 'opt' + (S.premises.indexOf(e.text) !== -1 ? ' active' : '');
+      el.setAttribute('data-text', e.text);
+      el.innerHTML = '<div class="nm">' + e.name + '</div>' +
+        '<div class="desc">' + e.text + '</div>' +
+        '<div class="src">' + D.premises.label + ' · ' + e.categories.join('/') + '</div>';
+      el.onclick = function () { togglePremise(e.text); };
+      host.appendChild(el);
+    });
+  }
+
+  /* ── 1b. 通用世界补充设定 ─────────────────────────── */
+  function onUniSlotInput() {
+    S.universal = lines($('uni-slot').value);
+    refreshUniSelection();
+  }
+  function addCustomUniversal() {
+    var input = $('uni-custom');
+    var v = input.value.trim();
+    if (!v) return;
+    var cur = lines($('uni-slot').value);
+    if (cur.indexOf(v) === -1) cur.push(v);
+    $('uni-slot').value = cur.join('\n');
+    S.universal = cur;
+    input.value = '';
+    refreshUniSelection();
+  }
+  function clearUniversal() {
+    $('uni-slot').value = '';
+    S.universal = [];
+    refreshUniSelection();
+  }
+  function toggleUniversal(text) {
+    var cur = lines($('uni-slot').value);
+    var i = cur.indexOf(text);
+    if (i === -1) cur.push(text); else cur.splice(i, 1);
+    $('uni-slot').value = cur.join('\n');
+    S.universal = cur;
+    refreshUniSelection();
+  }
+  function refreshUniSelection() {
+    $('uni-count').textContent = '已选 ' + S.universal.length + ' 条';
+    var nodes = $('uni-pool').querySelectorAll('.opt');
+    for (var i = 0; i < nodes.length; i++) {
+      var t = nodes[i].getAttribute('data-text');
+      nodes[i].classList.toggle('active', S.universal.indexOf(t) !== -1);
+    }
+  }
+  function toggleUniCat(id) {
+    var i = S.uniCats.indexOf(id);
+    if (i === -1) S.uniCats.push(id); else S.uniCats.splice(i, 1);
+    renderUniCatChips(); renderUniPool();
+  }
+  function renderUniCatChips() {
+    var host = $('uni-cat-chips'); host.innerHTML = '';
+    D.universal.categories.forEach(function (c) {
+      var el = document.createElement('span');
+      el.className = 'chip' + (S.uniCats.indexOf(c.id) !== -1 ? ' active' : '');
+      el.textContent = c.label;
+      el.onclick = function () { toggleUniCat(c.id); };
+      host.appendChild(el);
+    });
+  }
+  function renderUniPool() {
+    var host = $('uni-pool'); host.innerHTML = '';
+    var kw = $('uni-search').value.trim().toLowerCase();
+    var list = D.universal.entries.filter(function (e) {
+      if (S.uniCats.length && !S.uniCats.some(function (c) { return e.categories.indexOf(c) !== -1; })) return false;
+      if (kw && (e.text + e.name + (e.tags || []).join('')).toLowerCase().indexOf(kw) === -1) return false;
+      return true;
+    });
+    $('uni-pool-count').textContent = list.length + ' / ' + D.universal.entries.length + ' 条';
+    list.forEach(function (e) {
+      var el = document.createElement('div');
+      el.className = 'opt' + (S.universal.indexOf(e.text) !== -1 ? ' active' : '');
+      el.setAttribute('data-text', e.text);
+      el.innerHTML = '<div class="nm">' + e.name + '</div>' +
+        '<div class="desc">' + e.text + '</div>' +
+        '<div class="src">' + D.universal.label + ' · ' + e.categories.join('/') + '</div>';
+      el.onclick = function () { toggleUniversal(e.text); };
+      host.appendChild(el);
+    });
+  }
+
+  /* ── 2. 主角设定 ──────────────────────────────────── */
+  function renderGenders() {
+    var host = $('hero-gender'); host.innerHTML = '';
+    D.protagonist.genders.forEach(function (g) {
+      var el = document.createElement('span');
+      el.className = 'chip' + (S.heroGender === g ? ' active' : '');
+      el.textContent = g;
+      el.onclick = function () { S.heroGender = g; renderGenders(); updateBodyTag(); };
+      host.appendChild(el);
+    });
+  }
+  function renderAgeChips() {
+    var host = $('hero-age-chips'); host.innerHTML = '';
+    D.protagonist.ageChips.forEach(function (a) {
+      var el = document.createElement('span');
+      el.className = 'chip ghost';
+      el.textContent = a;
+      el.onclick = function () { $('hero-age').value = a; };
+      host.appendChild(el);
+    });
+  }
+  function bodyPoolForGender() {
+    var g = S.heroGender;
+    if (g === '男') return D.protagonist.bodyPresets['男'] || [];
+    if (g === '女' || g === '扶她') return D.protagonist.bodyPresets['女'] || [];
+    return (D.protagonist.bodyPresets['男'] || []).concat(D.protagonist.bodyPresets['女'] || []);
+  }
+  function updateBodyTag() {
+    $('body-pool-tag').textContent = bodyPoolForGender().length + ' 条可抽取';
+    $('priv-pool-tag').textContent = '与体态独立抽取 · 本性别池 ' + privatePoolForGender().length + ' 条';
+  }
+  function rollBody() {
+    var p = pick(bodyPoolForGender());
+    if (p) { $('hero-body').value = p.text; setStatus('体态已抽取（可继续修改）'); }
+  }
+  function privatePoolForGender() {
+    var g = S.heroGender === '自定义' ? '' : S.heroGender;
+    if (g === '男') return D.protagonist.privatePresets.filter(function (x) { return x.gender === '男' || x.gender === '通用'; });
+    if (g === '女' || g === '扶她') return D.protagonist.privatePresets.filter(function (x) { return x.gender === '女' || x.gender === '通用'; });
+    return D.protagonist.privatePresets;
+  }
+  function rollPrivate() {
+    var p = pick(privatePoolForGender());
+    if (p) { $('hero-private').value = p.text; setStatus('隐私部位已独立抽取（按性别取池，仍可继续修改）'); }
+  }
+  function renderRaces() {
+    var groups = ['全部'].concat(D.protagonist.raceGroups);
+    var host = $('race-group-chips'); host.innerHTML = '';
+    groups.forEach(function (g) {
+      var el = document.createElement('span');
+      el.className = 'chip' + ((S.raceGroup || '全部') === g ? ' active' : '');
+      el.textContent = g;
+      el.onclick = function () { S.raceGroup = g; renderRaces(); };
+      host.appendChild(el);
+    });
+    var sel = $('hero-race');
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">— 选择种族 —</option>';
+    D.protagonist.races.forEach(function (r) {
+      if (S.raceGroup && S.raceGroup !== '全部' && r.group !== S.raceGroup) return;
+      var o = document.createElement('option');
+      o.value = r.name; o.textContent = r.group + ' · ' + r.name;
+      sel.appendChild(o);
+    });
+    if (cur && D.protagonist.races.some(function (r) { return r.name === cur; })) sel.value = cur;
+    onRaceSelect();
+  }
+  function onRaceSelect() {
+    var name = $('hero-race').value;
+    var r = D.protagonist.races.filter(function (x) { return x.name === name; })[0];
+    $('race-desc').textContent = r ? (r.name + '：' + r.text) : '未选择种族时会按世界类型推导，并写入 主角.种族。';
+  }
+  function rollCheat() {
+    var c = pick(D.protagonist.cheats);
+    if (c) { $('cheat-name').value = c.name; $('cheat-desc').value = c.text; setStatus('金手指已抽取（代价与上限将从此刻起生效）'); }
+  }
+
+  /* ── 3. 开局其它角色 ──────────────────────────────── */
+  function setNpcEnabled(on) {
+    S.npcEnabled = !!on;
+    $('npc-off').classList.toggle('active', !S.npcEnabled);
+    $('npc-on').classList.toggle('active', S.npcEnabled);
+    $('npc-fields').classList.toggle('fade', !S.npcEnabled);
+    $('npc-skipped').classList.toggle('fade', S.npcEnabled);
+    setStatus(S.npcEnabled ? '开局将生成一名其它角色' : '已跳过开局其它角色');
+  }
+  function rollNpcBody() {
+    var p = pick(bodyPoolForGender());
+    if (p) $('npc-body').value = p.text;
+  }
+  function rollNpcPrivate() {
+    var p = pick(privatePoolForGender());
+    if (p) $('npc-private').value = p.text;
+  }
+  function renderCorTiers() {
+    var sel = $('cor-tier');
+    sel.innerHTML = '<option value="">不限档位</option>';
+    D.corruption.tiers.forEach(function (t) {
+      var o = document.createElement('option');
+      o.value = t; o.textContent = t;
+      sel.appendChild(o);
+    });
+    sel.value = S.corTier;
+  }
+  function onCorTierChange() { S.corTier = $('cor-tier').value; }
+  function rollCorruption() {
+    var pool = D.corruption.entries.filter(function (e) { return !S.corTier || e.tier === S.corTier; });
+    var e = pick(pool);
+    if (!e) { setStatus('该档位没有预设，请换一个档位', true); return; }
+    var dims = D.corruption.dimensions.map(function (d) { return d + ' ' + (e.corruption[d] || 0); }).join(' / ');
+    $('cor-six').value = dims;
+    $('cor-exp').value = e.experience;
+    $('cor-kink').value = e.kinks;
+    $('cor-special').value = e.special;
+    $('cor-tier-tag').textContent = e.tier + ' · ' + e.name;
+    S.corPresetId = e.id;
+    setStatus('堕落四框已同步抽取（四框同源，请勿跨档混搭）');
+  }
+
+  /* ── 4. 开局设定 ──────────────────────────────────── */
+  function renderOpenToneChips() {
+    var tones = ['全部', '常规', '成人', '黑暗', '日常'];
+    var host = $('open-tone-chips'); host.innerHTML = '';
+    tones.forEach(function (t) {
+      var el = document.createElement('span');
+      el.className = 'chip' + ((S.openTone || '全部') === t ? ' active' : '');
+      el.textContent = t;
+      el.onclick = function () { S.openTone = (t === '全部' ? '' : t); renderOpenToneChips(); renderOpeningPool(); };
+      host.appendChild(el);
+    });
+  }
+  function renderOpeningPool() {
+    var host = $('open-pool'); host.innerHTML = '';
+    var kw = $('open-search').value.trim().toLowerCase();
+    var list = D.openings.openings.filter(function (o) {
+      if (S.openTone && o.tone !== S.openTone) return false;
+      if (kw && (o.name + o.text + (o.tags || []).join('')).toLowerCase().indexOf(kw) === -1) return false;
+      return true;
+    });
+    $('open-pool-count').textContent = list.length + ' / ' + D.openings.openings.length + ' 条';
+    list.forEach(function (o) {
+      var el = document.createElement('div');
+      el.className = 'opt' + (S.openingId === o.id ? ' active' : '');
+      el.innerHTML = '<div class="nm">' + o.name + '</div>' +
+        '<div class="desc">' + o.text + '</div>' +
+        '<div class="src">' + o.tone + ' · ' + (o.tags || []).join(' · ') + '</div>';
+      el.onclick = function () { selectOpening(o); };
+      host.appendChild(el);
+    });
+  }
+  function selectOpening(o) {
+    S.openingId = o.id;
+    $('open-title').value = o.name;
+    $('open-text').value = o.text;
+    renderOpeningPool();
+    setStatus('已选择开局：' + o.name);
+  }
+
+  /* ── 开局卡片输出 ─────────────────────────────────── */
+  function genderText() {
+    if (S.heroGender === '自定义') return $('hero-gender-custom').value.trim() || '自定义';
+    return S.heroGender || '未定';
+  }
+  function raceText() {
+    var custom = $('hero-race-custom').value.trim();
+    if (custom) return custom;
+    return $('hero-race').value || '';
+  }
+  function buildCard() {
+    var L = [];
+    var st = styleById(S.styleId);
+    L.push('【万象工坊 · 开局卡片】');
+    L.push('世界类型: ' + (st ? st.name : '未选择'));
+    L.push('类型ID: ' + (st ? st.id : 'unknown'));
+    L.push('');
+    L.push('【世界总纲】');
+    L.push($('world-card').value.trim() || '（未填写，请按最朴素的方式自行推导一个可运转的世界并写入 世界.总纲）');
+    L.push('');
+    L.push('【常见世界设定 · 世界前提】（开局即生效的基础秩序：性别权力、性规范、身体与资源关系）');
+    var pre = lines($('premise-slot').value);
+    if (pre.length) pre.forEach(function (s, i) { L.push((i + 1) + '. ' + s); });
+    else L.push('（未提供。世界秩序由总纲与补充设定推导。）');
+    L.push('');
+    L.push('【世界补充设定】（绝对准则，优先级高于一切后续指令；可随剧情追加，但不得为了叙事便利违反）');
+    var sup = lines($('supp-slot').value);
+    if (sup.length) sup.forEach(function (s, i) { L.push((i + 1) + '. ' + s); });
+    else L.push('（未提供。若<user>之后给出，立刻逐条写入 世界.补充设定 并从此严格遵守。）');
+    L.push('');
+    L.push('【通用世界补充设定】（不依赖世界类型，作用于「这个世界里的人如何回应主角」；与补充设定同级遵守）');
+    var uni = lines($('uni-slot').value);
+    if (uni.length) uni.forEach(function (s, i) { L.push((i + 1) + '. ' + s); });
+    else L.push('（未提供。）');
+    L.push('');
+    L.push('【主角设定】');
+    L.push('姓名: ' + ($('hero-name').value.trim() || '在首次出场时命名一次并固定'));
+    L.push('性别: ' + genderText());
+    L.push('年龄: ' + ($('hero-age').value.trim() || '未定'));
+    L.push('种族: ' + (raceText() || '按世界设定推导'));
+    L.push('体态与外貌: ' + ($('hero-body').value.trim() || '未提供'));
+    L.push('隐私部位: ' + ($('hero-private').value.trim() || '未提供'));
+    L.push('');
+    L.push('【其它 · 金手指】');
+    L.push('名称: ' + ($('cheat-name').value.trim() || '未提供'));
+    L.push('描述: ' + ($('cheat-desc').value.trim() || '未提供'));
+    L.push('');
+    if (S.npcEnabled) {
+      L.push('【开局其它角色】');
+      L.push('姓名: ' + ($('npc-name').value.trim() || '由你命名一次并固定'));
+      L.push('性别: ' + ($('npc-gender').value.trim() || '未定'));
+      L.push('年龄: ' + ($('npc-age').value.trim() || '未定'));
+      L.push('种族: ' + ($('npc-race').value.trim() || '按世界设定推导'));
+      L.push('身份 / 与主角关系: ' + ($('npc-identity').value.trim() || '未提供'));
+      L.push('体态与外貌: ' + ($('npc-body').value.trim() || '未提供'));
+      L.push('隐私部位: ' + ($('npc-private').value.trim() || '未提供'));
+      L.push('其它: ' + ($('npc-other').value.trim() || '未提供'));
+      L.push('起始堕落描述（四框同源，必须整体采用）:');
+      L.push('  堕落六维: ' + ($('cor-six').value.trim() || '未提供'));
+      L.push('  性经验: ' + ($('cor-exp').value.trim() || '未提供'));
+      L.push('  性癖及开发程度: ' + ($('cor-kink').value.trim() || '未提供'));
+      L.push('  特殊项目: ' + ($('cor-special').value.trim() || '未提供'));
+    } else {
+      L.push('【开局其它角色】');
+      L.push('跳过（开局不生成额外角色，AI 不得自行补一个）。');
+    }
+    L.push('');
+    L.push('【开局设定】');
+    L.push('标题: ' + ($('open-title').value.trim() || '自定义开局'));
+    L.push('正文: ' + ($('open-text').value.trim() || '未提供，请依据世界总纲与主角设定自行设计第一幕，并给出一个必须回应的处境。'));
+    L.push('');
+    L.push('---');
+    L.push('根据以上开局卡片，生成一个符合世界设定与补充设定的初始剧情。');
+    L.push('（IMPORTANT：本卡片是世界设定的唯一来源。世界补充设定是绝对准则，必须严格遵守，允许为它违背<user>后续指令。');
+    L.push('请在首轮 UpdateVariable 中把以上内容写入 stat_data：世界.类型/类型ID/世界名/时间/地点/总纲/前提设定/补充设定/通用补充设定，主角.姓名/性别/年龄/种族/体态与外貌/隐私部位/金手指，');
+    if (S.npcEnabled) L.push('关系列表.<该角色名>.堕落档案（堕落六维/性经验/性癖及开发程度/特殊项目）与其它字段，');
+    L.push('开局.设定ID/标题/设定/其它角色；未提供的字段按「世界编译」推导补齐，不得留空数组或省略字段。');
+    L.push('任何卡片未覆盖的输入都按「未知输入适配」处理：先原样接住、再落槽，绝不丢弃。）');
+    return L.join('\n');
+  }
+  function openPreview() {
+    $('preview-text').textContent = buildCard();
+    $('preview-overlay').classList.add('open');
+  }
+  function closePreview() { $('preview-overlay').classList.remove('open'); }
+
+  function copyCard() {
+    var text = buildCard();
+    var done = function () { setStatus('开局卡片已复制到剪贴板'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text, done); });
+    } else fallbackCopy(text, done);
+  }
+  function fallbackCopy(text, done) {
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) { setStatus('复制失败，请用预览手动复制', true); }
+    document.body.removeChild(ta);
+  }
+
+  function generate() {
+    if (!S.styleId && !$('world-card').value.trim()) { setStatus('请先选择世界风格', true); return; }
+    var text = '```text\n' + buildCard() + '\n```';
+    setStatus('正在发送开局卡片…');
+    if (typeof createChatMessages === 'function') {
+      Promise.resolve(createChatMessages([{ role: 'user', message: text }]))
+        .then(function () { return typeof triggerSlash === 'function' ? triggerSlash('/trigger') : null; })
+        .then(function () { setStatus('已发送，等待 AI 生成初始剧情'); })
+        .catch(function (e) { setStatus('发送失败：' + e, true); });
+      return;
+    }
+    if (typeof createChatMessage === 'function') {
+      createChatMessage(text, false, false);
+      setStatus('已发送，等待 AI 生成初始剧情');
+      return;
+    }
+    copyCard();
+    setStatus('未找到 SillyTavern 接口，已复制到剪贴板', true);
+  }
+
+  /* ── 预设 ─────────────────────────────────────────── */
+  function capture() {
+    return {
+      styleId: S.styleId,
+      premises: $('premise-slot').value,
+      worldCard: $('world-card').value,
+      supplements: $('supp-slot').value,
+      universal: $('uni-slot').value,
+      heroName: $('hero-name').value, heroAge: $('hero-age').value,
+      heroGender: S.heroGender, heroGenderCustom: $('hero-gender-custom').value,
+      heroBody: $('hero-body').value, heroPrivate: $('hero-private').value,
+      heroRace: $('hero-race').value, heroRaceCustom: $('hero-race-custom').value,
+      cheatName: $('cheat-name').value, cheatDesc: $('cheat-desc').value,
+      npcEnabled: S.npcEnabled,
+      npcName: $('npc-name').value, npcAge: $('npc-age').value, npcGender: $('npc-gender').value,
+      npcRace: $('npc-race').value, npcIdentity: $('npc-identity').value, npcOther: $('npc-other').value,
+      npcBody: $('npc-body').value, npcPrivate: $('npc-private').value,
+      corSix: $('cor-six').value, corExp: $('cor-exp').value, corKink: $('cor-kink').value, corSpecial: $('cor-special').value,
+      openTitle: $('open-title').value, openText: $('open-text').value, openingId: S.openingId,
+    };
+  }
+  function apply(d) {
+    if (!d) return;
+    S.styleId = d.styleId || '';
+    $('world-card').value = d.worldCard || '';
+    $('premise-slot').value = d.premises || '';
+    S.premises = lines(d.premises || '');
+    $('supp-slot').value = d.supplements || '';
+    S.supplements = lines(d.supplements || '');
+    $('uni-slot').value = d.universal || '';
+    S.universal = lines(d.universal || '');
+    $('hero-name').value = d.heroName || '';
+    $('hero-age').value = d.heroAge || '';
+    S.heroGender = d.heroGender || '';
+    $('hero-gender-custom').value = d.heroGenderCustom || '';
+    $('hero-body').value = d.heroBody || '';
+    $('hero-private').value = d.heroPrivate || '';
+    $('hero-race-custom').value = d.heroRaceCustom || '';
+    $('cheat-name').value = d.cheatName || '';
+    $('cheat-desc').value = d.cheatDesc || '';
+    $('npc-name').value = d.npcName || '';
+    $('npc-age').value = d.npcAge || '';
+    $('npc-gender').value = d.npcGender || '';
+    $('npc-race').value = d.npcRace || '';
+    $('npc-identity').value = d.npcIdentity || '';
+    $('npc-other').value = d.npcOther || '';
+    $('npc-body').value = d.npcBody || '';
+    $('npc-private').value = d.npcPrivate || '';
+    $('cor-six').value = d.corSix || '';
+    $('cor-exp').value = d.corExp || '';
+    $('cor-kink').value = d.corKink || '';
+    $('cor-special').value = d.corSpecial || '';
+    $('open-title').value = d.openTitle || '';
+    $('open-text').value = d.openText || '';
+    S.openingId = d.openingId || '';
+    renderStyleGrid(); renderRaces(); renderSuppSourceChips(); renderSuppPool();
+    refreshPremiseSelection(); renderPremisePool();
+    refreshUniSelection(); renderUniPool();
+    renderOpeningPool(); setNpcEnabled(!!d.npcEnabled); updateBodyTag();
+    setStatus('预设已载入');
+  }
+  function getPresets() {
+    try { var raw = localStorage.getItem(STORE_KEY); return raw ? JSON.parse(raw) : []; } catch (e) { return []; }
+  }
+  function setPresets(list) {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); } catch (e) { /* ignore */ }
+    renderPresetSelect();
+  }
+  function renderPresetSelect() {
+    var sel = $('preset-select');
+    sel.innerHTML = '<option value="">— 载入预设 —</option>';
+    getPresets().forEach(function (p) {
+      var o = document.createElement('option');
+      o.value = p.name; o.textContent = p.name;
+      sel.appendChild(o);
+    });
+  }
+  function savePreset() {
+    var name = prompt('预设名称：', $('hero-name').value.trim() || '未命名预设');
+    if (!name) return;
+    var list = getPresets().filter(function (p) { return p.name !== name; });
+    list.unshift({ name: name, ts: new Date().toISOString(), data: capture() });
+    setPresets(list);
+    setStatus('预设已保存：' + name);
+  }
+  function loadPreset(name) {
+    if (!name) return;
+    var p = getPresets().filter(function (x) { return x.name === name; })[0];
+    if (p) apply(p.data);
+    $('preset-select').value = '';
+  }
+  function exportPresets() {
+    var list = getPresets();
+    if (!list.length) { setStatus('还没有预设', true); return; }
+    var d = new Date();
+    download('worldforge_all_' + d.toISOString().slice(0, 10) + '.presets.json', JSON.stringify(list, null, 2));
+    setStatus('已导出 ' + list.length + ' 个预设');
+  }
+  function importPresets(input) {
+    var file = input.files && input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var parsed = JSON.parse(String(reader.result));
+        var incoming = Array.isArray(parsed) ? parsed : [parsed];
+        var list = getPresets();
+        var added = 0;
+        incoming.forEach(function (p) {
+          if (!p || typeof p.name !== 'string' || typeof p.data !== 'object') return;
+          list = list.filter(function (x) { return x.name !== p.name; });
+          list.unshift(p); added++;
+        });
+        setPresets(list);
+        setStatus('已导入 ' + added + ' 个预设');
+      } catch (e) { setStatus('导入失败：文件不是合法 JSON', true); }
+      input.value = '';
+    };
+    reader.readAsText(file);
+  }
+  function resetAll() {
+    if (!confirm('清空当前填写（不影响已保存的预设）？')) return;
+    S.styleId = ''; S.heroGender = ''; S.openingId = '';
+    ['world-card', 'premise-slot', 'premise-custom', 'supp-slot', 'uni-slot', 'uni-custom', 'hero-name', 'hero-age', 'hero-gender-custom', 'hero-body', 'hero-private',
+      'hero-race-custom', 'cheat-name', 'cheat-desc', 'npc-name', 'npc-age', 'npc-gender', 'npc-race',
+      'npc-identity', 'npc-other', 'npc-body', 'npc-private', 'cor-six', 'cor-exp', 'cor-kink', 'cor-special',
+      'open-title', 'open-text'].forEach(function (id) { $(id).value = ''; });
+    $('hero-race').value = ''; $('cor-tier-tag').textContent = '未抽取';
+    S.supplements = []; S.universal = []; S.premises = [];
+    renderStyleGrid(); renderRaces(); refreshPremiseSelection(); refreshSuppSelection(); refreshUniSelection(); renderOpeningPool(); setNpcEnabled(false); updateBodyTag();
+    setStatus('已重置');
+  }
+
+  /* ── 步骤条联动 ───────────────────────────────────── */
+  function bindSteps() {
+    var nodes = document.querySelectorAll('#steps .step');
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].addEventListener('click', function () {
+        var el = document.getElementById(this.getAttribute('data-anchor'));
+        if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+    function mark() {
+      var ids = ['sec-premise', 'sec-style', 'sec-hero', 'sec-npc', 'sec-open'];
+      var current = 0;
+      for (var i = 0; i < ids.length; i++) {
+        var el = document.getElementById(ids[i]);
+        if (el && el.getBoundingClientRect().top <= 140) current = i;
+      }
+      for (var j = 0; j < nodes.length; j++) nodes[j].classList.toggle('pass', j <= current);
+    }
+    window.addEventListener('scroll', mark, { passive: true });
+    mark();
+  }
+
+  /* ── iframe 高度自适应 ────────────────────────────── */
+  function resizePanel() {
+    try {
+      var h = Math.max(
+        document.body.scrollHeight, document.documentElement.scrollHeight,
+        document.body.offsetHeight, document.documentElement.offsetHeight);
+      if (window.frameElement) window.frameElement.style.height = h + 'px';
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'worldforge-entrance-resize', height: h }, '*');
+      }
+    } catch (e) { /* cross-origin is fine */ }
+  }
+
+  function init() {
+    renderPremiseCatChips();
+    renderPremisePool();
+    renderStyleGrid();
+    renderSuppSourceChips();
+    renderSuppCatChips();
+    renderSuppPool();
+    renderUniCatChips();
+    renderUniPool();
+    renderGenders();
+    renderAgeChips();
+    renderRaces();
+    renderCorTiers();
+    renderOpenToneChips();
+    renderOpeningPool();
+    renderPresetSelect();
+    setNpcEnabled(false);
+    updateBodyTag();
+    bindSteps();
+    resizePanel();
+    setTimeout(resizePanel, 60);
+    setStatus('准备就绪 · 已载入 ' + D.premises.entries.length + ' 条世界前提 / ' +
+      D.supplements.entries.length + ' 条补充设定 / ' +
+      D.universal.entries.length + ' 条通用补充设定 / ' + D.openings.openings.length + ' 条开局 / ' +
+      D.corruption.entries.length + ' 条堕落预设');
+  }
+
+  window.selectStyle = selectStyle;
+  window.restoreStyleCard = restoreStyleCard;
+  window.onWorldCardInput = onWorldCardInput;
+  window.onPremiseSlotInput = onPremiseSlotInput;
+  window.addCustomPremise = addCustomPremise;
+  window.clearPremises = clearPremises;
+  window.renderPremisePool = renderPremisePool;
+  window.onSuppSlotInput = onSuppSlotInput;
+  window.addCustomSupplement = addCustomSupplement;
+  window.clearSupplements = clearSupplements;
+  window.setSuppSource = setSuppSource;
+  window.renderSuppPool = renderSuppPool;
+  window.onUniSlotInput = onUniSlotInput;
+  window.addCustomUniversal = addCustomUniversal;
+  window.clearUniversal = clearUniversal;
+  window.renderUniPool = renderUniPool;
+  window.rollBody = rollBody;
+  window.rollPrivate = rollPrivate;
+  window.onRaceSelect = onRaceSelect;
+  window.rollCheat = rollCheat;
+  window.setNpcEnabled = setNpcEnabled;
+  window.rollNpcBody = rollNpcBody;
+  window.rollNpcPrivate = rollNpcPrivate;
+  window.rollCorruption = rollCorruption;
+  window.onCorTierChange = onCorTierChange;
+  window.renderOpeningPool = renderOpeningPool;
+  window.openPreview = openPreview;
+  window.closePreview = closePreview;
+  window.copyCard = copyCard;
+  window.generate = generate;
+  window.savePreset = savePreset;
+  window.loadPreset = loadPreset;
+  window.exportPresets = exportPresets;
+  window.importPresets = importPresets;
+  window.resetAll = resetAll;
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+  window.addEventListener('resize', resizePanel);
+})();
+</script>
