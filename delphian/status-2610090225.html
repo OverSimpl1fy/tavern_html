@@ -28776,8 +28776,569 @@
     }
 
   </style>
+<style>
+/* 自绘伙伴页样式：全部走面板主题变量（默认羊皮纸），作用域限定在 #yd-partner-root */
+#yd-partner-root{
+  --yd-paper: var(--theme-card-bg, #faf5eb);
+  --yd-paper-2: color-mix(in srgb, var(--theme-card-bg, #faf5eb) 82%, var(--theme-text-primary, #3d2b1f) 18%);
+  --yd-ink: var(--theme-text-primary, #3d2b1f);
+  --yd-ink-2: var(--theme-text-secondary, #6b5a4a);
+  --yd-muted: var(--theme-text-muted, #9e8d7a);
+  --yd-line: var(--theme-card-border, #d4c5a9);
+  --yd-seal: var(--theme-primary-bg, #a8611f);
+  --yd-seal-text: var(--theme-primary-text, #f9eed9);
+  --yd-good: var(--theme-success, #4f7a3a);
+  --yd-bad: var(--theme-error, #9c3b23);
+  --yd-eros: var(--theme-affection, #b4586c);
+  font-family: inherit;
+  color: var(--yd-ink);
+  padding: 10px 12px 16px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-window-bg, #fff) 92%, transparent), transparent 40%);
+}
+
+/* ── 头部与筛选 ── */
+#yd-partner-root .yd-head{display:flex;align-items:baseline;gap:10px;margin:0 0 10px}
+#yd-partner-root .yd-head h2{margin:0;font-size:.95rem;letter-spacing:.14em;color:var(--yd-seal)}
+#yd-partner-root .yd-sub{font-size:.7rem;color:var(--yd-muted)}
+
+#yd-partner-root .yd-filters{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;
+}
+#yd-partner-root .yd-filters button{
+  appearance:none;cursor:pointer;font:inherit;
+  min-height:52px;padding:8px 6px;border-radius:10px;
+  border:1px solid var(--yd-line);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--yd-paper) 92%, transparent), color-mix(in srgb, var(--yd-paper-2) 88%, transparent));
+  color:var(--yd-ink-2);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  font-size:.82rem;font-weight:600;letter-spacing:.06em;
+  box-shadow:0 1px 0 rgba(255,255,255,.4) inset, 0 2px 6px -4px rgba(0,0,0,.5);
+  transition:transform .15s, border-color .15s, color .15s, background .15s;
+}
+#yd-partner-root .yd-filters button small{font-size:.66rem;font-weight:400;color:var(--yd-muted)}
+#yd-partner-root .yd-filters button:hover{transform:translateY(-1px)}
+#yd-partner-root .yd-filters button[aria-selected="true"]{
+  border-color:var(--yd-seal);color:var(--yd-seal-text);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--yd-seal) 88%, var(--yd-paper)), color-mix(in srgb, var(--yd-seal) 70%, var(--yd-paper)));
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--yd-seal) 35%, transparent), 0 4px 12px -6px rgba(0,0,0,.6);
+}
+#yd-partner-root .yd-filters button[aria-selected="true"] small{color:color-mix(in srgb, var(--yd-seal-text) 80%, transparent)}
+
+/* ── 伙伴卡片（默认只显示卡片，不显示详情） ── */
+#yd-partner-root .yd-card-wrap{margin-top:2px}
+#yd-partner-root .yd-list{display:flex;flex-direction:column;gap:9px}
+#yd-partner-root .yd-card{
+  appearance:none;cursor:pointer;font:inherit;text-align:left;width:100%;
+  display:flex;gap:11px;align-items:center;padding:11px 12px;border-radius:12px;
+  border:1px solid var(--yd-line);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--yd-paper) 96%, transparent), color-mix(in srgb, var(--yd-paper-2) 92%, transparent));
+  box-shadow:0 1px 0 rgba(255,255,255,.45) inset, 0 6px 16px -10px rgba(0,0,0,.6);
+  transition:transform .14s, border-color .14s, box-shadow .14s;
+}
+#yd-partner-root .yd-card:hover{transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.45) inset, 0 10px 20px -10px rgba(0,0,0,.65)}
+#yd-partner-root .yd-card.on{border-color:var(--yd-seal);box-shadow:0 0 0 2px color-mix(in srgb, var(--yd-seal) 28%, transparent), 0 8px 20px -12px rgba(0,0,0,.6)}
+#yd-partner-root .yd-ava{
+  flex:0 0 auto;width:48px;height:48px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  font-size:1.15rem;font-weight:700;color:var(--yd-seal-text);
+  background:linear-gradient(150deg, color-mix(in srgb, var(--yd-seal) 80%, var(--yd-paper)), color-mix(in srgb, var(--yd-seal) 55%, var(--yd-paper-2)));
+  border:1px solid color-mix(in srgb, var(--yd-seal) 60%, var(--yd-line));
+}
+#yd-partner-root .yd-card-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+#yd-partner-root .yd-card-name{font-size:.95rem;font-weight:700;color:var(--yd-ink)}
+#yd-partner-root .yd-card-sub{font-size:.74rem;color:var(--yd-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#yd-partner-root .yd-card-tags{display:flex;gap:5px;flex-wrap:wrap}
+#yd-partner-root .yd-tag{
+  font-size:.66rem;padding:1px 7px;border-radius:99px;border:1px solid var(--yd-line);
+  background:color-mix(in srgb, var(--yd-paper) 70%, transparent);color:var(--yd-muted);
+}
+#yd-partner-root .yd-tag.on{border-color:var(--yd-good);color:var(--yd-good)}
+#yd-partner-root .yd-tag.eros{border-color:var(--yd-eros);color:var(--yd-eros)}
+#yd-partner-root .yd-card-nums{flex:0 0 auto;display:flex;flex-direction:column;gap:2px;font-size:.68rem;color:var(--yd-muted);text-align:right}
+#yd-partner-root .yd-card-nums b{color:var(--yd-ink);font-size:.82rem}
+
+/* ── 详情 ── */
+#yd-partner-root .yd-detail-head{display:flex;align-items:center;gap:9px;margin:4px 0 10px}
+#yd-partner-root .yd-back{
+  appearance:none;cursor:pointer;font:inherit;font-size:.76rem;padding:5px 10px;border-radius:8px;
+  border:1px solid var(--yd-line);background:var(--yd-paper);color:var(--yd-ink-2);
+}
+#yd-partner-root .yd-detail-name{font-size:1rem;font-weight:700}
+#yd-partner-root .yd-detail-sub{font-size:.72rem;color:var(--yd-muted)}
+#yd-partner-root .yd-tabs{display:flex;gap:4px;border-bottom:1px solid var(--yd-line);margin-bottom:12px}
+#yd-partner-root .yd-tabs button{
+  appearance:none;cursor:pointer;font:inherit;font-size:.78rem;font-weight:600;letter-spacing:.08em;
+  padding:8px 12px;border:0;background:transparent;color:var(--yd-muted);
+  border-bottom:2px solid transparent;
+}
+#yd-partner-root .yd-tabs button[aria-selected="true"]{color:var(--yd-seal);border-bottom-color:var(--yd-seal)}
+#yd-partner-root .yd-pane{padding-bottom:6px}
+
+#yd-partner-root .yd-addr{font-size:.78rem;color:var(--yd-ink-2);margin-bottom:9px}
+#yd-partner-root .yd-addr b{color:var(--yd-seal)}
+#yd-partner-root .yd-metrics{display:flex;gap:8px;margin-bottom:4px}
+#yd-partner-root .yd-metrics>div{
+  flex:1;text-align:center;padding:8px 6px;border-radius:10px;border:1px solid var(--yd-line);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--yd-paper) 90%, transparent), transparent);
+}
+#yd-partner-root .yd-metrics .k{display:block;font-size:.66rem;letter-spacing:.1em;color:var(--yd-muted)}
+#yd-partner-root .yd-metrics .v{display:block;font-size:1.1rem;font-weight:700;margin-top:2px}
+#yd-partner-root .yd-metrics .v.a{color:var(--yd-good)}
+#yd-partner-root .yd-metrics .v.b{color:var(--yd-seal)}
+#yd-partner-root .yd-metrics .v.c{color:var(--yd-bad)}
+
+#yd-partner-root .yd-sec{margin-top:14px}
+#yd-partner-root .yd-sec>h3{
+  margin:0 0 7px;font-size:.74rem;letter-spacing:.16em;color:var(--yd-seal);font-weight:700;
+  display:flex;align-items:center;gap:8px;
+}
+#yd-partner-root .yd-sec>h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg, color-mix(in srgb, var(--yd-seal) 45%, transparent), transparent)}
+
+#yd-partner-root .yd-rows{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.8rem;margin:0}
+#yd-partner-root .yd-rows dt{color:var(--yd-muted);white-space:nowrap}
+#yd-partner-root .yd-rows dd{margin:0;color:var(--yd-ink)}
+#yd-partner-root .yd-prose{margin:0;font-size:.82rem;line-height:1.7}
+#yd-partner-root .yd-quote{
+  margin:0;padding:7px 0 7px 11px;font-size:.84rem;color:var(--yd-ink);
+  border-left:2px solid var(--yd-seal);
+  background:linear-gradient(90deg, color-mix(in srgb, var(--yd-seal) 10%, transparent), transparent);
+  border-radius:0 8px 8px 0;
+}
+#yd-partner-root .yd-empty{margin:0;font-size:.78rem;color:var(--yd-muted)}
+
+#yd-partner-root .yd-res{display:flex;gap:8px}
+#yd-partner-root .yd-res>div{flex:1;padding:7px 9px;border-radius:9px;border:1px solid var(--yd-line);background:color-mix(in srgb, var(--yd-paper) 72%, transparent)}
+#yd-partner-root .yd-res-l{font-size:.66rem;color:var(--yd-muted)}
+#yd-partner-root .yd-bar{display:block;height:7px;border-radius:99px;background:color-mix(in srgb, var(--yd-ink) 14%, transparent);overflow:hidden;margin:5px 0 3px}
+#yd-partner-root .yd-bar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg, color-mix(in srgb, var(--yd-good) 80%, var(--yd-seal)), var(--yd-good))}
+#yd-partner-root .yd-bar.mp>i{background:linear-gradient(90deg, var(--theme-resource-mp, #5a7fb5), color-mix(in srgb, var(--theme-resource-mp, #5a7fb5) 60%, var(--yd-ink)))}
+#yd-partner-root .yd-bar.sp>i{background:linear-gradient(90deg, var(--theme-resource-sp, #6a9e7a), color-mix(in srgb, var(--theme-resource-sp, #6a9e7a) 60%, var(--yd-ink)))}
+#yd-partner-root .yd-res-n{display:block;font-size:.74rem;text-align:right;color:var(--yd-ink)}
+
+#yd-partner-root .yd-attrs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+#yd-partner-root .yd-attrs>div{display:flex;justify-content:space-between;padding:6px 9px;border-radius:8px;border:1px solid var(--yd-line);background:color-mix(in srgb, var(--yd-paper) 72%, transparent);font-size:.78rem}
+#yd-partner-root .yd-attrs b{color:var(--yd-seal)}
+
+#yd-partner-root .yd-dims{display:grid;gap:8px}
+#yd-partner-root .yd-dim{display:grid;grid-template-columns:4.4em 1fr auto;gap:8px;align-items:center}
+#yd-partner-root .yd-dim .dn{font-size:.75rem;color:var(--yd-muted)}
+#yd-partner-root .yd-dim .yd-bar{margin:0}
+#yd-partner-root .yd-dim .yd-bar>i{background:linear-gradient(90deg, var(--yd-seal), color-mix(in srgb, var(--yd-seal) 55%, var(--yd-ink)))}
+#yd-partner-root .yd-dim-n{font-size:.72rem;color:var(--yd-ink-2);white-space:nowrap}
+#yd-partner-root .yd-dim-note{grid-column:2 / span 2;font-size:.73rem;color:var(--yd-muted);margin-top:-3px}
+
+/* ── 技能 / 装备 / 物品（主角同级详细度） ── */
+#yd-partner-root .yd-entry{
+  border:1px solid var(--yd-line);border-radius:11px;margin-bottom:9px;overflow:hidden;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--yd-paper) 92%, transparent), color-mix(in srgb, var(--yd-paper-2) 80%, transparent));
+  box-shadow:0 1px 0 rgba(255,255,255,.4) inset, 0 4px 12px -10px rgba(0,0,0,.55);
+}
+#yd-partner-root .yd-entry-h{
+  display:flex;align-items:center;gap:8px;padding:8px 11px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--yd-seal) 14%, transparent), transparent);
+  border-bottom:1px solid var(--yd-line);
+}
+#yd-partner-root .yd-cn{flex:1;font-size:.88rem;font-weight:700}
+#yd-partner-root .yd-q{
+  font-size:.66rem;padding:1px 8px;border-radius:99px;white-space:nowrap;
+  border:1px solid color-mix(in srgb, var(--yd-seal) 55%, var(--yd-line));color:var(--yd-seal);
+  background:color-mix(in srgb, var(--yd-seal) 10%, transparent);
+}
+#yd-partner-root .yd-entry-b{padding:8px 11px 10px}
+#yd-partner-root .yd-meta{display:flex;gap:10px;flex-wrap:wrap;font-size:.74rem;color:var(--yd-muted);margin-bottom:6px}
+#yd-partner-root .yd-meta b{color:var(--yd-ink)}
+#yd-partner-root .yd-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
+#yd-partner-root .yd-tags span{font-size:.66rem;padding:1px 6px;border-radius:4px;border:1px solid var(--yd-line);color:var(--yd-muted)}
+#yd-partner-root .yd-eff{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:.78rem;margin:0 0 6px}
+#yd-partner-root .yd-eff dt{color:var(--yd-muted)}
+#yd-partner-root .yd-eff dd{margin:0}
+#yd-partner-root .yd-desc{margin:0 0 6px;font-size:.79rem;color:var(--yd-ink-2);line-height:1.65}
+#yd-partner-root .yd-exp{display:flex;align-items:center;gap:8px;font-size:.72rem;color:var(--yd-muted)}
+#yd-partner-root .yd-exp .yd-bar{flex:0 0 90px;margin:0}
+#yd-partner-root .yd-exp .yd-bar>i{background:linear-gradient(90deg, var(--yd-seal), color-mix(in srgb, var(--yd-seal) 50%, var(--yd-ink)))}
+#yd-partner-root .yd-exp-l{white-space:nowrap;color:var(--yd-ink-2)}
+#yd-partner-root .yd-exp-c{flex:1;text-align:right}
+
+/* ── 资产 ── */
+#yd-partner-root .yd-coin{display:flex;gap:8px;margin-bottom:4px}
+#yd-partner-root .yd-coin>div{
+  flex:1;text-align:center;padding:10px;border-radius:10px;
+  border:1px solid color-mix(in srgb, var(--yd-seal) 45%, var(--yd-line));
+  background:linear-gradient(180deg, color-mix(in srgb, var(--yd-seal) 18%, transparent), transparent);
+}
+#yd-partner-root .yd-coin .k{display:block;font-size:.66rem;letter-spacing:.1em;color:var(--yd-muted)}
+#yd-partner-root .yd-coin .v{display:block;font-size:1.15rem;font-weight:700;color:var(--yd-seal);margin-top:2px}
+</style>
 </head>
 
 <body>
   <div id="app"></div>
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   欲潮涌动 · 伙伴页重绘（注入式）
+   ──────────────────────────────────────────────────────────────────────────
+   面板是压缩后的 React 产物、没有源码，直接改 JSX 风险过高。这里改成：
+   ① 只读它同一个数据源 Mvu.getMvuData(...).stat_data.关系列表
+   ② 隐藏原伙伴页内容，在同一个容器里挂自绘 UI
+   ③ 全部样式用 --theme-* 变量，跟面板主题（羊皮纸）保持一致
+   目标规格（用户 2026-10-09 定稿）：
+   · 默认只显示伙伴卡片（不含具体信息），选中后才展开详情
+   · 筛选 4 项：全部 / 在场 / 不在场 / 已侵蚀，卡片放大、选中态明显
+   · 详情分栏：概览 / 状态 / 技能 / 装备 / 背景 / 资产（技能装备背包各自独立）
+   · 概览含 称呼·好感度·侵蚀度·堕落度·心里话·资源·基础信息·属性·外貌着装·性格
+   · 堕落六维用六条进度条，逐维附「当前认知」里的具体表现
+   · 背景栏合并 背景故事 + 心里话 + 奇遇 + 壮举
+   · 资产栏上方金钱与学分、下方物品
+   · 技能/装备/物品按主角同级详细度渲染
+   ══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  "use strict";
+  if (window.__YD_PARTNER_PANEL__) return;
+  window.__YD_PARTNER_PANEL__ = true;
+
+  var DIMENSIONS = ["道德沦丧", "共情泯灭", "欲望沉溺", "自我消解", "手段残酷", "罪责开脱"];
+  var FILTERS = [
+    { key: "all", label: "全部" },
+    { key: "present", label: "在场" },
+    { key: "away", label: "不在场" },
+    { key: "corrupt", label: "已侵蚀" },
+  ];
+  var SECTIONS = [
+    { key: "overview", label: "概览" },
+    { key: "status", label: "状态" },
+    { key: "skills", label: "技能" },
+    { key: "equipment", label: "装备" },
+    { key: "background", label: "背景" },
+    { key: "assets", label: "资产" },
+  ];
+
+  var state = { filter: "all", selected: null, section: "overview", signature: "" };
+
+  /* ── 工具 ───────────────────────────────────────────────────────── */
+  function esc(v) {
+    return String(v === null || v === undefined ? "" : v).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  function num(v, fallback) {
+    var n = Number(v);
+    return Number.isFinite(n) ? n : (fallback === undefined ? 0 : fallback);
+  }
+  function has(obj) {
+    return obj !== null && typeof obj === "object" && !Array.isArray(obj);
+  }
+  function keysOf(obj) {
+    return has(obj) ? Object.keys(obj).filter(function (k) { return k !== ""; }) : [];
+  }
+  function textOf(v) {
+    if (v === null || v === undefined) return "";
+    if (typeof v === "string") return v;
+    if (Array.isArray(v)) return v.map(textOf).filter(Boolean).join("、");
+    if (typeof v === "object") {
+      return Object.keys(v).map(function (k) {
+        var inner = textOf(v[k]);
+        return inner ? k + "：" + inner : k;
+      }).join("；");
+    }
+    return String(v);
+  }
+  /** 从「当前认知」的 `维度：数值/100（表现）` 逐行里取某一维的表现文字。 */
+  function cognitionFor(text, dimension) {
+    if (typeof text !== "string") return "";
+    var lines = text.split(/\n+/);
+    for (var i = 0; i < lines.length; i += 1) {
+      var line = lines[i];
+      if (line.indexOf(dimension) !== 0) continue;
+      var m = /[（(]([^）)]*)[）)]/.exec(line);
+      if (m) return m[1];
+      var after = line.replace(/^[^：:]*[：:]/, "").replace(/\d+\s*\/\s*\d+/g, "").trim();
+      return after;
+    }
+    return "";
+  }
+  function entriesOf(obj) {
+    if (!has(obj)) return [];
+    return Object.keys(obj).map(function (name) {
+      var item = has(obj[name]) ? obj[name] : { 描述: obj[name] };
+      return { name: has(item) && item.名字 ? String(item.名字) : name, item: item };
+    });
+  }
+
+  /* ── 详情块（技能/装备/物品共用，主角同级详细度） ───────────────── */
+  function detailCard(entry, kind) {
+    var it = entry.item || {};
+    var rows = [];
+    function meta(label, value) {
+      var text = textOf(value);
+      if (text === "" || text === "—") return;
+      rows.push('<span>' + esc(label) + ' <b>' + esc(text) + '</b></span>');
+    }
+    meta("类型", it.类型);
+    if (kind === "skill") { meta("消耗", it.消耗); meta("目标豁免", it.目标豁免); meta("伤害", it.伤害); }
+    if (kind === "equipment") { meta("位置", it.位置); meta("数量", it.数量); }
+    if (kind === "item") { meta("数量", it.数量); }
+    if (kind === "skill" || kind === "equipment") { /* 状态/补充见下 */ }
+
+    var tags = Array.isArray(it.标签) ? it.标签 : [];
+    var effects = has(it.效果) ? Object.keys(it.效果) : [];
+    var exp = has(it.经验值) ? it.经验值 : null;
+    var html = '<div class="yd-entry"><div class="yd-entry-h"><span class="yd-cn">' + esc(entry.name) + '</span>'
+      + '<span class="yd-q">' + esc(textOf(it.品质) || "—") + '</span></div><div class="yd-entry-b">';
+    if (rows.length) html += '<div class="yd-meta">' + rows.join("") + '</div>';
+    if (tags.length) html += '<div class="yd-tags">' + tags.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join("") + '</div>';
+    if (effects.length) {
+      html += '<dl class="yd-eff">' + effects.map(function (k) {
+        return '<dt>' + esc(k) + '</dt><dd>' + esc(textOf(it.效果[k])) + '</dd>';
+      }).join("") + '</dl>';
+    }
+    var desc = textOf(it.描述);
+    if (desc) html += '<p class="yd-desc">' + esc(desc) + '</p>';
+    if (kind === "skill") {
+      var extra = [];
+      if (textOf(it.状态)) extra.push('<span>状态 <b>' + esc(textOf(it.状态)) + '</b></span>');
+      if (textOf(it.补充)) extra.push('<span>补充 <b>' + esc(textOf(it.补充)) + '</b></span>');
+      if (extra.length) html += '<div class="yd-meta">' + extra.join("") + '</div>';
+    }
+    if (exp) {
+      var cur = num(exp.当前), max = num(exp.上限);
+      var pct = max > 0 ? Math.min(100, Math.round(cur * 100 / max)) : 0;
+      html += '<div class="yd-exp"><span class="yd-exp-l">' + esc(kind === "equipment" ? "磨损" : "经验") + ' ' + cur + ' / ' + (max || "—")
+        + '</span><span class="yd-bar"><i style="width:' + pct + '%"></i></span>'
+        + '<span class="yd-exp-c">' + esc(textOf(exp.升级条件) || "不可成长") + '</span></div>';
+    }
+    return html + '</div></div>';
+  }
+
+  function listOrEmpty(list, empty) {
+    return list.length ? list.join("") : '<p class="yd-empty">' + esc(empty) + '</p>';
+  }
+
+  /* ── 卡片（默认列表态） ─────────────────────────────────────────── */
+  function partnerCard(name, data) {
+    var tags = Array.isArray(data.关系标签) ? data.关系标签.slice(0, 3) : [];
+    var present = data.在场 === true;
+    var corrupt = num(data.侵蚀度) > 0 || num(data.堕落度) >= 40;
+    return '<button class="yd-card' + (state.selected === name ? " on" : "") + '" data-name="' + esc(name) + '">'
+      + '<span class="yd-ava">' + esc(String(name).slice(0, 1)) + '</span>'
+      + '<span class="yd-card-main">'
+      + '<span class="yd-card-name">' + esc(name) + '</span>'
+      + '<span class="yd-card-sub">' + esc(textOf(data.身份) || textOf(data.备注) || "—") + '</span>'
+      + '<span class="yd-card-tags">'
+      + (present ? '<span class="yd-tag on">在场</span>' : '<span class="yd-tag">不在场</span>')
+      + (corrupt ? '<span class="yd-tag eros">已侵蚀</span>' : '')
+      + tags.map(function (t) { return '<span class="yd-tag">' + esc(t) + '</span>'; }).join("")
+      + '</span></span>'
+      + '<span class="yd-card-nums"><span>好感 <b>' + num(data.好感度) + '</b></span><span>侵蚀 <b>' + num(data.侵蚀度) + '</b></span></span>'
+      + '</button>';
+  }
+
+  /* ── 详情 ──────────────────────────────────────────────────────── */
+  function detail(name, data) {
+    var corruption = num(data.堕落度);
+    var head = '<div class="yd-detail-head">'
+      + '<button class="yd-back" data-back="1">‹ 返回</button>'
+      + '<span class="yd-detail-name">' + esc(name) + '</span>'
+      + '<span class="yd-detail-sub">' + esc(textOf(data.身份) || "") + '</span></div>';
+
+    var tabs = '<div class="yd-tabs">' + SECTIONS.map(function (s) {
+      return '<button data-section="' + s.key + '"' + (state.section === s.key ? ' aria-selected="true"' : '') + '>' + s.label + '</button>';
+    }).join("") + '</div>';
+
+    var body = "";
+    if (state.section === "overview") {
+      var addr = '<div class="yd-addr">她叫你：<b>' + esc(textOf(data.对主角称呼) || "—") + '</b> ｜ 你叫她：<b>'
+        + esc(textOf(data.主角称呼) || "—") + '</b></div>';
+      var metrics = '<div class="yd-metrics">'
+        + '<div><span class="k">好感度</span><span class="v a">' + num(data.好感度) + '</span></div>'
+        + '<div><span class="k">侵蚀度</span><span class="v b">' + num(data.侵蚀度) + '</span></div>'
+        + '<div><span class="k">堕落度</span><span class="v c">' + corruption + '</span></div></div>';
+      var resources = '<div class="yd-res">'
+        + resBar("生命", num(data.生命值), num(data.生命值上限), "")
+        + resBar("法力", num(data.法力值), num(data.法力值上限), "mp")
+        + resBar("体力", num(data.体力值), num(data.体力值上限), "sp") + '</div>';
+      var basic = '<dl class="yd-rows">'
+        + row("种族 / 性别", [textOf(data.种族), textOf(data.性别), textOf(data.年龄) ? textOf(data.年龄) + " 岁" : ""].filter(Boolean).join(" · "))
+        + row("生命层级", textOf(data.生命层级) + (textOf(data.等级) ? " · Lv" + textOf(data.等级) : ""))
+        + row("职业", textOf(data.职业))
+        + row("身份", textOf(data.身份))
+        + row("口癖", textOf(data.口癖))
+        + '</dl>';
+      var attrs = has(data.属性) ? '<div class="yd-attrs">' + ["力量", "敏捷", "体质", "智力", "感知", "魅力"].map(function (k) {
+        return '<div><span>' + k + '</span><b>' + num(data.属性[k]) + '</b></div>';
+      }).join("") + '</div>' : "";
+      var dims = '<div class="yd-dims">' + DIMENSIONS.map(function (d) {
+        var v = has(data.堕落六维) ? num(data.堕落六维[d]) : 0;
+        var note = cognitionFor(data.当前认知, d);
+        return '<div class="yd-dim"><span class="dn">' + d + '</span><span class="yd-bar"><i style="width:' + Math.min(100, v) + '%"></i></span>'
+          + '<span class="yd-dim-n">' + v + '/100</span>'
+          + (note ? '<span class="yd-dim-note">' + esc(note) + '</span>' : '') + '</div>';
+      }).join("") + '</div>';
+      body = addr + metrics + section("心里话", '<p class="yd-quote">' + esc(textOf(data.心里话) || "—") + '</p>')
+        + section("资源状态", resources) + section("基础信息", basic)
+        + section("属性", attrs) + section("外貌 / 着装", '<dl class="yd-rows">' + row("外貌", textOf(data.外貌)) + row("着装", textOf(data.着装)) + '</dl>')
+        + section("性格", '<p class="yd-prose">' + esc(textOf(data.性格) || "—") + '</p>')
+        + section("堕落六维", dims);
+    } else if (state.section === "status") {
+      var effects = entriesOf(data.状态效果).map(function (e) {
+        return '<div class="yd-entry"><div class="yd-entry-h"><span class="yd-cn">' + esc(e.name) + '</span>'
+          + '<span class="yd-q">' + esc(textOf(e.item.类型) || "状态") + '</span></div><div class="yd-entry-b">'
+          + '<div class="yd-meta"><span>层数 <b>' + num(e.item.层数, 1) + '</b></span>'
+          + (textOf(e.item.剩余时间) ? '<span>剩余 <b>' + esc(textOf(e.item.剩余时间)) + '</b></span>' : '')
+          + (textOf(e.item.来源) ? '<span>来源 <b>' + esc(textOf(e.item.来源)) + '</b></span>' : '')
+          + '</div><p class="yd-desc">' + esc(textOf(e.item.效果) || "—") + '</p></div></div>';
+      });
+      body = section("状态效果", listOrEmpty(effects, "当前没有状态效果"));
+    } else if (state.section === "skills") {
+      body = section("技能", listOrEmpty(entriesOf(data.技能).map(function (e) { return detailCard(e, "skill"); }), "暂无技能"));
+    } else if (state.section === "equipment") {
+      body = section("装备", listOrEmpty(entriesOf(data.装备).map(function (e) { return detailCard(e, "equipment"); }), "暂无装备"));
+    } else if (state.section === "background") {
+      body = section("背景故事", '<p class="yd-prose">' + esc(textOf(data.背景故事) || "—") + '</p>')
+        + section("心里话", '<p class="yd-quote">' + esc(textOf(data.心里话) || "—") + '</p>')
+        + section("奇遇", listOrEmpty(entriesOf(data.奇遇).map(function (e) {
+            return '<div class="yd-entry"><div class="yd-entry-h"><span class="yd-cn">' + esc(e.name) + '</span></div><div class="yd-entry-b">'
+              + '<p class="yd-desc">' + esc(textOf(e.item.描述) || "—") + '</p>'
+              + (textOf(e.item.效果) ? '<dl class="yd-eff"><dt>效果</dt><dd>' + esc(textOf(e.item.效果)) + '</dd></dl>' : '')
+              + '</div></div>';
+          }), "暂无奇遇"))
+        + section("壮举", listOrEmpty(entriesOf(data.壮举).map(function (e) {
+            var it = e.item;
+            return '<div class="yd-entry"><div class="yd-entry-h"><span class="yd-cn">' + esc(e.name) + '</span>'
+              + '<span class="yd-q">' + esc(textOf(it.层级) || "—") + '</span></div><div class="yd-entry-b">'
+              + '<div class="yd-meta">' + (textOf(it.类型) ? '<span>类型 <b>' + esc(textOf(it.类型)) + '</b></span>' : '')
+              + (textOf(it.完成等级) ? '<span>完成等级 <b>Lv' + esc(textOf(it.完成等级)) + '</b></span>' : '')
+              + (textOf(it.来源) ? '<span>来源 <b>' + esc(textOf(it.来源)) + '</b></span>' : '')
+              + (textOf(it.状态) ? '<span>状态 <b>' + esc(textOf(it.状态)) + '</b></span>' : '') + '</div>'
+              + '<p class="yd-desc">' + esc(textOf(it.描述) || "—") + '</p>'
+              + (textOf(it.获得专长) ? '<dl class="yd-eff"><dt>获得专长</dt><dd>' + esc(textOf(it.获得专长)) + '</dd></dl>' : '')
+              + (textOf(it.获得技能) ? '<dl class="yd-eff"><dt>获得技能</dt><dd>' + esc(textOf(it.获得技能)) + '</dd></dl>' : '')
+              + '</div></div>';
+          }), "暂无壮举"));
+    } else {
+      var coins = '<div class="yd-coin">'
+        + '<div><span class="k">金钱 G</span><span class="v">' + num(data.金钱) + '</span></div>'
+        + '<div><span class="k">学分</span><span class="v">' + num(data.学分) + '</span></div></div>';
+      var items = entriesOf(data.背包).map(function (e) { return detailCard(e, "item"); });
+      body = section("金钱 / 学分", coins) + section("物品", listOrEmpty(items, "背包是空的"));
+    }
+
+    return head + tabs + '<div class="yd-pane">' + body + '</div>';
+  }
+
+  function section(title, inner) {
+    return '<section class="yd-sec"><h3>' + esc(title) + '</h3>' + inner + '</section>';
+  }
+  function row(label, value) {
+    var text = textOf(value);
+    return '<dt>' + esc(label) + '</dt><dd>' + esc(text || "—") + '</dd>';
+  }
+  function resBar(label, cur, max, cls) {
+    var pct = max > 0 ? Math.min(100, Math.round(cur * 100 / max)) : 0;
+    return '<div><span class="yd-res-l">' + esc(label) + '</span><span class="yd-bar' + (cls ? " " + cls : "") + '"><i style="width:' + pct + '%"></i></span>'
+      + '<span class="yd-res-n">' + cur + ' / ' + max + '</span></div>';
+  }
+
+  /* ── 渲染 ──────────────────────────────────────────────────────── */
+  function render(root, partners) {
+    var names = Object.keys(partners);
+    var list = names.filter(function (n) {
+      var d = has(partners[n]) ? partners[n] : {};
+      if (state.filter === "present") return d.在场 === true;
+      if (state.filter === "away") return d.在场 !== true;
+      if (state.filter === "corrupt") return num(d.侵蚀度) > 0 || num(d.堕落度) >= 40;
+      return true;
+    });
+    if (state.selected !== null && names.indexOf(state.selected) === -1) state.selected = null;
+    if (state.selected === null && list.length === 1) state.selected = list[0];
+
+    var filters = '<div class="yd-filters">' + FILTERS.map(function (f) {
+      return '<button data-filter="' + f.key + '"' + (state.filter === f.key ? ' aria-selected="true"' : '') + '>'
+        + f.label + '<small>' + (f.key === "all" ? names.length : names.filter(function (n) {
+          var d = has(partners[n]) ? partners[n] : {};
+          if (f.key === "present") return d.在场 === true;
+          if (f.key === "away") return d.在场 !== true;
+          return num(d.侵蚀度) > 0 || num(d.堕落度) >= 40;
+        }).length) + '</small></button>';
+    }).join("") + '</div>';
+
+    var content;
+    if (state.selected !== null && has(partners[state.selected])) {
+      content = '<div class="yd-list single">' + partnerCard(state.selected, partners[state.selected]) + '</div>'
+        + detail(state.selected, partners[state.selected]);
+    } else {
+      content = '<div class="yd-list">' + listOrEmpty(list.map(function (n) {
+        return partnerCard(n, has(partners[n]) ? partners[n] : {});
+      }), "这一筛选下没有伙伴") + '</div>';
+    }
+    root.innerHTML = '<div class="yd-head"><h2>伙伴</h2><span class="yd-sub">'
+      + (state.selected !== null ? "选中：点击卡片切换" : "点击卡片查看详情") + '</span></div>' + filters
+      + '<div class="yd-card-wrap">' + content + '</div>';
+  }
+
+  /* ── 挂载与数据 ────────────────────────────────────────────────── */
+  function currentPartners() {
+    try {
+      if (!window.Mvu || typeof window.Mvu.getMvuData !== "function") return null;
+      var msgId = typeof window.getCurrentMessageId === "function" ? window.getCurrentMessageId() : null;
+      var data = window.Mvu.getMvuData({ type: "message", message_id: msgId });
+      var stat = data && data.stat_data ? data.stat_data : null;
+      return has(stat) && has(stat.关系列表) ? stat.关系列表 : (has(stat) ? {} : null);
+    } catch (_) { return null; }
+  }
+
+  function containers() {
+    return Array.prototype.slice.call(document.querySelectorAll('[class*="destinyTabPartners"]'));
+  }
+
+  function mount() {
+    var roots = containers();
+    if (!roots.length) return false;
+    var host = roots[0];
+    var root = document.getElementById("yd-partner-root");
+    if (!root || !host.contains(root)) {
+      root = document.createElement("div");
+      root.id = "yd-partner-root";
+      host.appendChild(root);
+    }
+    // 隐藏原伙伴页内容（除自绘根节点外）
+    Array.prototype.slice.call(host.children).forEach(function (child) {
+      if (child.id === "yd-partner-root") return;
+      child.style.display = "none";
+    });
+    var partners = currentPartners();
+    if (partners === null) { root.innerHTML = '<p class="yd-empty">等待 MVU 数据…</p>'; return true; }
+    var signature = JSON.stringify([state.filter, state.selected, state.section, partners]);
+    if (signature === state.signature) return true;
+    state.signature = signature;
+    render(root, partners);
+    return true;
+  }
+
+  document.addEventListener("click", function (event) {
+    var target = event.target;
+    if (!target || !target.closest) return;
+    var filterBtn = target.closest("#yd-partner-root [data-filter]");
+    if (filterBtn) { state.filter = filterBtn.getAttribute("data-filter"); state.signature = ""; mount(); return; }
+    var back = target.closest("#yd-partner-root [data-back]");
+    if (back) { state.selected = null; state.section = "overview"; state.signature = ""; mount(); return; }
+    var sectionBtn = target.closest("#yd-partner-root [data-section]");
+    if (sectionBtn) { state.section = sectionBtn.getAttribute("data-section"); state.signature = ""; mount(); return; }
+    var card = target.closest("#yd-partner-root [data-name]");
+    if (card) {
+      var name = card.getAttribute("data-name");
+      state.selected = state.selected === name ? null : name;
+      state.section = "overview";
+      state.signature = "";
+      mount();
+    }
+  }, true);
+
+  var tries = 0;
+  var timer = window.setInterval(function () {
+    tries += 1;
+    if (mount() || tries > 600) window.clearInterval(timer);
+  }, 500);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) mount(); });
+})();
+</script>
 </body>
