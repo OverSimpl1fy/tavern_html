@@ -28792,6 +28792,9 @@
   font-family: inherit;
   color: var(--yd-ink);
   padding: 10px 12px 16px;
+  max-height: 68vh;                                   /* 可滑动：否则看不到堕落栏等内容 */
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--theme-window-bg, #fff) 92%, transparent), transparent 40%);
 }
@@ -28803,20 +28806,20 @@
 #yd-partner-root .yd-sub{font-size:.7rem;color:var(--yd-muted)}
 
 #yd-partner-root .yd-filters{
-  display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;
+  display:flex;gap:6px;margin-bottom:10px;
 }
 #yd-partner-root .yd-filters button{
-  appearance:none;cursor:pointer;font:inherit;
-  min-height:64px;padding:11px 10px;border-radius:12px;
+  appearance:none;cursor:pointer;font:inherit;flex:1 1 0;min-width:0;
+  min-height:30px;padding:5px 4px;border-radius:7px;
   border:1px solid var(--yd-line);
   background:linear-gradient(180deg, color-mix(in srgb, var(--yd-paper) 92%, transparent), color-mix(in srgb, var(--yd-paper-2) 88%, transparent));
   color:var(--yd-ink-2);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-  font-size:1.02rem;font-weight:700;letter-spacing:.08em;
-  box-shadow:0 1px 0 rgba(255,255,255,.4) inset, 0 2px 6px -4px rgba(0,0,0,.5);
+  display:flex;flex-direction:row;align-items:center;justify-content:center;gap:4px;
+  font-size:.74rem;font-weight:600;letter-spacing:0;
+  box-shadow:0 1px 0 rgba(255,255,255,.35) inset;
   transition:transform .15s, border-color .15s, color .15s, background .15s;
 }
-#yd-partner-root .yd-filters button small{font-size:.8rem;font-weight:500;color:var(--yd-muted);margin-top:1px}
+#yd-partner-root .yd-filters button small{font-size:.66rem;font-weight:500;color:var(--yd-muted)}
 #yd-partner-root .yd-filters button:hover{transform:translateY(-1px)}
 #yd-partner-root .yd-filters button[aria-selected="true"]{
   border-color:var(--yd-seal);color:var(--yd-seal-text);
@@ -28866,13 +28869,25 @@
 }
 #yd-partner-root .yd-detail-name{font-size:1rem;font-weight:700}
 #yd-partner-root .yd-detail-sub{font-size:.72rem;color:var(--yd-muted)}
-#yd-partner-root .yd-tabs{display:flex;gap:4px;border-bottom:1px solid var(--yd-line);margin-bottom:12px}
-#yd-partner-root .yd-tabs button{
-  appearance:none;cursor:pointer;font:inherit;font-size:.78rem;font-weight:600;letter-spacing:.08em;
-  padding:8px 12px;border:0;background:transparent;color:var(--yd-muted);
-  border-bottom:2px solid transparent;
+#yd-partner-root .yd-tabs{
+  display:flex;gap:1px;border-bottom:1px solid var(--yd-line);margin-bottom:10px;
+  overflow-x:auto;scrollbar-width:none;
 }
-#yd-partner-root .yd-tabs button[aria-selected="true"]{color:var(--yd-seal);border-bottom-color:var(--yd-seal)}
+#yd-partner-root .yd-tabs::-webkit-scrollbar{display:none}
+#yd-partner-root .yd-clickable{cursor:pointer}
+#yd-partner-root .yd-dims-hint{margin-top:6px;font-size:.72rem;color:var(--yd-seal);text-align:right}
+#yd-partner-root .yd-expandable{cursor:pointer}
+#yd-partner-root .yd-caret{margin-left:auto;font-size:.7rem;color:var(--yd-muted)}
+#yd-partner-root .yd-tabs button{
+  appearance:none;cursor:pointer;font:inherit;flex:1 1 auto;min-width:36px;
+  font-size:.8rem;font-weight:600;letter-spacing:0;text-align:center;white-space:nowrap;
+  padding:6px 2px;border:0;background:transparent;color:var(--yd-muted);
+  border-bottom:2px solid transparent;border-radius:0;
+}
+#yd-partner-root .yd-tabs button[aria-selected="true"]{
+  color:var(--yd-seal);border-bottom-color:var(--yd-seal);
+  background:linear-gradient(180deg, transparent, color-mix(in srgb, var(--yd-seal) 14%, transparent));
+}
 #yd-partner-root .yd-pane{padding-bottom:6px}
 
 #yd-partner-root .yd-addr{font-size:.78rem;color:var(--yd-ink-2);margin-bottom:9px}
@@ -28907,7 +28922,13 @@
 }
 #yd-partner-root .yd-empty{margin:0;font-size:.78rem;color:var(--yd-muted)}
 
-#yd-partner-root .yd-res{display:flex;gap:8px}
+#yd-partner-root .yd-res{display:flex;gap:10px}
+#yd-partner-root .yd-res-item{flex:1 1 0;min-width:0}
+#yd-partner-root .yd-res-row1{display:flex;align-items:center;gap:6px}
+#yd-partner-root .yd-res-l{font-size:.68rem;color:var(--yd-muted);white-space:nowrap}
+#yd-partner-root .yd-res-row1 .yd-bar{flex:1;margin:0}
+#yd-partner-root .yd-res-row2{font-size:.72rem;color:var(--yd-ink-2);text-align:right;margin-top:3px}
+#yd-partner-root .yd-res-row2 b{color:var(--yd-ink)}
 #yd-partner-root .yd-res>div{flex:1;padding:7px 9px;border-radius:9px;border:1px solid var(--yd-line);background:color-mix(in srgb, var(--yd-paper) 72%, transparent)}
 #yd-partner-root .yd-res-l{font-size:.66rem;color:var(--yd-muted)}
 #yd-partner-root .yd-bar{display:block;height:7px;border-radius:99px;background:color-mix(in srgb, var(--yd-ink) 14%, transparent);overflow:hidden;margin:5px 0 3px}
@@ -29012,9 +29033,11 @@
     { key: "equipment", label: "装备" },
     { key: "background", label: "背景" },
     { key: "assets", label: "资产" },
+    { key: "depravity", label: "堕落" },
   ];
 
-  var state = { filter: "all", selected: null, section: "overview", signature: "", mounted: false };
+  var hiddenByUs = [];
+  var state = { filter: "all", selected: null, section: "overview", signature: "", mounted: false, expanded: null };
 
   /* ── 工具 ───────────────────────────────────────────────────────── */
   function esc(v) {
@@ -29060,10 +29083,15 @@
   }
   function entriesOf(obj) {
     if (!has(obj)) return [];
-    return Object.keys(obj).map(function (name) {
-      var item = has(obj[name]) ? obj[name] : { 描述: obj[name] };
-      return { name: has(item) && item.名字 ? String(item.名字) : name, item: item };
+    var out = [];
+    Object.keys(obj).forEach(function (name) {
+      var raw = obj[name];
+      var item = has(raw) ? raw : (raw === null || raw === undefined || raw === "" ? {} : { 描述: raw });
+      var filled = Object.keys(item).filter(function (k) { return textOf(item[k]) !== ""; });
+      if (filled.length === 0) return;              // 空对象不计入（否则空栏也长出一堆卡）
+      out.push({ name: has(item) && item.名字 ? String(item.名字) : name, item: item });
     });
+    return out;
   }
 
   /* ── 详情块（技能/装备/物品共用，主角同级详细度） ───────────────── */
@@ -29168,13 +29196,13 @@
       var attrs = has(data.属性) ? '<div class="yd-attrs">' + ["力量", "敏捷", "体质", "智力", "感知", "魅力"].map(function (k) {
         return '<div><span>' + k + '</span><b>' + num(data.属性[k]) + '</b></div>';
       }).join("") + '</div>' : "";
-      var dims = '<div class="yd-dims">' + DIMENSIONS.map(function (d) {
+      var dims = '<div class="yd-dims yd-clickable" data-section="depravity" title="点击进入堕落栏">' + DIMENSIONS.map(function (d) {
         var v = has(data.堕落六维) ? num(data.堕落六维[d]) : 0;
         var note = cognitionFor(data.当前认知, d);
         return '<div class="yd-dim"><span class="dn">' + d + '</span><span class="yd-bar"><i style="width:' + Math.min(100, v) + '%"></i></span>'
           + '<span class="yd-dim-n">' + v + '/100</span>'
           + (note ? '<span class="yd-dim-note">' + esc(note) + '</span>' : '') + '</div>';
-      }).join("") + '</div>';
+      }).join("") + '<div class="yd-dims-hint">点击进入堕落栏 ›</div></div>';
       body = addr + metrics + section("心里话", '<p class="yd-quote">' + esc(textOf(data.心里话) || "—") + '</p>')
         + section("资源状态", resources) + section("基础信息", basic)
         + section("属性", attrs) + section("外貌 / 着装", '<dl class="yd-rows">' + row("外貌", textOf(data.外貌)) + row("着装", textOf(data.着装)) + '</dl>')
@@ -29205,9 +29233,15 @@
           }), "暂无奇遇"))
         + section("壮举", listOrEmpty(entriesOf(data.壮举).map(function (e) {
             var it = e.item;
-            return '<div class="yd-entry"><div class="yd-entry-h"><span class="yd-cn">' + esc(e.name) + '</span>'
-              + '<span class="yd-q">' + esc(textOf(it.层级) || "—") + '</span></div><div class="yd-entry-b">'
-              + '<div class="yd-meta">' + (textOf(it.类型) ? '<span>类型 <b>' + esc(textOf(it.类型)) + '</b></span>' : '')
+            var open = state.expanded === "feat:" + e.name;
+            var head = '<div class="yd-entry-h yd-expandable" data-expand="feat:' + esc(e.name) + '">'
+              + '<span class="yd-cn">' + esc(e.name) + '</span>'
+              + (textOf(it.类型) ? '<span class="yd-tag">' + esc(textOf(it.类型)) + '</span>' : '')
+              + '<span class="yd-q">' + esc(textOf(it.层级) || "—") + '</span>'
+              + '<span class="yd-caret">' + (open ? "▾" : "▸") + '</span></div>';
+            if (!open) return '<div class="yd-entry">' + head + '</div>';
+            return '<div class="yd-entry">' + head + '<div class="yd-entry-b">'
+              + '<div class="yd-meta">'
               + (textOf(it.完成等级) ? '<span>完成等级 <b>Lv' + esc(textOf(it.完成等级)) + '</b></span>' : '')
               + (textOf(it.来源) ? '<span>来源 <b>' + esc(textOf(it.来源)) + '</b></span>' : '')
               + (textOf(it.状态) ? '<span>状态 <b>' + esc(textOf(it.状态)) + '</b></span>' : '') + '</div>'
@@ -29216,8 +29250,44 @@
               + (textOf(it.获得技能) ? '<dl class="yd-eff"><dt>获得技能</dt><dd>' + esc(textOf(it.获得技能)) + '</dd></dl>' : '')
               + '</div></div>';
           }), "暂无壮举"));
+    } else if (state.section === "depravity") {
+      var dimsD = '<div class="yd-dims">' + DIMENSIONS.map(function (d) {
+        var v = has(data.堕落六维) ? num(data.堕落六维[d]) : 0;
+        var note = cognitionFor(data.当前认知, d);
+        return '<div class="yd-dim"><span class="dn">' + d + '</span><span class="yd-bar"><i style="width:' + Math.min(100, v) + '%"></i></span>'
+          + '<span class="yd-dim-n">' + v + '/100</span>'
+          + (note ? '<span class="yd-dim-note">' + esc(note) + '</span>' : '') + '</div>';
+      }).join("") + '</div>';
+      var dpMetrics = '<div class="yd-metrics"><div><span class="k">堕落度</span><span class="v c">' + corruption + '</span></div>'
+        + '<div><span class="k">侵蚀度</span><span class="v b">' + num(data.侵蚀度) + '</span></div></div>';
+      var xpList = entriesOf(data.xp).map(function (e) {
+        var it = e.item;
+        return '<div class="yd-entry"><div class="yd-entry-h"><span class="yd-cn">' + esc(e.name) + '</span>'
+          + '<span class="yd-q">' + esc(textOf(it.开发程度) || "未开发") + '</span></div><div class="yd-entry-b">'
+          + '<p class="yd-desc">' + esc(textOf(it.描述) || "—") + '</p><dl class="yd-eff">'
+          + (textOf(it.对堕落的影响) ? '<dt>对堕落的影响</dt><dd>' + esc(textOf(it.对堕落的影响)) + '</dd>' : '')
+          + (textOf(it.对好感度的影响) ? '<dt>对好感度的影响</dt><dd>' + esc(textOf(it.对好感度的影响)) + '</dd>' : '')
+          + '</dl></div></div>';
+      });
+      var specialList = entriesOf(data.特殊项目).map(function (e) {
+        return '<div class="yd-entry"><div class="yd-entry-h"><span class="yd-cn">' + esc(e.name) + '</span>'
+          + (textOf(e.item.状态) ? '<span class="yd-q">' + esc(textOf(e.item.状态)) + '</span>' : '') + '</div>'
+          + '<div class="yd-entry-b"><p class="yd-desc">' + esc(textOf(e.item.描述) || textOf(e.item.效果) || "—") + '</p></div></div>';
+      });
+      var nodeList = entriesOf(data.堕落节点).map(function (e) {
+        var it = e.item;
+        return '<div class="yd-entry"><div class="yd-entry-h"><span class="yd-cn">' + esc(e.name) + '</span>'
+          + '<span class="yd-q">阈值 ' + num(it.阈值) + '</span></div><div class="yd-entry-b">'
+          + (textOf(it.节点事件) ? '<p class="yd-desc">' + esc(textOf(it.节点事件)) + '</p>' : '')
+          + (textOf(it.心态变化) ? '<dl class="yd-eff"><dt>心态变化</dt><dd>' + esc(textOf(it.心态变化)) + '</dd></dl>' : '')
+          + '</div></div>';
+      });
+      body = section("堕落状态", dpMetrics) + section("堕落六维", dimsD)
+        + section("XP", listOrEmpty(xpList, "暂无 XP"))
+        + section("特殊项目", listOrEmpty(specialList, "暂无特殊项目"))
+        + section("堕落节点", listOrEmpty(nodeList, "暂无堕落节点"));
     } else {
-      var coins = '<div class="yd-coin">'
+      var coins = '<div class="yd-coin">' 
         + '<div><span class="k">金钱 G</span><span class="v">' + num(data.金钱) + '</span></div>'
         + '<div><span class="k">学分</span><span class="v">' + num(data.学分) + '</span></div></div>';
       var items = entriesOf(data.背包).map(function (e) { return detailCard(e, "item"); });
@@ -29236,8 +29306,10 @@
   }
   function resBar(label, cur, max, cls) {
     var pct = max > 0 ? Math.min(100, Math.round(cur * 100 / max)) : 0;
-    return '<div><span class="yd-res-l">' + esc(label) + '</span><span class="yd-bar' + (cls ? " " + cls : "") + '"><i style="width:' + pct + '%"></i></span>'
-      + '<span class="yd-res-n">' + cur + ' / ' + max + '</span></div>';
+    return '<div class="yd-res-item">'
+      + '<div class="yd-res-row1"><span class="yd-res-l">' + esc(label) + '</span>'
+      + '<span class="yd-bar' + (cls ? " " + cls : "") + '"><i style="width:' + pct + '%"></i></span></div>'
+      + '<div class="yd-res-row2">' + cur + ' / ' + max + ' <b>' + pct + '%</b></div></div>';
   }
 
   /* ── 渲染 ──────────────────────────────────────────────────────── */
@@ -29417,10 +29489,14 @@
       root.className = "yd-partner-root";
       host.appendChild(root);
     }
-    // 隐藏原伙伴页内容（除自绘根节点外）
+    // 只隐藏「伙伴页那一块」，并先恢复之前隐藏过、但现在不属于伙伴页的节点。
+    // 否则切到别的页签会把它们的内容一起挡住（"别的信息都被挡住"）。
+    hiddenByUs.forEach(function (el) { if (el && el.style && el.style.display === "none") el.style.display = ""; });
+    hiddenByUs = [];
     Array.prototype.slice.call(host.children).forEach(function (child) {
       if (/yd-partner-root/.test(String(child.className || ""))) return;
-      if (child.style.display !== "none") child.style.display = "none";
+      if (!/好感|侵蚀|筛选|在场|伙伴|堕落/.test(String(child.textContent || ""))) return;
+      if (child.style.display !== "none") { child.style.display = "none"; hiddenByUs.push(child); }
     });
     state.mounted = true;
     dismissBanner();
@@ -29441,11 +29517,19 @@
     if (!target || !target.closest) return;
     var filterBtn = target.closest(".yd-partner-root [data-filter]");
     if (filterBtn) { state.filter = filterBtn.getAttribute("data-filter"); state.signature = ""; mount(); return; }
-    var back = target.closest("#yd-partner-root [data-back]");
+    var back = target.closest(".yd-partner-root [data-back]");
     if (back) { state.selected = null; state.section = "overview"; state.signature = ""; mount(); return; }
-    var sectionBtn = target.closest("#yd-partner-root [data-section]");
+    var expandBtn = target.closest(".yd-partner-root [data-expand]");
+    if (expandBtn) {
+      var expandKey = expandBtn.getAttribute("data-expand");
+      state.expanded = state.expanded === expandKey ? null : expandKey;
+      state.signature = "";
+      mount();
+      return;
+    }
+    var sectionBtn = target.closest(".yd-partner-root [data-section]");
     if (sectionBtn) { state.section = sectionBtn.getAttribute("data-section"); state.signature = ""; mount(); return; }
-    var card = target.closest("#yd-partner-root [data-name]");
+    var card = target.closest(".yd-partner-root [data-name]");
     if (card) {
       var name = card.getAttribute("data-name");
       state.selected = state.selected === name ? null : name;
