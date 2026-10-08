@@ -28799,6 +28799,7 @@
 /* ── 头部与筛选 ── */
 #yd-partner-root .yd-head{display:flex;align-items:baseline;gap:10px;margin:0 0 10px}
 #yd-partner-root .yd-head h2{margin:0;font-size:.95rem;letter-spacing:.14em;color:var(--yd-seal)}
+#yd-partner-root .yd-selfdrawn{border-color:var(--yd-seal);color:var(--yd-seal);font-weight:700}
 #yd-partner-root .yd-sub{font-size:.7rem;color:var(--yd-muted)}
 
 #yd-partner-root .yd-filters{
@@ -29266,7 +29267,7 @@
     if (state.selected !== null && has(partners[state.selected])) {
       content += detail(state.selected, partners[state.selected]);
     }
-    root.innerHTML = '<div class="yd-head"><h2>伙伴</h2><span class="yd-sub">'
+    root.innerHTML = '<div class="yd-head"><h2>伙伴</h2><span class="yd-tag' + ' yd-selfdrawn">自绘版</span><span class="yd-sub">'
       + (state.selected !== null ? "选中：点击卡片切换" : "点击卡片查看详情") + '</span></div>' + filters
       + '<div class="yd-card-wrap">' + content + '</div>';
   }
@@ -29282,8 +29283,34 @@
     } catch (_) { return null; }
   }
 
+  /** 找伙伴页容器：类名可能随打包变化，所以按优先级多路兜底。 */
   function containers() {
-    return Array.prototype.slice.call(document.querySelectorAll('[class*="destinyTabPartners"]'));
+    var tries = [
+      '[class*="destinyTabPartners"]',
+      '[class*="destinyTabPartner"]',
+      '[class*="Partner"]',
+    ];
+    var found = [];
+    for (var i = 0; i < tries.length; i += 1) {
+      var list = document.querySelectorAll(tries[i]);
+      for (var k = 0; k < list.length; k += 1) {
+        if (mineOnly(list[k]) && found.indexOf(list[k]) === -1) found.push(list[k]);
+      }
+      if (found.length) return found;
+    }
+    // 最后兜底：含有原版「筛选：」提示文字、且确实是页签容器的元素
+    var all = document.querySelectorAll('[class*="DestinyTab"], [role="tabpanel"], [class*="tabContent"]');
+    for (var j = 0; j < all.length; j += 1) {
+      var el = all[j];
+      if (el.textContent && el.textContent.indexOf("筛选：") !== -1 && el.querySelectorAll("button").length >= 2) {
+        if (found.indexOf(el) === -1) found.push(el);
+      }
+    }
+    return found.length ? found : [];
+  }
+  /** 排除「自绘根节点自己的祖先链」造成的误匹配。 */
+  function mineOnly(el) {
+    return el && el.nodeType === 1 && !el.closest('#yd-partner-root');
   }
 
   function mount() {
@@ -29329,10 +29356,31 @@
     }
   }, true);
 
+  /** 长时间找不到容器 → 在页面上留一行可见提示，避免"看起来毫无变化、无从排查"。 */
+  function diagnose() {
+    if (document.getElementById("yd-partner-diagnose")) return;
+    var box = document.createElement("div");
+    box.id = "yd-partner-diagnose";
+    box.style.cssText = "position:fixed;right:10px;bottom:10px;z-index:99999;max-width:60%;padding:8px 10px;"
+      + "border-radius:8px;border:1px solid var(--theme-card-border,#d4c5a9);background:var(--theme-card-bg,#faf5eb);"
+      + "color:var(--theme-text-primary,#3d2b1f);font-size:12px;line-height:1.5;box-shadow:0 6px 18px -8px rgba(0,0,0,.6)";
+    var cls = [];
+    var nodes = document.querySelectorAll('[class*="Destiny"], [class*="Tab"]');
+    for (var i = 0; i < nodes.length && cls.length < 6; i += 1) {
+      var c = String(nodes[i].className || "").split(/\s+/)[0];
+      if (c && cls.indexOf(c) === -1) cls.push(c);
+    }
+    box.innerHTML = "伙伴页·自绘：<b>没找到容器</b>，自绘未挂载。<br>面板里现有的类名：" + cls.join(" / ")
+      + "<br>（把这行发我即可定位）";
+    var host = document.body || document.documentElement;
+    if (host) host.appendChild(box);
+  }
+
   var tries = 0;
   var timer = window.setInterval(function () {
     tries += 1;
     mount();
+    if (tries === 30) diagnose();                    // 约 20 秒后仍挂不上 → 给出可见提示
     if (tries > 3600) window.clearInterval(timer);   // 约 40 分钟仍找不到容器才放弃
   }, 700);
   try {
