@@ -28802,35 +28802,35 @@
 #yd-partner-root .yd-sub{font-size:.7rem;color:var(--yd-muted)}
 
 #yd-partner-root .yd-filters{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;
 }
 #yd-partner-root .yd-filters button{
   appearance:none;cursor:pointer;font:inherit;
-  min-height:52px;padding:8px 6px;border-radius:10px;
+  min-height:64px;padding:11px 10px;border-radius:12px;
   border:1px solid var(--yd-line);
   background:linear-gradient(180deg, color-mix(in srgb, var(--yd-paper) 92%, transparent), color-mix(in srgb, var(--yd-paper-2) 88%, transparent));
   color:var(--yd-ink-2);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-  font-size:.82rem;font-weight:600;letter-spacing:.06em;
+  font-size:1.02rem;font-weight:700;letter-spacing:.08em;
   box-shadow:0 1px 0 rgba(255,255,255,.4) inset, 0 2px 6px -4px rgba(0,0,0,.5);
   transition:transform .15s, border-color .15s, color .15s, background .15s;
 }
-#yd-partner-root .yd-filters button small{font-size:.66rem;font-weight:400;color:var(--yd-muted)}
+#yd-partner-root .yd-filters button small{font-size:.8rem;font-weight:500;color:var(--yd-muted);margin-top:1px}
 #yd-partner-root .yd-filters button:hover{transform:translateY(-1px)}
 #yd-partner-root .yd-filters button[aria-selected="true"]{
   border-color:var(--yd-seal);color:var(--yd-seal-text);
   background:linear-gradient(180deg, color-mix(in srgb, var(--yd-seal) 88%, var(--yd-paper)), color-mix(in srgb, var(--yd-seal) 70%, var(--yd-paper)));
-  box-shadow:0 0 0 2px color-mix(in srgb, var(--yd-seal) 35%, transparent), 0 4px 12px -6px rgba(0,0,0,.6);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--yd-seal) 42%, transparent), 0 6px 16px -8px rgba(0,0,0,.65);
 }
 #yd-partner-root .yd-filters button[aria-selected="true"] small{color:color-mix(in srgb, var(--yd-seal-text) 80%, transparent)}
-#yd-partner-root .yd-filters button[aria-selected="true"]::after{content:"✓";font-size:.7rem;line-height:1;opacity:.9}
+#yd-partner-root .yd-filters button[aria-selected="true"]::after{content:"✓";font-size:.9rem;line-height:1;opacity:.95;margin-top:1px}
 
 /* ── 伙伴卡片（默认只显示卡片，不显示详情） ── */
 #yd-partner-root .yd-card-wrap{margin-top:2px}
 #yd-partner-root .yd-list{display:flex;flex-direction:column;gap:9px}
 #yd-partner-root .yd-card{
   appearance:none;cursor:pointer;font:inherit;text-align:left;width:100%;
-  display:flex;gap:13px;align-items:center;padding:14px 14px;border-radius:13px;
+  display:flex;gap:11px;align-items:center;padding:11px 12px;border-radius:12px;
   border:1px solid var(--yd-line);
   background:linear-gradient(180deg, color-mix(in srgb, var(--yd-paper) 96%, transparent), color-mix(in srgb, var(--yd-paper-2) 92%, transparent));
   box-shadow:0 1px 0 rgba(255,255,255,.45) inset, 0 6px 16px -10px rgba(0,0,0,.6);
@@ -28839,13 +28839,13 @@
 #yd-partner-root .yd-card:hover{transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.45) inset, 0 10px 20px -10px rgba(0,0,0,.65)}
 #yd-partner-root .yd-card.on{border-color:var(--yd-seal);box-shadow:0 0 0 2px color-mix(in srgb, var(--yd-seal) 28%, transparent), 0 8px 20px -12px rgba(0,0,0,.6)}
 #yd-partner-root .yd-ava{
-  flex:0 0 auto;width:58px;height:58px;border-radius:13px;display:flex;align-items:center;justify-content:center;
+  flex:0 0 auto;width:48px;height:48px;border-radius:11px;display:flex;align-items:center;justify-content:center;
   font-size:1.15rem;font-weight:700;color:var(--yd-seal-text);
   background:linear-gradient(150deg, color-mix(in srgb, var(--yd-seal) 80%, var(--yd-paper)), color-mix(in srgb, var(--yd-seal) 55%, var(--yd-paper-2)));
   border:1px solid color-mix(in srgb, var(--yd-seal) 60%, var(--yd-line));
 }
 #yd-partner-root .yd-card-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-#yd-partner-root .yd-card-name{font-size:1.05rem;font-weight:700;color:var(--yd-ink)}
+#yd-partner-root .yd-card-name{font-size:.95rem;font-weight:700;color:var(--yd-ink)}
 #yd-partner-root .yd-card-sub{font-size:.74rem;color:var(--yd-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #yd-partner-root .yd-card-tags{display:flex;gap:5px;flex-wrap:wrap}
 #yd-partner-root .yd-tag{
@@ -28854,8 +28854,8 @@
 }
 #yd-partner-root .yd-tag.on{border-color:var(--yd-good);color:var(--yd-good)}
 #yd-partner-root .yd-tag.eros{border-color:var(--yd-eros);color:var(--yd-eros)}
-#yd-partner-root .yd-card-nums{flex:0 0 auto;display:flex;flex-direction:column;gap:3px;font-size:.72rem;color:var(--yd-muted);text-align:right}
-#yd-partner-root .yd-card-nums b{color:var(--yd-ink);font-size:.95rem}
+#yd-partner-root .yd-card-nums{flex:0 0 auto;display:flex;flex-direction:column;gap:2px;font-size:.68rem;color:var(--yd-muted);text-align:right}
+#yd-partner-root .yd-card-nums b{color:var(--yd-ink);font-size:.82rem}
 
 /* ── 详情 ── */
 #yd-partner-root .yd-detail-head{display:flex;align-items:center;gap:9px;margin:4px 0 10px}
