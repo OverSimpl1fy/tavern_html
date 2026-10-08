@@ -28823,13 +28823,14 @@
   box-shadow:0 0 0 2px color-mix(in srgb, var(--yd-seal) 35%, transparent), 0 4px 12px -6px rgba(0,0,0,.6);
 }
 #yd-partner-root .yd-filters button[aria-selected="true"] small{color:color-mix(in srgb, var(--yd-seal-text) 80%, transparent)}
+#yd-partner-root .yd-filters button[aria-selected="true"]::after{content:"✓";font-size:.7rem;line-height:1;opacity:.9}
 
 /* ── 伙伴卡片（默认只显示卡片，不显示详情） ── */
 #yd-partner-root .yd-card-wrap{margin-top:2px}
 #yd-partner-root .yd-list{display:flex;flex-direction:column;gap:9px}
 #yd-partner-root .yd-card{
   appearance:none;cursor:pointer;font:inherit;text-align:left;width:100%;
-  display:flex;gap:11px;align-items:center;padding:11px 12px;border-radius:12px;
+  display:flex;gap:13px;align-items:center;padding:14px 14px;border-radius:13px;
   border:1px solid var(--yd-line);
   background:linear-gradient(180deg, color-mix(in srgb, var(--yd-paper) 96%, transparent), color-mix(in srgb, var(--yd-paper-2) 92%, transparent));
   box-shadow:0 1px 0 rgba(255,255,255,.45) inset, 0 6px 16px -10px rgba(0,0,0,.6);
@@ -28838,13 +28839,13 @@
 #yd-partner-root .yd-card:hover{transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.45) inset, 0 10px 20px -10px rgba(0,0,0,.65)}
 #yd-partner-root .yd-card.on{border-color:var(--yd-seal);box-shadow:0 0 0 2px color-mix(in srgb, var(--yd-seal) 28%, transparent), 0 8px 20px -12px rgba(0,0,0,.6)}
 #yd-partner-root .yd-ava{
-  flex:0 0 auto;width:48px;height:48px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  flex:0 0 auto;width:58px;height:58px;border-radius:13px;display:flex;align-items:center;justify-content:center;
   font-size:1.15rem;font-weight:700;color:var(--yd-seal-text);
   background:linear-gradient(150deg, color-mix(in srgb, var(--yd-seal) 80%, var(--yd-paper)), color-mix(in srgb, var(--yd-seal) 55%, var(--yd-paper-2)));
   border:1px solid color-mix(in srgb, var(--yd-seal) 60%, var(--yd-line));
 }
 #yd-partner-root .yd-card-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-#yd-partner-root .yd-card-name{font-size:.95rem;font-weight:700;color:var(--yd-ink)}
+#yd-partner-root .yd-card-name{font-size:1.05rem;font-weight:700;color:var(--yd-ink)}
 #yd-partner-root .yd-card-sub{font-size:.74rem;color:var(--yd-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #yd-partner-root .yd-card-tags{display:flex;gap:5px;flex-wrap:wrap}
 #yd-partner-root .yd-tag{
@@ -28853,8 +28854,8 @@
 }
 #yd-partner-root .yd-tag.on{border-color:var(--yd-good);color:var(--yd-good)}
 #yd-partner-root .yd-tag.eros{border-color:var(--yd-eros);color:var(--yd-eros)}
-#yd-partner-root .yd-card-nums{flex:0 0 auto;display:flex;flex-direction:column;gap:2px;font-size:.68rem;color:var(--yd-muted);text-align:right}
-#yd-partner-root .yd-card-nums b{color:var(--yd-ink);font-size:.82rem}
+#yd-partner-root .yd-card-nums{flex:0 0 auto;display:flex;flex-direction:column;gap:3px;font-size:.72rem;color:var(--yd-muted);text-align:right}
+#yd-partner-root .yd-card-nums b{color:var(--yd-ink);font-size:.95rem}
 
 /* ── 详情 ── */
 #yd-partner-root .yd-detail-head{display:flex;align-items:center;gap:9px;margin:4px 0 10px}
@@ -29248,7 +29249,6 @@
       return true;
     });
     if (state.selected !== null && names.indexOf(state.selected) === -1) state.selected = null;
-    if (state.selected === null && list.length === 1) state.selected = list[0];
 
     var filters = '<div class="yd-filters">' + FILTERS.map(function (f) {
       return '<button data-filter="' + f.key + '"' + (state.filter === f.key ? ' aria-selected="true"' : '') + '>'
@@ -29260,14 +29260,11 @@
         }).length) + '</small></button>';
     }).join("") + '</div>';
 
-    var content;
+    var content = '<div class="yd-list">' + listOrEmpty(list.map(function (n) {
+      return partnerCard(n, has(partners[n]) ? partners[n] : {});
+    }), "这一筛选下没有伙伴") + '</div>';
     if (state.selected !== null && has(partners[state.selected])) {
-      content = '<div class="yd-list single">' + partnerCard(state.selected, partners[state.selected]) + '</div>'
-        + detail(state.selected, partners[state.selected]);
-    } else {
-      content = '<div class="yd-list">' + listOrEmpty(list.map(function (n) {
-        return partnerCard(n, has(partners[n]) ? partners[n] : {});
-      }), "这一筛选下没有伙伴") + '</div>';
+      content += detail(state.selected, partners[state.selected]);
     }
     root.innerHTML = '<div class="yd-head"><h2>伙伴</h2><span class="yd-sub">'
       + (state.selected !== null ? "选中：点击卡片切换" : "点击卡片查看详情") + '</span></div>' + filters
@@ -29302,7 +29299,7 @@
     // 隐藏原伙伴页内容（除自绘根节点外）
     Array.prototype.slice.call(host.children).forEach(function (child) {
       if (child.id === "yd-partner-root") return;
-      child.style.display = "none";
+      if (child.style.display !== "none") child.style.display = "none";
     });
     var partners = currentPartners();
     if (partners === null) { root.innerHTML = '<p class="yd-empty">等待 MVU 数据…</p>'; return true; }
@@ -29335,8 +29332,13 @@
   var tries = 0;
   var timer = window.setInterval(function () {
     tries += 1;
-    if (mount() || tries > 600) window.clearInterval(timer);
-  }, 500);
+    mount();
+    if (tries > 3600) window.clearInterval(timer);   // 约 40 分钟仍找不到容器才放弃
+  }, 700);
+  try {
+    // React 重渲染会把自绘根节点冲掉，必须持续接管（mount 内部有签名比对，不会自激）
+    new MutationObserver(function () { mount(); }).observe(document.body, { childList: true, subtree: true });
+  } catch (_) {}
   document.addEventListener("visibilitychange", function () { if (!document.hidden) mount(); });
 })();
 </script>
