@@ -29272,6 +29272,25 @@
       + '<div class="yd-card-wrap">' + content + '</div>';
   }
 
+  /** 给「伙伴」页签打一个「自绘」小标记：证明注入脚本确实执行了（与挂载成功与否无关）。 */
+  function stampTab() {
+    var bar = tabBar();
+    if (!bar || bar.querySelector(".yd-tab-stamp")) return;
+    var items = bar.querySelectorAll('[class*="item"], [role="tab"], button');
+    for (var i = 0; i < items.length; i += 1) {
+      var el = items[i];
+      var label = (el.textContent || "").replace(/\s+/g, "");
+      if (label.indexOf("伙伴") === -1 || label.length > 8) continue;
+      var dot = document.createElement("i");
+      dot.className = "yd-tab-stamp";
+      dot.textContent = "自绘";
+      dot.style.cssText = "margin-left:4px;font-style:normal;font-size:9px;line-height:1;padding:1px 4px;"
+        + "border-radius:99px;border:1px solid var(--theme-primary-bg,#c28b48);color:var(--theme-primary-bg,#c28b48)";
+      el.appendChild(dot);
+      return;
+    }
+  }
+
   /* ── 挂载与数据 ────────────────────────────────────────────────── */
   function currentPartners() {
     try {
@@ -29379,14 +29398,12 @@
   }
 
   function mount() {
-    // 不在伙伴页签就别动 DOM（面板开在任务页时伙伴内容根本不存在，这也是之前"找不到容器"的原因）
-    if (!partnerTabActive()) {
-      var stale = document.getElementById("yd-partner-diagnose");
-      if (stale && stale.parentNode) stale.parentNode.removeChild(stale);
-      return false;
+    stampTab();                                   // 无论挂不挂得上，都先给页签打标记（证明脚本在跑）
+    var roots = containers();                     // 伙伴内容只在该页签激活时才在 DOM 里
+    if (!roots.length) {
+      if (!partnerTabActive()) return false;      // 不在伙伴页签 → 安静等待
+      return false;                              // 在伙伴页签却找不到 → 交给 diagnose 报出来
     }
-    var roots = containers();
-    if (!roots.length) return false;
     var host = roots[0];
     var root = document.getElementById("yd-partner-root");
     if (!root || !host.contains(root)) {
@@ -29429,7 +29446,6 @@
 
   /** 长时间找不到容器 → 在页面上留一行可见提示，避免"看起来毫无变化、无从排查"。 */
   function diagnose() {
-    if (!partnerTabActive()) return;          // 只有停在伙伴页签时才提示，否则纯噪音
     if (document.getElementById("yd-partner-diagnose")) return;
     var box = document.createElement("div");
     box.id = "yd-partner-diagnose";
@@ -29441,7 +29457,8 @@
     var info = "页签栏:" + (bar ? String(bar.className || "").split(/\s+/)[0] : "无")
       + " ｜ 内容区:" + (host ? String(host.className || "").split(/\s+/)[0] : "无")
       + " ｜ 内容区子节点数:" + (host ? host.children.length : 0);
-    box.innerHTML = "伙伴页·自绘：<b>没找到容器</b>，自绘未挂载。<br>" + info
+    box.innerHTML = "伙伴页·自绘：<b>没找到容器</b>，自绘未挂载。页签判定="
+      + (partnerTabActive() ? "伙伴页" : "非伙伴页") + "<br>" + info
       + "<br>类名样例：" + sampleClasses(10).join(" / ")
       + "<br>（把这行发我即可定位）";
     var host = document.body || document.documentElement;
@@ -29452,7 +29469,7 @@
   var timer = window.setInterval(function () {
     tries += 1;
     mount();
-    if (tries === 30) diagnose();                    // 约 20 秒后仍挂不上（且停在伙伴页签）→ 给出可见提示
+    if (tries === 30) diagnose();                    // 约 20 秒后仍没挂上 → 一律给出可见提示
     if (tries > 3600) window.clearInterval(timer);   // 约 40 分钟仍找不到容器才放弃
   }, 700);
   try {
