@@ -29013,7 +29013,7 @@
     { key: "assets", label: "资产" },
   ];
 
-  var state = { filter: "all", selected: null, section: "overview", signature: "" };
+  var state = { filter: "all", selected: null, section: "overview", signature: "", mounted: false };
 
   /* ── 工具 ───────────────────────────────────────────────────────── */
   function esc(v) {
@@ -29421,7 +29421,10 @@
   function mount() {
     stampTab();                                   // 无论挂不挂得上，都先给页签打标记（证明脚本在跑）
     var roots = containers();                     // 伙伴内容只在该页签激活时才在 DOM 里
-    if (!roots.length) return false;              // 找不到 → 交给 diagnose 报出来
+    if (!roots.length) {
+      state.mounted = false;
+      return false;                               // 找不到 → 交给 diagnose 报出来
+    }
     var host = roots[0];
     var root = document.getElementById("yd-partner-root");
     if (!root || !host.contains(root)) {
@@ -29434,7 +29437,9 @@
       if (child.id === "yd-partner-root") return;
       if (child.style.display !== "none") child.style.display = "none";
     });
+    state.mounted = true;
     dismissBanner();
+    dismissDiagnose();                            // 挂上了就不再报警（之前是无条件报警，成了假警报）
     var partners = currentPartners();
     if (partners === null) { root.innerHTML = '<p class="yd-empty">等待 MVU 数据…</p>'; return true; }
     var signature = JSON.stringify([state.filter, state.selected, state.section, partners]);
@@ -29480,8 +29485,14 @@
     if (box && box.parentNode) box.parentNode.removeChild(box);
   }
 
+  function dismissDiagnose() {
+    var box = document.getElementById("yd-partner-diagnose");
+    if (box && box.parentNode) box.parentNode.removeChild(box);
+  }
+
   /** 长时间找不到容器 → 在页面上留一行可见提示，避免"看起来毫无变化、无从排查"。 */
   function diagnose() {
+    if (state.mounted) return;                    // 已挂载 → 不报警
     if (document.getElementById("yd-partner-diagnose")) return;
     var box = document.createElement("div");
     box.id = "yd-partner-diagnose";
@@ -29509,7 +29520,7 @@
   var timer = window.setInterval(function () {
     tries += 1;
     mount();
-    if (tries === 30) diagnose();                    // 约 20 秒后仍没挂上 → 一律给出可见提示
+    if (tries === 30 && !state.mounted) diagnose();   // 20 秒后**确实**没挂上才提示
     if (tries > 3600) window.clearInterval(timer);   // 约 40 分钟仍找不到容器才放弃
   }, 700);
   try {
