@@ -28996,6 +28996,7 @@
   "use strict";
   if (window.__YD_PARTNER_PANEL__) return;
   window.__YD_PARTNER_PANEL__ = true;
+  var YD_VER = "v10";
 
   var DIMENSIONS = ["道德沦丧", "共情泯灭", "欲望沉溺", "自我消解", "手段残酷", "罪责开脱"];
   var FILTERS = [
@@ -29326,6 +29327,7 @@
     for (var i = 0; i < win.children.length; i += 1) {
       var child = win.children[i];
       if (child === bar || (bar && child.contains(bar))) continue;
+      if (child.id === "yd-partner-root") continue;                 // 别把自绘根当成内容区（否则自锁）
       if (/titleBar/i.test(String(child.className || ""))) continue;
       var area = (child.offsetWidth || 0) * (child.offsetHeight || 0);
       if (area > bestArea) { bestArea = area; best = child; }
@@ -29353,19 +29355,22 @@
    * 第二条要求"看起来是伙伴页"是关键：面板的页签切换没有可靠的激活属性可读，
    * 而伙伴内容**只在该页签激活时存在**，所以用内容标记（类名/文字）判定比猜激活态可靠得多。
    */
+  /**
+   * 容器候选：**能挂就挂**，不再要求任何标记/激活判定。
+   * 之前的版本层层设条件（类名 → 内容标记 → 激活态），任意一环不满足就整体静默失败；
+   * 而诊断已证明"内容区"取的就是正确的 ContentArea。所以这里直接把它当容器用，
+   * 只排除「我自己已经挂上去的那个根节点」。
+   */
   function containers() {
-    var found = [];
+    var out = [];
     var direct = document.querySelectorAll('[class*="destinyTabPartner"]');
     for (var i = 0; i < direct.length; i += 1) {
-      if (direct[i].nodeType === 1 && !direct[i].closest("#yd-partner-root")) found.push(direct[i]);
+      var el = direct[i];
+      if (el.nodeType === 1 && el.id !== "yd-partner-root" && !el.closest("#yd-partner-root")) out.push(el);
     }
-    if (found.length) return found;
     var host = contentHost();
-    if (!host || host.closest("#yd-partner-root")) return found;
-    var html = String(host.innerHTML || "").toLowerCase();
-    var text = String(host.textContent || "");
-    if (/partner|destinytab/i.test(html) || /好感|侵蚀|筛选|在场/.test(text)) found.push(host);
-    return found;
+    if (host && host.id !== "yd-partner-root" && out.indexOf(host) === -1) out.push(host);
+    return out;
   }
   /** 列出面板里实际存在的类名，供诊断用。 */
   function sampleClasses(limit) {
@@ -29440,6 +29445,8 @@
     state.mounted = true;
     dismissBanner();
     dismissDiagnose();                            // 挂上了就不再报警（之前是无条件报警，成了假警报）
+    state.mounted = true;                         // 节点已挂上就算成功（取数失败也不再报"未挂载"）
+    dismissBanner();
     var partners = currentPartners();
     if (partners === null) { root.innerHTML = '<p class="yd-empty">等待 MVU 数据…</p>'; return true; }
     var signature = JSON.stringify([state.filter, state.selected, state.section, partners]);
@@ -29507,7 +29514,7 @@
       + " ｜ 内容区:" + (host ? String(host.className || "").split(/\s+/)[0] : "无")
       + " ｜ 内容区子节点:" + (host ? host.children.length : 0)
       + " ｜ 内容区文字前 40 字:" + (host ? String(host.textContent || "").replace(/\s+/g, "").slice(0, 40) : "-");
-    box.innerHTML = "伙伴页·自绘：<b>没找到容器</b>，自绘未挂载。页签判定="
+    box.innerHTML = "伙伴页·自绘 " + YD_VER + "：<b>没找到容器</b>，自绘未挂载。页签判定="
       + (partnerTabActive() ? "伙伴页" : "非伙伴页") + "<br>" + info
       + "<br>类名样例：" + sampleClasses(10).join(" / ")
       + "<br>（把这行发我即可定位）";
