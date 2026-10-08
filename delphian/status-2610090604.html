@@ -28792,9 +28792,7 @@
   font-family: inherit;
   color: var(--yd-ink);
   padding: 10px 12px 16px;
-  max-height: 68vh;                                   /* 可滑动：否则看不到堕落栏等内容 */
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  /* 不限制高度：伙伴页直接展开到完整长度（用户 2026-10-09 要求） */
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--theme-window-bg, #fff) 92%, transparent), transparent 40%);
 }
@@ -29254,25 +29252,37 @@
               + (textOf(e.item.效果) ? '<dl class="yd-eff"><dt>效果</dt><dd>' + esc(textOf(e.item.效果)) + '</dd></dl>' : '')
               + '</div></div>';
           }), "暂无奇遇"))
-        + section("壮举", listOrEmpty(entriesOf(data.壮举).map(function (e) {
+        + section("专长", listOrEmpty(entriesOf(data.专长).map(function (e) {
             var it = e.item;
-            var open = state.expanded === "feat:" + e.name;
-            var head = '<div class="yd-entry-h yd-expandable" data-expand="feat:' + esc(e.name) + '">'
-              + '<span class="yd-cn">' + esc(e.name) + '</span>'
-              + (textOf(it.类型) ? '<span class="yd-tag">' + esc(textOf(it.类型)) + '</span>' : '')
-              + '<span class="yd-q">' + esc(textOf(it.层级) || "—") + '</span>'
+            return '<div class="yd-entry"><div class="yd-entry-h"><span class="yd-cn">' + esc(e.name) + '</span>'
+              + (textOf(it.来源) ? '<span class="yd-q">' + esc(textOf(it.来源)) + '</span>' : '') + '</div>'
+              + '<div class="yd-entry-b"><p class="yd-desc">' + esc(textOf(it.描述) || "（暂无描述）") + '</p>'
+              + (num(it.获得等级) ? '<div class="yd-meta"><span>获得等级 <b>Lv' + num(it.获得等级) + '</b></span></div>' : '')
+              + '</div></div>';
+          }), "暂无专长"))
+        + section("壮举", (function () {
+            var feat = has(data.壮举) ? data.壮举 : null;
+            var name = feat ? textOf(feat.名称) : "";
+            if (!name) return '<p class="yd-empty">暂无壮举</p>';
+            var open = state.expanded === "feat";
+            var head = '<div class="yd-entry-h yd-expandable" data-expand="feat">'
+              + '<span class="yd-cn">' + esc(name) + '</span>'
+              + (textOf(feat.类型) ? '<span class="yd-tag">' + esc(textOf(feat.类型)) + '</span>' : '')
+              + '<span class="yd-q">' + esc(textOf(feat.层级) || "—") + '</span>'
               + '<span class="yd-caret">' + (open ? "▾" : "▸") + '</span></div>';
             if (!open) return '<div class="yd-entry">' + head + '</div>';
             return '<div class="yd-entry">' + head + '<div class="yd-entry-b">'
               + '<div class="yd-meta">'
-              + (textOf(it.完成等级) ? '<span>完成等级 <b>Lv' + esc(textOf(it.完成等级)) + '</b></span>' : '')
-              + (textOf(it.来源) ? '<span>来源 <b>' + esc(textOf(it.来源)) + '</b></span>' : '')
-              + (textOf(it.状态) ? '<span>状态 <b>' + esc(textOf(it.状态)) + '</b></span>' : '') + '</div>'
-              + '<p class="yd-desc">' + esc(textOf(it.描述) || "—") + '</p>'
-              + (textOf(it.获得专长) ? '<dl class="yd-eff"><dt>获得专长</dt><dd>' + esc(textOf(it.获得专长)) + '</dd></dl>' : '')
-              + (textOf(it.获得技能) ? '<dl class="yd-eff"><dt>获得技能</dt><dd>' + esc(textOf(it.获得技能)) + '</dd></dl>' : '')
+              + (num(feat.完成等级) ? '<span>完成等级 <b>Lv' + num(feat.完成等级) + '</b></span>' : '')
+              + (textOf(feat.来源) ? '<span>来源 <b>' + esc(textOf(feat.来源)) + '</b></span>' : '')
+              + (textOf(feat.状态) ? '<span>状态 <b>' + esc(textOf(feat.状态)) + '</b></span>' : '') + '</div>'
+              + '<p class="yd-desc">' + esc(textOf(feat.描述) || "（暂无描述）") + '</p>'
+              + (Array.isArray(feat.获得专长) && feat.获得专长.length
+                  ? '<dl class="yd-eff"><dt>获得专长</dt><dd>' + esc(feat.获得专长.join("、")) + '</dd></dl>' : '')
+              + (Array.isArray(feat.获得技能) && feat.获得技能.length
+                  ? '<dl class="yd-eff"><dt>获得技能</dt><dd>' + esc(feat.获得技能.join("、")) + '</dd></dl>' : '')
               + '</div></div>';
-          }), "暂无壮举"));
+          })());
     } else if (state.section === "depravity") {
       var dimsD = '<div class="yd-dims">' + DIMENSIONS.map(function (d) {
         var v = has(data.堕落六维) ? num(data.堕落六维[d]) : 0;
