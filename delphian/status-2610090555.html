@@ -29503,7 +29503,13 @@
 
   function mount() {
     stampTab();                                   // 无论挂不挂得上，都先给页签打标记（证明脚本在跑）
-    var roots = containers();                     // 伙伴内容只在该页签激活时才在 DOM 里
+    // 不在伙伴页签：把原面板恢复回去，什么都不做（否则会挡住主角信息等其他页签）
+    if (!partnerTabActive()) {
+      restoreHidden();
+      state.mounted = false;
+      return false;
+    }
+    var roots = containers();
     if (!roots.length) {
       state.mounted = false;
       return false;                               // 找不到 → 交给 diagnose 报出来
@@ -29516,14 +29522,14 @@
       root.className = "yd-partner-root";
       host.appendChild(root);
     }
-    // 只隐藏「伙伴页那一块」，并先恢复之前隐藏过、但现在不属于伙伴页的节点。
-    // 否则切到别的页签会把它们的内容一起挡住（"别的信息都被挡住"）。
-    hiddenByUs.forEach(function (el) { if (el && el.style && el.style.display === "none") el.style.display = ""; });
-    hiddenByUs = [];
+    // 伙伴页签下：**原内容全部让位**（只保留自绘根）。
+    // 之前用"看起来像伙伴页才隐藏"的启发式，结果原伙伴块留在自绘 UI 上方 —— 就是"卡片永远在最上面"。
+    // 离开页签时由上面的挂载门调用 restoreHidden() 恢复，所以不会遮挡其他页签。
+    restoreHidden();
     Array.prototype.slice.call(host.children).forEach(function (child) {
       if (/yd-partner-root/.test(String(child.className || ""))) return;
-      if (!/好感|侵蚀|筛选|在场|伙伴|堕落/.test(String(child.textContent || ""))) return;
-      if (child.style.display !== "none") { child.style.display = "none"; hiddenByUs.push(child); }
+      child.style.display = "none";
+      hiddenByUs.push(child);
     });
     state.mounted = true;
     dismissBanner();
@@ -29581,6 +29587,14 @@
   function dismissBanner() {
     var box = document.getElementById("yd-partner-banner");
     if (box && box.parentNode) box.parentNode.removeChild(box);
+  }
+
+  /** 恢复此前被我隐藏的原面板节点（离开伙伴页签时必须做，否则会挡住别的页签）。 */
+  function restoreHidden() {
+    hiddenByUs.forEach(function (el) {
+      if (el && el.style && el.style.display === "none") el.style.display = "";
+    });
+    hiddenByUs = [];
   }
 
   function dismissDiagnose() {
