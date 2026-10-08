@@ -28807,14 +28807,16 @@
 
 #yd-partner-root .yd-filters{
   display:flex;gap:6px;margin-bottom:10px;
+  overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;-webkit-overflow-scrolling:touch;
 }
+#yd-partner-root .yd-filters::-webkit-scrollbar{display:none}
 #yd-partner-root .yd-filters button{
-  appearance:none;cursor:pointer;font:inherit;flex:1 1 0;min-width:0;
-  min-height:34px;padding:7px 12px;border-radius:4px;
+  appearance:none;cursor:pointer;font:inherit;flex:0 0 auto;
+  min-height:28px;padding:4px 10px;border-radius:4px;
   border:1px solid color-mix(in srgb, var(--yd-line) 72%, transparent);
   background:transparent;color:var(--yd-muted);
-  display:inline-flex;align-items:center;justify-content:center;gap:5px;
-  font-size:11px;font-weight:500;letter-spacing:0;
+  display:inline-flex;align-items:center;justify-content:center;gap:4px;
+  font-size:11px;font-weight:500;letter-spacing:0;white-space:nowrap;
   transition:background 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 #yd-partner-root .yd-filters button small{font-size:.66rem;font-weight:500;color:var(--yd-muted)}
@@ -29355,12 +29357,19 @@
         }).length) + '</small></button>';
     }).join("") + '</div>';
 
-    var content = '<div class="yd-list">' + listOrEmpty(list.map(function (n) {
+    var cards = '<div class="yd-list">' + listOrEmpty(list.map(function (n) {
       return partnerCard(n, has(partners[n]) ? partners[n] : {});
     }), "这一筛选下没有伙伴") + '</div>';
-    root.innerHTML = '<div class="yd-head"><h2>伙伴</h2><span class="yd-tag' + ' yd-selfdrawn">自绘版</span><span class="yd-sub">'
-      + (state.selected !== null ? "选中：点击卡片切换" : "点击卡片查看详情") + '</span></div>' + filters
-      + '<div class="yd-card-wrap">' + content + '</div>';
+
+    var headBar = '<div class="yd-head"><h2>伙伴</h2><span class="yd-tag yd-selfdrawn">自绘版</span>'
+      + '<span class="yd-sub">' + (state.selected !== null ? "‹ 返回到列表" : "点击卡片查看详情") + '</span></div>';
+
+    // 列表页与详情页**互斥**：选中了就只渲染详情（返回 + 姓名 + 页签 + 内容）
+    if (state.selected !== null && has(partners[state.selected])) {
+      root.innerHTML = headBar + detail(state.selected, partners[state.selected]);
+    } else {
+      root.innerHTML = headBar + filters + '<div class="yd-card-wrap">' + cards + '</div>';
+    }
   }
 
   /** 给「伙伴」页签打一个「自绘」小标记：证明注入脚本确实执行了（与挂载成功与否无关）。 */
