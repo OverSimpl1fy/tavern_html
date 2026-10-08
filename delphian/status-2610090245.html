@@ -4,7 +4,7 @@
     import * as e from "https://testingcf.jsdelivr.net/npm/scheduler/+esm";
     import { produce as t } from "https://testingcf.jsdelivr.net/npm/immer/+esm";
     import { default as n } from "https://testingcf.jsdelivr.net/npm/gsap/+esm";
-    import { default as a } from "https://testingcf.jsdelivr.net/npm/openseadragon/+esm";
+    const a = new Proxy(function () {}, { get: () => () => {}, construct: () => ({}) });
     var r = {
         15(e, t, n) {
           var a = n(379),
@@ -12605,7 +12605,6 @@
         { id: "news", label: "新闻", icon: "fa-solid fa-newspaper" },
         { id: "intel", label: "情报", icon: "fa-solid fa-lightbulb" },
         { id: "depravity", label: "堕落", icon: "fa-solid fa-heart-crack" },
-        { id: "map", label: "地图", icon: "fa-solid fa-map" },
       ],
       d = (e) => {
         let t;
