@@ -29490,15 +29490,6 @@
     return out;
   }
   /** 列出面板里实际存在的类名，供诊断用。 */
-  function sampleClasses(limit) {
-    var out = [];
-    var nodes = document.querySelectorAll('[class]');
-    for (var i = 0; i < nodes.length && out.length < limit; i += 1) {
-      var c = String(nodes[i].className || "").split(/\s+/)[0];
-      if (c && out.indexOf(c) === -1 && /module__/.test(c)) out.push(c);
-    }
-    return out;
-  }
   /* ── 挂载与数据 ────────────────────────────────────────────────── */
   /* [dedup] 已移除重复的 currentPartners 定义（后者覆盖前者，是历次补丁叠加的残留） */
   
@@ -29547,8 +29538,6 @@
       hiddenByUs.push(child);
     });
     state.mounted = true;
-    dismissBanner();
-    dismissDiagnose();                            // 挂上了就不再报警（之前是无条件报警，成了假警报）
     state.mounted = true;                         // 节点已挂上就算成功（取数失败也不再报"未挂载"）
     dismissBanner();
     var partners = currentPartners();
@@ -29588,21 +29577,6 @@
   }, true);
 
   /** 启动横幅：证明注入脚本已执行。挂载成功后自动撤掉。 */
-  function banner() {
-    var box = document.createElement("div");
-    box.id = "yd-partner-banner";
-    box.style.cssText = "position:fixed;left:10px;bottom:10px;z-index:99999;padding:6px 10px;border-radius:8px;"
-      + "border:1px solid var(--theme-primary-bg,#c28b48);background:var(--theme-card-bg,#faf5eb);"
-      + "color:var(--theme-text-primary,#3d2b1f);font-size:11px;line-height:1.4;opacity:.92";
-    box.textContent = "伙伴页·自绘：脚本已加载，等待面板容器…";
-    var host = document.body || document.documentElement;
-    if (host) host.appendChild(box);
-    window.setTimeout(function () { if (box.parentNode) box.textContent = "伙伴页·自绘：脚本已加载（已运行 20 秒仍未见容器）"; }, 20000);
-  }
-  function dismissBanner() {
-    var box = document.getElementById("yd-partner-banner");
-    if (box && box.parentNode) box.parentNode.removeChild(box);
-  }
 
   /** 恢复此前被我隐藏的原面板节点（离开伙伴页签时必须做，否则会挡住别的页签）。 */
   function restoreHidden() {
@@ -29612,42 +29586,13 @@
     hiddenByUs = [];
   }
 
-  function dismissDiagnose() {
-    var box = document.getElementById("yd-partner-diagnose");
-    if (box && box.parentNode) box.parentNode.removeChild(box);
-  }
 
   /** 长时间找不到容器 → 在页面上留一行可见提示，避免"看起来毫无变化、无从排查"。 */
-  function diagnose() {
-    if (state.mounted) return;                    // 已挂载 → 不报警
-    if (document.getElementById("yd-partner-diagnose")) return;
-    var box = document.createElement("div");
-    box.id = "yd-partner-diagnose";
-    box.style.cssText = "position:fixed;right:10px;bottom:10px;z-index:99999;max-width:60%;padding:8px 10px;"
-      + "border-radius:8px;border:1px solid var(--theme-card-border,#d4c5a9);background:var(--theme-card-bg,#faf5eb);"
-      + "color:var(--theme-text-primary,#3d2b1f);font-size:12px;line-height:1.5;box-shadow:0 6px 18px -8px rgba(0,0,0,.6)";
-    var host = contentHost();
-    var bar = tabBar();
-    var win = windowEl();
-    var info = "窗口:" + (win ? String(win.className || "").split(/\s+/)[0] : "无")
-      + " ｜ 页签栏:" + (bar ? String(bar.className || "").split(/\s+/)[0] : "无")
-      + " ｜ 内容区:" + (host ? String(host.className || "").split(/\s+/)[0] : "无")
-      + " ｜ 内容区子节点:" + (host ? host.children.length : 0)
-      + " ｜ 内容区文字前 40 字:" + (host ? String(host.textContent || "").replace(/\s+/g, "").slice(0, 40) : "-");
-    box.innerHTML = "伙伴页·自绘 " + YD_VER + "：<b>没找到容器</b>，自绘未挂载。页签判定="
-      + (partnerTabActive() ? "伙伴页" : "非伙伴页") + "<br>" + info
-      + "<br>类名样例：" + sampleClasses(10).join(" / ")
-      + "<br>（把这行发我即可定位）";
-    var host = document.body || document.documentElement;
-    if (host) host.appendChild(box);
-  }
 
-  banner();   // 启动即显：看到它 = 脚本确实在执行
   var tries = 0;
   var timer = window.setInterval(function () {
     tries += 1;
     mount();
-    if (tries === 30 && !state.mounted) diagnose();   // 20 秒后**确实**没挂上才提示
     if (tries > 3600) window.clearInterval(timer);   // 约 40 分钟仍找不到容器才放弃
   }, 700);
   try {
