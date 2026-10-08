@@ -29361,7 +29361,7 @@
       return partnerCard(n, has(partners[n]) ? partners[n] : {});
     }), "这一筛选下没有伙伴") + '</div>';
 
-    var headBar = '<div class="yd-head"><h2>伙伴</h2><span class="yd-tag yd-selfdrawn">自绘版</span>'
+    var headBar = '<div class="yd-head"><h2>伙伴</h2>'
       + '<span class="yd-sub">' + (state.selected !== null ? "‹ 返回到列表" : "点击卡片查看详情") + '</span></div>';
 
     // 列表页与详情页**互斥**：选中了就只渲染详情（返回 + 姓名 + 页签 + 内容）
@@ -29502,10 +29502,15 @@
   }
 
   function mount() {
-    stampTab();                                   // 无论挂不挂得上，都先给页签打标记（证明脚本在跑）
     // 不在伙伴页签：把原面板恢复回去，什么都不做（否则会挡住主角信息等其他页签）
     if (!partnerTabActive()) {
+      // 离开伙伴页签：**把自绘 UI 整块移除**（否则它会一直占着 status 上方，挡住别的信息），
+      // 同时恢复原面板内容，并重置签名 —— 回到伙伴页签时会重新创建并渲染。
+      Array.prototype.slice.call(document.querySelectorAll(".yd-partner-root")).forEach(function (node) {
+        if (node.parentNode) node.parentNode.removeChild(node);
+      });
       restoreHidden();
+      state.signature = "";
       state.mounted = false;
       return false;
     }
