@@ -29391,41 +29391,12 @@
     return out;
   }
   /* ── 挂载与数据 ────────────────────────────────────────────────── */
-  function currentPartners() {
-    try {
-      if (!window.Mvu || typeof window.Mvu.getMvuData !== "function") return null;
-      var msgId = typeof window.getCurrentMessageId === "function" ? window.getCurrentMessageId() : null;
-      var data = window.Mvu.getMvuData({ type: "message", message_id: msgId });
-      var stat = data && data.stat_data ? data.stat_data : null;
-      return has(stat) && has(stat.关系列表) ? stat.关系列表 : (has(stat) ? {} : null);
-    } catch (_) { return null; }
-  }
+  /* [dedup] 已移除重复的 currentPartners 定义（后者覆盖前者，是历次补丁叠加的残留） */
+  
 
   /** 找伙伴页容器：类名可能随打包变化，所以按优先级多路兜底。 */
-  function containers() {
-    var tries = [
-      '[class*="destinyTabPartners"]',
-      '[class*="destinyTabPartner"]',
-      '[class*="Partner"]',
-    ];
-    var found = [];
-    for (var i = 0; i < tries.length; i += 1) {
-      var list = document.querySelectorAll(tries[i]);
-      for (var k = 0; k < list.length; k += 1) {
-        if (mineOnly(list[k]) && found.indexOf(list[k]) === -1) found.push(list[k]);
-      }
-      if (found.length) return found;
-    }
-    // 最后兜底：含有原版「筛选：」提示文字、且确实是页签容器的元素
-    var all = document.querySelectorAll('[class*="DestinyTab"], [role="tabpanel"], [class*="tabContent"]');
-    for (var j = 0; j < all.length; j += 1) {
-      var el = all[j];
-      if (el.textContent && el.textContent.indexOf("筛选：") !== -1 && el.querySelectorAll("button").length >= 2) {
-        if (found.indexOf(el) === -1) found.push(el);
-      }
-    }
-    return found.length ? found : [];
-  }
+  /* [dedup] 已移除重复的 containers 定义（后者覆盖前者，是历次补丁叠加的残留） */
+  
   /** 排除「自绘根节点自己的祖先链」造成的误匹配。 */
   function mineOnly(el) {
     return el && el.nodeType === 1 && !el.closest('#yd-partner-root');
