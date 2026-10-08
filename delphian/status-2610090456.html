@@ -29306,16 +29306,31 @@
   function tabBar() {
     return document.querySelector('[class*="TabBar-module__tabBar"], [class*="tabBar"]');
   }
-  /** 内容区 = 页签栏的父节点里、不包含页签栏的那个兄弟节点。 */
+  /** 面板窗口：Window-module__statusWindow（或页签栏的父节点）。 */
+  function windowEl() {
+    var win = document.querySelector('[class*="statusWindow"], [class*="Window-module__"]');
+    if (win) return win;
+    var bar = tabBar();
+    return bar && bar.parentElement ? bar.parentElement : null;
+  }
+  /**
+   * 内容区 = 窗口里排除「标题栏」和「页签栏」之后、**面积最大**的子节点。
+   * 之前用"页签栏的第一个兄弟"，实测命中的是 TitleBar（诊断给的就是这个），所以改为按面积挑。
+   */
   function contentHost() {
     var bar = tabBar();
-    if (!bar || !bar.parentElement) return null;
-    var root = bar.parentElement;
-    for (var i = 0; i < root.children.length; i += 1) {
-      var child = root.children[i];
-      if (child !== bar && !child.contains(bar)) return child;
+    var win = windowEl();
+    if (!win) return null;
+    var best = null;
+    var bestArea = -1;
+    for (var i = 0; i < win.children.length; i += 1) {
+      var child = win.children[i];
+      if (child === bar || (bar && child.contains(bar))) continue;
+      if (/titleBar/i.test(String(child.className || ""))) continue;
+      var area = (child.offsetWidth || 0) * (child.offsetHeight || 0);
+      if (area > bestArea) { bestArea = area; best = child; }
     }
-    return null;
+    return best;
   }
   /** 当前是不是停在「伙伴」页签（页签项文字判定，不依赖 hash 类名）。 */
   function partnerTabActive() {
@@ -29333,17 +29348,23 @@
     }
     return false;
   }
-  /** 找伙伴页容器：① 内容区里带 destinyTabPartners 的节点 ② 直接用内容区。 */
+  /**
+   * 找伙伴页容器：① 带 destinyTabPartner 的节点 ② 内容区（**但必须看起来确实是伙伴内容**）。
+   * 第二条要求"看起来是伙伴页"是关键：面板的页签切换没有可靠的激活属性可读，
+   * 而伙伴内容**只在该页签激活时存在**，所以用内容标记（类名/文字）判定比猜激活态可靠得多。
+   */
   function containers() {
     var found = [];
-    var direct = document.querySelectorAll('[class*="destinyTabPartners"], [class*="destinyTabPartner"]');
+    var direct = document.querySelectorAll('[class*="destinyTabPartner"]');
     for (var i = 0; i < direct.length; i += 1) {
       if (direct[i].nodeType === 1 && !direct[i].closest("#yd-partner-root")) found.push(direct[i]);
     }
     if (found.length) return found;
-    // 兜底：页签栏的兄弟节点就是内容区，直接在里面挂
     var host = contentHost();
-    if (host && !host.closest("#yd-partner-root")) found.push(host);
+    if (!host || host.closest("#yd-partner-root")) return found;
+    var html = String(host.innerHTML || "").toLowerCase();
+    var text = String(host.textContent || "");
+    if (/partner|destinytab/i.test(html) || /好感|侵蚀|筛选|在场/.test(text)) found.push(host);
     return found;
   }
   /** 列出面板里实际存在的类名，供诊断用。 */
@@ -29400,10 +29421,7 @@
   function mount() {
     stampTab();                                   // 无论挂不挂得上，都先给页签打标记（证明脚本在跑）
     var roots = containers();                     // 伙伴内容只在该页签激活时才在 DOM 里
-    if (!roots.length) {
-      if (!partnerTabActive()) return false;      // 不在伙伴页签 → 安静等待
-      return false;                              // 在伙伴页签却找不到 → 交给 diagnose 报出来
-    }
+    if (!roots.length) return false;              // 找不到 → 交给 diagnose 报出来
     var host = roots[0];
     var root = document.getElementById("yd-partner-root");
     if (!root || !host.contains(root)) {
@@ -29472,9 +29490,12 @@
       + "color:var(--theme-text-primary,#3d2b1f);font-size:12px;line-height:1.5;box-shadow:0 6px 18px -8px rgba(0,0,0,.6)";
     var host = contentHost();
     var bar = tabBar();
-    var info = "页签栏:" + (bar ? String(bar.className || "").split(/\s+/)[0] : "无")
+    var win = windowEl();
+    var info = "窗口:" + (win ? String(win.className || "").split(/\s+/)[0] : "无")
+      + " ｜ 页签栏:" + (bar ? String(bar.className || "").split(/\s+/)[0] : "无")
       + " ｜ 内容区:" + (host ? String(host.className || "").split(/\s+/)[0] : "无")
-      + " ｜ 内容区子节点数:" + (host ? host.children.length : 0);
+      + " ｜ 内容区子节点:" + (host ? host.children.length : 0)
+      + " ｜ 内容区文字前 40 字:" + (host ? String(host.textContent || "").replace(/\s+/g, "").slice(0, 40) : "-");
     box.innerHTML = "伙伴页·自绘：<b>没找到容器</b>，自绘未挂载。页签判定="
       + (partnerTabActive() ? "伙伴页" : "非伙伴页") + "<br>" + info
       + "<br>类名样例：" + sampleClasses(10).join(" / ")
