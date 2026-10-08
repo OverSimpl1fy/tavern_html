@@ -29305,14 +29305,21 @@
 
   /** 页签栏与内容区：DOM 结构比压缩后的类名稳定，优先按结构找。 */
   function tabBar() {
-    return document.querySelector('[class*="TabBar-module__tabBar"], [class*="tabBar"]');
+    var w = windowEl();
+    return w ? w.querySelector('[class*="TabBar-module__tabBar"], [class*="tabBar"]') : null;
   }
   /** 面板窗口：Window-module__statusWindow（或页签栏的父节点）。 */
   function windowEl() {
-    var win = document.querySelector('[class*="statusWindow"], [class*="Window-module__"]');
-    if (win) return win;
-    var bar = tabBar();
-    return bar && bar.parentElement ? bar.parentElement : null;
+    // 聊天里可能并存多份面板（每条消息一份）。必须取**最后一个可见的**，
+    // 否则会命中历史消息里的旧面板 —— 表现就是"改了却毫无变化"。
+    var all = document.querySelectorAll('[class*="statusWindow"], [class*="Window-module__"]');
+    var vis = [];
+    for (var i = 0; i < all.length; i += 1) {
+      var r = all[i].getBoundingClientRect();
+      if (r.width > 60 && r.height > 60) vis.push(all[i]);
+    }
+    var pool = vis.length ? vis : Array.prototype.slice.call(all);
+    return pool.length ? pool[pool.length - 1] : null;
   }
   /**
    * 内容区 = 窗口里排除「标题栏」和「页签栏」之后、**面积最大**的子节点。
@@ -29327,7 +29334,7 @@
     for (var i = 0; i < win.children.length; i += 1) {
       var child = win.children[i];
       if (child === bar || (bar && child.contains(bar))) continue;
-      if (child.id === "yd-partner-root") continue;                 // 别把自绘根当成内容区（否则自锁）
+      if (/yd-partner-root/.test(String(child.className || ""))) continue;   // 别把自绘根当成内容区（否则自锁）
       if (/titleBar/i.test(String(child.className || ""))) continue;
       var area = (child.offsetWidth || 0) * (child.offsetHeight || 0);
       if (area > bestArea) { bestArea = area; best = child; }
@@ -29363,7 +29370,8 @@
    */
   function containers() {
     var out = [];
-    var direct = document.querySelectorAll('[class*="destinyTabPartner"]');
+    var win = windowEl();
+    var direct = win ? win.querySelectorAll('[class*="destinyTabPartner"]') : [];
     for (var i = 0; i < direct.length; i += 1) {
       var el = direct[i];
       if (el.nodeType === 1 && el.id !== "yd-partner-root" && !el.closest("#yd-partner-root")) out.push(el);
@@ -29431,15 +29439,16 @@
       return false;                               // 找不到 → 交给 diagnose 报出来
     }
     var host = roots[0];
-    var root = document.getElementById("yd-partner-root");
-    if (!root || !host.contains(root)) {
+    var root = host.querySelector(":scope > .yd-partner-root");
+    if (!root) {
       root = document.createElement("div");
-      root.id = "yd-partner-root";
+      root.id = "yd-partner-root";     // id 保留给内部 CSS 用
+      root.className = "yd-partner-root";
       host.appendChild(root);
     }
     // 隐藏原伙伴页内容（除自绘根节点外）
     Array.prototype.slice.call(host.children).forEach(function (child) {
-      if (child.id === "yd-partner-root") return;
+      if (/yd-partner-root/.test(String(child.className || ""))) return;
       if (child.style.display !== "none") child.style.display = "none";
     });
     state.mounted = true;
@@ -29459,7 +29468,7 @@
   document.addEventListener("click", function (event) {
     var target = event.target;
     if (!target || !target.closest) return;
-    var filterBtn = target.closest("#yd-partner-root [data-filter]");
+    var filterBtn = target.closest(".yd-partner-root [data-filter]");
     if (filterBtn) { state.filter = filterBtn.getAttribute("data-filter"); state.signature = ""; mount(); return; }
     var back = target.closest("#yd-partner-root [data-back]");
     if (back) { state.selected = null; state.section = "overview"; state.signature = ""; mount(); return; }
