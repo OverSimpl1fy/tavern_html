@@ -29283,6 +29283,71 @@
     } catch (_) { return null; }
   }
 
+  /** 页签栏与内容区：DOM 结构比压缩后的类名稳定，优先按结构找。 */
+  function tabBar() {
+    return document.querySelector('[class*="TabBar-module__tabBar"], [class*="tabBar"]');
+  }
+  /** 内容区 = 页签栏的父节点里、不包含页签栏的那个兄弟节点。 */
+  function contentHost() {
+    var bar = tabBar();
+    if (!bar || !bar.parentElement) return null;
+    var root = bar.parentElement;
+    for (var i = 0; i < root.children.length; i += 1) {
+      var child = root.children[i];
+      if (child !== bar && !child.contains(bar)) return child;
+    }
+    return null;
+  }
+  /** 当前是不是停在「伙伴」页签（页签项文字判定，不依赖 hash 类名）。 */
+  function partnerTabActive() {
+    var bar = tabBar();
+    if (!bar) return false;
+    var items = bar.querySelectorAll('[class*="item"], [role="tab"], button');
+    for (var i = 0; i < items.length; i += 1) {
+      var el = items[i];
+      var label = (el.textContent || "").replace(/\s+/g, "");
+      if (label.indexOf("伙伴") === -1 || label.length > 6) continue;
+      var cls = String(el.className || "");
+      var state = el.getAttribute("aria-selected");
+      if (state === "true" || el.getAttribute("aria-current")) return true;
+      if (/active|selected|current|--on|\bon\b/i.test(cls)) return true;
+    }
+    return false;
+  }
+  /** 找伙伴页容器：① 内容区里带 destinyTabPartners 的节点 ② 直接用内容区。 */
+  function containers() {
+    var found = [];
+    var direct = document.querySelectorAll('[class*="destinyTabPartners"], [class*="destinyTabPartner"]');
+    for (var i = 0; i < direct.length; i += 1) {
+      if (direct[i].nodeType === 1 && !direct[i].closest("#yd-partner-root")) found.push(direct[i]);
+    }
+    if (found.length) return found;
+    // 兜底：页签栏的兄弟节点就是内容区，直接在里面挂
+    var host = contentHost();
+    if (host && !host.closest("#yd-partner-root")) found.push(host);
+    return found;
+  }
+  /** 列出面板里实际存在的类名，供诊断用。 */
+  function sampleClasses(limit) {
+    var out = [];
+    var nodes = document.querySelectorAll('[class]');
+    for (var i = 0; i < nodes.length && out.length < limit; i += 1) {
+      var c = String(nodes[i].className || "").split(/\s+/)[0];
+      if (c && out.indexOf(c) === -1 && /module__/.test(c)) out.push(c);
+    }
+    return out;
+  }
+  /* ── 挂载与数据 ────────────────────────────────────────────────── */
+  function currentPartners() {
+    try {
+      if (!window.Mvu || typeof window.Mvu.getMvuData !== "function") return null;
+      var msgId = typeof window.getCurrentMessageId === "function" ? window.getCurrentMessageId() : null;
+      var data = window.Mvu.getMvuData({ type: "message", message_id: msgId });
+      var stat = data && data.stat_data ? data.stat_data : null;
+      return has(stat) && has(stat.关系列表) ? stat.关系列表 : (has(stat) ? {} : null);
+    } catch (_) { return null; }
+  }
+
   /** 找伙伴页容器：类名可能随打包变化，所以按优先级多路兜底。 */
   function containers() {
     var tries = [
@@ -29314,6 +29379,12 @@
   }
 
   function mount() {
+    // 不在伙伴页签就别动 DOM（面板开在任务页时伙伴内容根本不存在，这也是之前"找不到容器"的原因）
+    if (!partnerTabActive()) {
+      var stale = document.getElementById("yd-partner-diagnose");
+      if (stale && stale.parentNode) stale.parentNode.removeChild(stale);
+      return false;
+    }
     var roots = containers();
     if (!roots.length) return false;
     var host = roots[0];
@@ -29358,19 +29429,20 @@
 
   /** 长时间找不到容器 → 在页面上留一行可见提示，避免"看起来毫无变化、无从排查"。 */
   function diagnose() {
+    if (!partnerTabActive()) return;          // 只有停在伙伴页签时才提示，否则纯噪音
     if (document.getElementById("yd-partner-diagnose")) return;
     var box = document.createElement("div");
     box.id = "yd-partner-diagnose";
     box.style.cssText = "position:fixed;right:10px;bottom:10px;z-index:99999;max-width:60%;padding:8px 10px;"
       + "border-radius:8px;border:1px solid var(--theme-card-border,#d4c5a9);background:var(--theme-card-bg,#faf5eb);"
       + "color:var(--theme-text-primary,#3d2b1f);font-size:12px;line-height:1.5;box-shadow:0 6px 18px -8px rgba(0,0,0,.6)";
-    var cls = [];
-    var nodes = document.querySelectorAll('[class*="Destiny"], [class*="Tab"]');
-    for (var i = 0; i < nodes.length && cls.length < 6; i += 1) {
-      var c = String(nodes[i].className || "").split(/\s+/)[0];
-      if (c && cls.indexOf(c) === -1) cls.push(c);
-    }
-    box.innerHTML = "伙伴页·自绘：<b>没找到容器</b>，自绘未挂载。<br>面板里现有的类名：" + cls.join(" / ")
+    var host = contentHost();
+    var bar = tabBar();
+    var info = "页签栏:" + (bar ? String(bar.className || "").split(/\s+/)[0] : "无")
+      + " ｜ 内容区:" + (host ? String(host.className || "").split(/\s+/)[0] : "无")
+      + " ｜ 内容区子节点数:" + (host ? host.children.length : 0);
+    box.innerHTML = "伙伴页·自绘：<b>没找到容器</b>，自绘未挂载。<br>" + info
+      + "<br>类名样例：" + sampleClasses(10).join(" / ")
       + "<br>（把这行发我即可定位）";
     var host = document.body || document.documentElement;
     if (host) host.appendChild(box);
@@ -29380,7 +29452,7 @@
   var timer = window.setInterval(function () {
     tries += 1;
     mount();
-    if (tries === 30) diagnose();                    // 约 20 秒后仍挂不上 → 给出可见提示
+    if (tries === 30) diagnose();                    // 约 20 秒后仍挂不上（且停在伙伴页签）→ 给出可见提示
     if (tries > 3600) window.clearInterval(timer);   // 约 40 分钟仍找不到容器才放弃
   }, 700);
   try {
