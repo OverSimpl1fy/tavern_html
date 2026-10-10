@@ -4369,7 +4369,8 @@
                 const dimsSrc = _.get(o, "堕落六维", {});
                 rec.堕落六维 = _.fromPairs(DIMS.map((k) => [k, CLAMP100(_.get(dimsSrc, k, 0))]));
                 // 文本类字段：缺就不写（不覆盖 schema 默认，也不塞空串污染提示词）
-                const cognition = _.get(o, "当前认知", _.get(o, "当前状态", ""));
+                const cognition = [_.get(o, "当前认知", _.get(o, "当前状态", "")), _.isEmpty(o.备注) ? "" : "备注：" + asText(o.备注)].filter((v) => !_.isEmpty(v)).map(asText).join("\n");
+                if (!_.isEmpty(o.身材)) rec.外貌 = [rec.外貌, "身材：" + asText(o.身材)].filter(Boolean).join("\n");
                 if (!_.isEmpty(cognition)) rec.当前认知 = asText(cognition);
                 if (!_.isEmpty(_.get(o, "堕落节点", {}))) rec.堕落节点 = _.get(o, "堕落节点");
                 if (!_.isEmpty(_.get(o, "xp", {}))) rec.xp = _.get(o, "xp");
@@ -4409,9 +4410,12 @@
               // 依据 js_initial.json 的 schema：
               //   · 等级/生命层级 已由 level 推导并写入（主角.等级 / 主角.生命层级），本段不重复写；
               //   · 金钱/命运点数 已分别由 money / destinyPoints 写入，本段不重复写；
-              //   · 「欲潮之书进度」在 schema 里**没有**对应字段（既不在 主角 也不在 事件/信息 下），
-              //     自造路径会被 zod 丢弃，因此只作为 `/信息/情报-开局档案` 的内容保留（只读锚定）。
+              // 初始晋升进度写入 schema 的世界.欲潮之书进度；后续演进由网关事件层负责。
               const opening = _.get(e, "preset.开局档案", null);
+              const openingTime = _.get(opening, "世界时间", "");
+              if (typeof openingTime === "string" && openingTime.trim()) _.set(c, "stat_data.世界.时间", openingTime.trim());
+              const openingProgress = _.get(opening, "晋升进度", null);
+              if (_.isPlainObject(openingProgress)) _.set(c, "stat_data.世界.欲潮之书进度", openingProgress);
               if (_.isPlainObject(opening) && !_.isEmpty(opening)) {
                 _.set(c, ["stat_data", "信息", "情报-开局档案"], {
                   类型: "开局档案",
@@ -4563,7 +4567,7 @@
               //   t = selectedItems / a = selectedSkills / l = selectedPartners / m = selectedEquipments
               // 额外数据走 e.preset：情报 / 开局档案 / 首轮约束 都不在 character 里，
               // 挂一个额外键即可让构建段读到（character 是每次开局新建的副本，不影响 UI 与校验）。
-              _.assign(l.value, { preset: presetMetaRef && presetMetaRef.value ? presetMetaRef.value : null }),
+              _.assign(l.value, { preset: presetMetaRef && presetMetaRef.value ? presetMetaRef.value : (l.value.preset || null) }),
               e.selectedItems,
               e.selectedSkills,
               e.selectedPartners,
@@ -4780,6 +4784,7 @@
                 const e = "【自定义开局】" === l.name && r ? r : l.description;
                 e ? c.push(`描述: ${e}`) : c.push("描述: （本开局不预设剧情；以当前状态快照、世界设定与开场事件为准自行展开。）");
               }
+              if (_.isPlainObject(e.preset)) c.push("<gateway_opening>" + JSON.stringify({ 情报: e.preset.情报 || [], 开局档案: e.preset.开局档案 || {}, 首轮约束: e.preset.首轮约束 || null, 预设名: e.preset.name || "" }) + "</gateway_opening>");
               return `\`\`\`text\n${c.join("\n")}\n\`\`\`\n\n---\n根据当前状态快照和以上内容，生成一个符合情景与设定的初始剧情！`;
             })(
               l.value,

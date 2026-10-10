@@ -12944,6 +12944,7 @@
               昵称: z.string().prefault(""),
               口癖: z.string().prefault(""),
               性别: z.string().prefault(""),
+              年龄: z.string().prefault(""),
               关系标签: z.array(z.string()).prefault([]).transform((e) => _.uniq(e)),
               生命值: z.coerce.number().prefault(0),
               生命值上限: z.coerce.number().prefault(0),
@@ -13016,6 +13017,7 @@
                 "昵称",
                 "口癖",
                 "性别",
+                "年龄",
                 "关系标签",
                 "生命值",
                 "生命值上限",
@@ -13094,6 +13096,8 @@
               .prefault(0)
               .transform((e) => Math.min(100, Math.max(0, e))),
             欲潮范围: z.string().prefault(""),
+            事件池: z.string().prefault(""),
+            欲潮之书进度: z.object({ 炼制: z.boolean().prefault(false), 训练: z.boolean().prefault(false), 欲术: z.boolean().prefault(false), 秘文: z.boolean().prefault(false), 结社已建立: z.boolean().prefault(false), 结社成员数: z.coerce.number().min(0).prefault(0), 恶堕人数: z.coerce.number().min(0).prefault(0), 自主传播: z.boolean().prefault(false), 学院掌控度: z.coerce.number().min(0).max(100).prefault(0), 势力清算: z.boolean().prefault(false), 初潮之仪: z.boolean().prefault(false) }).prefault({}),
           })
           .prefault({}),
         任务列表: z.record(z.string(), v).prefault({}),
