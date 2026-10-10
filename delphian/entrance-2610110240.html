@@ -4193,6 +4193,19 @@
         legendary: "传说",
         mythic: "神话",
       };
+    // stat_data 的直接写入不会更新 MVU 的旧 schema；只同步已定义的动态信息容器。
+    function repairInformationContainer(variables) {
+      if (!_.isPlainObject(variables.stat_data)) return;
+      if (variables.stat_data.信息 == null) variables.stat_data.信息 = {};
+      const schema = variables.schema;
+      if (!_.isPlainObject(schema) || schema.type !== "object") return;
+      if (!_.isPlainObject(schema.properties)) schema.properties = {};
+      const previous = schema.properties.信息;
+      schema.properties.信息 = {
+        ...previous, type: "object", extensible: true, recursiveExtensible: false,
+        properties: _.isPlainObject(previous?.properties) ? previous.properties : {}, required: true,
+      };
+    }
     function Le() {
       const journeyStore = L(),
         t = q(),
@@ -4214,6 +4227,7 @@
       const persistJourneyMvu = async (data, target) => {
         assertJourneyContext(target);
         const variableTarget = { type: "message", message_id: target.messageId };
+        repairInformationContainer(data);
         const persistedData = JSON.parse(JSON.stringify(data));
         await Mvu.replaceMvuData(persistedData, variableTarget);
         assertJourneyContext(target);
@@ -4227,8 +4241,10 @@
         if (!response.ok) throw new Error("初始变量保存验证失败：HTTP " + response.status);
         const saved = await response.json();
         assertJourneyContext(target);
-        const actual = saved[target.messageId + 1]?.variables?.[target.swipeId]?.stat_data;
+        const savedVariables = saved[target.messageId + 1]?.variables?.[target.swipeId];
+        const actual = savedVariables?.stat_data;
         if (!_.isEqual(actual, persistedData.stat_data)) throw new Error("服务器尚未保存完整初始变量，请重试；本次不会开始生成");
+        if (!_.isEqual(savedVariables?.schema, persistedData.schema)) throw new Error("服务器尚未保存初始变量的更新结构，请重试；本次不会开始生成");
         if (target.context.eventSource?.emit) await target.context.eventSource.emit("delphian:journey:initialized", { chatId: target.chatId, messageId: target.messageId, stat_data: _.cloneDeep(actual) });
       };
       return {
