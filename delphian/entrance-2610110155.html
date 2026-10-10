@@ -3011,7 +3011,14 @@
       try {
         const e = getVariables({ type: "character" }),
           t = _.get(e, T);
-        if (t && _.isArray(t.presets)) return t;
+        const context = SillyTavern.getContext();
+        const active = context.presets?.getSelected?.("openai");
+        const bundled = context.presets?.getStored?.(active)?.body?.extensions?.delphian_start_presets?.presets || [];
+        const stored = t && _.isArray(t.presets) ? t : { presets: [] };
+        // 内置开局来自当前狐神预设，跟随成套更新；角色卡里的个人预设保留。
+        return { ...stored, presets: [...stored.presets, ...bundled.map(preset => ({
+          ...normalizeStartPreset(preset), name: preset.name + " · 内置", bundledStart: true,
+        }))] };
       } catch (e) {
         console.warn("读取预设存储失败，返回空存储:", e);
       }
@@ -3019,7 +3026,7 @@
     }
     function M(e) {
       try {
-        (insertOrAssignVariables({ [T]: e }, { type: "character" }),
+        (insertOrAssignVariables({ [T]: { ...e, presets: e.presets.filter(preset => !preset.bundledStart) } }, { type: "character" }),
           console.log("✅ 预设存储已保存到角色卡变量"));
       } catch (e) {
         throw (console.error("保存预设存储失败:", e), e);
@@ -3081,6 +3088,7 @@
       O = { 力量: 0, 敏捷: 0, 体质: 0, 智力: 0, 感知: 0, 魅力: 0 },
       K = ["力量", "敏捷", "体质", "智力", "感知", "魅力"];
     function H(e, t) {
+      e = normalizeStartPreset(e);
       (t.resetCharacter(), t.clearAllSelections());
       const a = (function (e) {
         if (!("basePoints" in e)) {
@@ -3112,8 +3120,33 @@
         _.forEach(e.skills, (e) => t.addSkill(e)),
         _.forEach(e.partners, (e) => t.addPartner(e)),
         t.setBackground(e.background),
+        q().updateCustomBackgroundDescription(e.customBackgroundDescription || ""),
         (t.presetMeta = e),
         toastr.success(`已加载预设「${e.name}」`));
+    }
+    function buildStartPreset(name, store, customStore) {
+      const now = Date.now();
+      const description = (0, c.unref)(customStore.customBackgroundDescription) || "";
+      const background = _.cloneDeep(store.selectedBackground);
+      if (background?.name === "【自定义开局】") background.description = description;
+      return {
+        ..._.omit(_.cloneDeep(store.presetMeta || {}), ["character", "equipments", "items", "skills", "partners", "background", "bundledStart"]),
+        name, createdAt: now, updatedAt: now,
+        character: _.cloneDeep(store.character), equipments: _.cloneDeep(store.selectedEquipments),
+        items: _.cloneDeep(store.selectedItems), skills: _.cloneDeep(store.selectedSkills),
+        partners: _.cloneDeep(store.selectedPartners), background, customBackgroundDescription: description,
+      };
+    }
+    function normalizeStartPreset(preset) {
+      const result = _.cloneDeep(preset);
+      if (!result.background) return result;
+      if (result.开场 || result.background.name === "【自定义开局】") {
+        result.customBackgroundDescription = result.customBackgroundDescription ?? result.background.description ?? "";
+        if (result.background.name !== "【自定义开局】") result.background.sourceName = result.background.name;
+        result.background.name = "【自定义开局】";
+        result.background.description = result.customBackgroundDescription;
+      }
+      return result;
     }
     function J(e) {
       return new Date(e).toLocaleString("zh-CN", {
@@ -3244,20 +3277,7 @@
           const u = () => {
               const e = i.value.trim();
               if (!e) return void toastr.warning("请输入预设名称");
-              const t = (function (e, t) {
-                const a = Date.now();
-                return {
-                  name: e,
-                  createdAt: a,
-                  updatedAt: a,
-                  character: o(t.character),
-                  equipments: o(t.selectedEquipments),
-                  items: o(t.selectedItems),
-                  skills: o(t.selectedSkills),
-                  partners: o(t.selectedPartners),
-                  background: o(t.selectedBackground),
-                };
-              })(e, n);
+              const t = buildStartPreset(e, n, r);
               R(e)
                 ? ((d.value = null),
                   p.value === e
@@ -4174,25 +4194,77 @@
         mythic: "神话",
       };
     function Le() {
-      const e = L(),
+      const journeyStore = L(),
         t = q(),
-        { character: l, presetMeta: presetMetaRef } = a(e);
+        { character: l, presetMeta: presetMetaRef } = a(journeyStore),
+        journeyBusy = (0, c.ref)(false),
+        journeyStatus = (0, c.ref)("");
+      const journeyContext = () => {
+        const context = SillyTavern.getContext();
+        const character = context.characters[context.characterId];
+        if (!context.chatId || !character || context.groupId) throw new Error("请在单角色聊天中开始旅程");
+        const messageId = typeof getCurrentMessageId === "function" ? getCurrentMessageId() : context.chat.length - 1;
+        if (!Number.isInteger(messageId) || !context.chat[messageId]) throw new Error("找不到当前开场消息，请重新打开聊天");
+        return { context, chatId: context.chatId, avatar: character.avatar, messageId, swipeId: context.chat[messageId].swipe_id || 0 };
+      };
+      const assertJourneyContext = target => {
+        const now = journeyContext();
+        if (now.chatId !== target.chatId || now.avatar !== target.avatar || now.messageId !== target.messageId || now.swipeId !== target.swipeId) throw new Error("聊天或开场消息已切换，请回到原聊天再开始旅程");
+      };
+      const persistJourneyMvu = async (data, target) => {
+        assertJourneyContext(target);
+        const variableTarget = { type: "message", message_id: target.messageId };
+        const persistedData = JSON.parse(JSON.stringify(data));
+        await Mvu.replaceMvuData(persistedData, variableTarget);
+        assertJourneyContext(target);
+        // 宿主的变量 API 只安排延迟保存；显式等待保存并读取服务器，避免假成功。
+        await target.context.saveChat();
+        assertJourneyContext(target);
+        const response = await fetch("/api/chats/get", {
+          method: "POST", headers: target.context.getRequestHeaders(), cache: "no-store",
+          body: JSON.stringify({ avatar_url: target.avatar, file_name: target.chatId }),
+        });
+        if (!response.ok) throw new Error("初始变量保存验证失败：HTTP " + response.status);
+        const saved = await response.json();
+        assertJourneyContext(target);
+        const actual = saved[target.messageId + 1]?.variables?.[target.swipeId]?.stat_data;
+        if (!_.isEqual(actual, persistedData.stat_data)) throw new Error("服务器尚未保存完整初始变量，请重试；本次不会开始生成");
+        if (target.context.eventSource?.emit) await target.context.eventSource.emit("delphian:journey:initialized", { chatId: target.chatId, messageId: target.messageId, stat_data: _.cloneDeep(actual) });
+      };
       return {
+        journeyBusy,
+        journeyStatus,
         // ⚠️ 2026-10-10 修复：prompt IIFE（见下方 })(l.value, e.selectedEquipments, …)）在**调用时**
         // 读 e.selectedEquipments/selectedPartners/selectedBackground/selectedItems/selectedSkills，
         // 而调用点（CheckSubmit 的 k()，entrance.html:5345/5352/5361）**不传任何参数**，
         // 于是 e === undefined ⇒ 抛 `Cannot read properties of undefined (reading 'selectedEquipments')`，
         // 被外层 try/catch 静默吞掉 ⇒ 构建段跑完（变量确实落盘）但**提示词永不生成、/trigger 永不触发**。
         // 该缺陷自首个提交 7384676 起就存在（git log -S 核实）。这里显式接收并给出空对象兜底。
-        executeJourney: async (e = {}) => {
+        executeJourney: async (options = {}) => {
+          if (journeyBusy.value) return false;
+          journeyBusy.value = true;
+          journeyStatus.value = "正在保存初始变量…";
           try {
+            // 实际按钮调用 k()，选择从 Pinia store 读取，测试也必须覆盖此调用方式。
+            const e = _.cloneDeep({
+              selectedItems: (0, c.unref)(journeyStore.selectedItems) || [],
+              selectedSkills: (0, c.unref)(journeyStore.selectedSkills) || [],
+              selectedPartners: (0, c.unref)(journeyStore.selectedPartners) || [],
+              selectedEquipments: (0, c.unref)(journeyStore.selectedEquipments) || [],
+              selectedBackground: (0, c.unref)(journeyStore.selectedBackground) || null,
+              ...options,
+            });
+            const character = _.cloneDeep(l.value);
+            character.preset = _.cloneDeep((0, c.unref)(presetMetaRef) || character.preset || null);
+            const customDescription = (0, c.unref)(t.customBackgroundDescription) ?? e.selectedBackground?.description ?? "";
+            const target = journeyContext();
             (await (async function (e, t, a, l, m) {
               await waitGlobalInitialized("Mvu");
-              const o = _.filter(a, (e) => !e.isCustom),
-                n = _.filter(t, (e) => !e.isCustom),
-                r = _.filter(l, (e) => !e.isCustom),
+              const o = a,
+                n = t,
+                r = l,
                 ra = raceAttrFor("自定义" === e.race ? e.customRace : e.race),
-                c = Mvu.getMvuData({ type: "message", message_id: "latest" });
+                c = _.cloneDeep(Mvu.getMvuData({ type: "message", message_id: target.messageId }));
               _.set(c, "stat_data.命运点数", e.core ? e.destinyPoints : 0);
               _.set(c, "stat_data.世界.地点", "自定义" === e.startLocation ? e.customStartLocation : e.startLocation),
               _.set(c, "stat_data.世界.时间", "庭院纪元633年-1月-1日-神曜日-08:00"),
@@ -4425,6 +4497,9 @@
                 });
               }
               const firstTurn = _.get(e, "preset.首轮约束", null);
+              if (customDescription) _.set(c, ["stat_data", "信息", "情报-自定义开局"], {
+                类型: "开场", 内容: customDescription, 来源: "前端自定义开局", 备注: "开始旅程时由用户确认并直接保存的开场内容。",
+              });
               if (!_.isEmpty(firstTurn)) {
                 _.set(c, ["stat_data", "信息", "情报-首轮约束"], {
                   类型: "首轮约束",
@@ -4556,10 +4631,7 @@
                 _.set(c, "stat_data.主角.体力值上限", spMax),
                 _.set(c, "stat_data.主角.体力值", spMax));
               (_.set(c, "stat_data.关系列表", d),
-                await Mvu.replaceMvuData(c, {
-                  type: "message",
-                  message_id: "latest",
-                }),
+                await persistJourneyMvu(c, target),
                 console.log("✅ 预设数据已成功写入消息楼层变量"));
             })(
               // 形参表 `(e, t, a, l, m)`：
@@ -4567,7 +4639,7 @@
               //   t = selectedItems / a = selectedSkills / l = selectedPartners / m = selectedEquipments
               // 额外数据走 e.preset：情报 / 开局档案 / 首轮约束 都不在 character 里，
               // 挂一个额外键即可让构建段读到（character 是每次开局新建的副本，不影响 UI 与校验）。
-              _.assign(l.value, { preset: presetMetaRef && presetMetaRef.value ? presetMetaRef.value : (l.value.preset || null) }),
+              character,
               e.selectedItems,
               e.selectedSkills,
               e.selectedPartners,
@@ -4787,21 +4859,30 @@
               if (_.isPlainObject(e.preset)) c.push("<gateway_opening>" + JSON.stringify({ 情报: e.preset.情报 || [], 开局档案: e.preset.开局档案 || {}, 首轮约束: e.preset.首轮约束 || null, 预设名: e.preset.name || "" }) + "</gateway_opening>");
               return `\`\`\`text\n${c.join("\n")}\n\`\`\`\n\n---\n根据当前状态快照和以上内容，生成一个符合情景与设定的初始剧情！`;
             })(
-              l.value,
+              character,
               e.selectedEquipments,
               e.selectedPartners,
               e.selectedBackground,
               e.selectedItems,
               e.selectedSkills,
-              t.customBackgroundDescription,
+              customDescription,
               e,
             );
+            assertJourneyContext(target);
+            journeyStatus.value = "初始变量已保存并核对，正在开始旅程…";
             (console.log("✅ AI 提示词已生成：\n", a),
               await createChatMessages([{ role: "user", message: a }]),
               console.log("✅ 角色信息已发送给 AI"),
               await triggerSlash("/trigger"));
+            journeyStatus.value = "初始变量已写入后端，旅程已开始。";
+            return true;
           } catch (e) {
             console.error("❌ 踏上旅程时发生错误：", e);
+            journeyStatus.value = "无法开始旅程：" + (e.message || String(e));
+            toastr.error(journeyStatus.value, "开始旅程失败");
+            return false;
+          } finally {
+            journeyBusy.value = false;
           }
         },
       };
@@ -5360,7 +5441,7 @@
               checkAndShowLoadModal: f,
             } = Ae(),
             V = (0, c.ref)(!1),
-            { executeJourney: k } = Le(),
+            { executeJourney: k, journeyBusy, journeyStatus } = Le(),
             { availablePoints: N } = Te(),
             y = (0, c.ref)(!1),
             E = Ue.map((e) => ({ title: e.shortTitle }));
@@ -5377,11 +5458,8 @@
             },
             h = async () => {
               if (o.value) {
-                const e = W(t);
-                return void (e
-                  ? (toastr.info(`当前配置与预设「${e}」相同，直接开始旅程`),
-                    k())
-                  : ((y.value = !0), ee()));
+                await k();
+                return;
               }
               i(a.value + 1);
             },
@@ -5397,8 +5475,8 @@
             w = () => {
               ((V.value = !1), p());
             },
-            S = (0, c.computed)(() => !!o.value && N.value < 0),
-            D = (0, c.computed)(() => (o.value ? "踏上旅程" : "下一步"));
+            S = (0, c.computed)(() => journeyBusy.value || (!!o.value && N.value < 0)),
+            D = (0, c.computed)(() => journeyBusy.value ? "正在开始旅程…" : (o.value ? "踏上旅程" : "下一步"));
           return (e, t) => (
             (0, c.openBlock)(),
             (0, c.createElementBlock)("div", bt, [
@@ -5430,7 +5508,7 @@
                   "can-go-previous": (0, c.unref)(l),
                   "is-next-disabled": (0, c.unref)(S),
                   "next-button-text": (0, c.unref)(D),
-                  "next-disabled-title": "可用转生点数不能为负",
+                  "next-disabled-title": "正在保存初始数据，或可用转生点数为负",
                   onPrevious: (0, c.unref)(r),
                   onNext: h,
                 },
@@ -5443,6 +5521,7 @@
                   "onPrevious",
                 ],
               ),
+              (0, c.createElementVNode)("p", { class: "journey-status", role: "status", "aria-live": "polite" }, (0, c.toDisplayString)(journeyStatus.value), 1),
               (0, c.createVNode)(
                 Fe,
                 {
