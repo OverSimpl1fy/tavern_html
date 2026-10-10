@@ -2468,6 +2468,33 @@
           return (attrs[m[1]] || 0) >= Number(m[2]);
         });
       },
+      // ==== 伙伴属性键兼容读取（2026-10-10 提到模块级，供构建段与初始提示词段共用）====
+      // 伙伴池 entrance/assets/data/partners.json 用中文键（力量/敏捷/…），
+      // 人物预设（如「奥菲莉娅的邀约」）用英文键（strength/dexterity/…）。
+      // 旧代码两处都只读英文键 ⇒ 伙伴池伙伴的 属性 全是 undefined（zod prefault(0) 落成 0）。
+      numv = (v) => {
+        if (null == v || "" === v) return null;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+      },
+      firstNum = (list) => {
+        for (const v of list) {
+          const n = numv(v);
+          if (null !== n) return n;
+        }
+        return null;
+      },
+      attrOf = (src, en, cn, extra) => {
+        const s = src && "object" == typeof src ? src : {},
+          direct = firstNum([s[en], s[cn]]);
+        if (null !== direct) return direct;
+        if ("function" == typeof extra) {
+          const fb = numv(extra(s));
+          if (null !== fb) return fb;
+        }
+        return 0;
+      },
+      safeArr = (x) => (_.isArray(x) ? [...x] : x ? [x] : []),
       D = {};
     let P = null;
     function F() {
@@ -2481,7 +2508,11 @@
     })();
     const I = () => _.find(_.keys(B.value), (e) => _.includes(e, "冒险者")) || "冒险者",
       L = t("character", () => {
-        const e = (0, c.ref)({
+        // 人物预设的原始对象（含 character / 情报 / 开局档案 / 首轮约束 / 专长 …）。
+        // 「踏上旅程」的确定性写入需要它：情报、开局档案这些**不在 character 里**的字段，
+        // 光靠 store.character 拿不到。setPresetMeta 由 H()（加载人物预设）写入。
+        const presetMeta = (0, c.ref)(null),
+          e = (0, c.ref)({
             name: "",
             nickname: "",
             catchphrase: "",
@@ -2619,6 +2650,7 @@
           ),
           {
             character: e,
+            presetMeta,
             consumedPoints: r,
             selectedEquipments: t,
             selectedItems: a,
@@ -3080,6 +3112,7 @@
         _.forEach(e.skills, (e) => t.addSkill(e)),
         _.forEach(e.partners, (e) => t.addPartner(e)),
         t.setBackground(e.background),
+        (t.presetMeta = e),
         toastr.success(`已加载预设「${e.name}」`));
     }
     function J(e) {
@@ -4143,9 +4176,15 @@
     function Le() {
       const e = L(),
         t = q(),
-        { character: l } = a(e);
+        { character: l, presetMeta: presetMetaRef } = a(e);
       return {
-        executeJourney: async () => {
+        // ⚠️ 2026-10-10 修复：prompt IIFE（见下方 })(l.value, e.selectedEquipments, …)）在**调用时**
+        // 读 e.selectedEquipments/selectedPartners/selectedBackground/selectedItems/selectedSkills，
+        // 而调用点（CheckSubmit 的 k()，entrance.html:5345/5352/5361）**不传任何参数**，
+        // 于是 e === undefined ⇒ 抛 `Cannot read properties of undefined (reading 'selectedEquipments')`，
+        // 被外层 try/catch 静默吞掉 ⇒ 构建段跑完（变量确实落盘）但**提示词永不生成、/trigger 永不触发**。
+        // 该缺陷自首个提交 7384676 起就存在（git log -S 核实）。这里显式接收并给出空对象兜底。
+        executeJourney: async (e = {}) => {
           try {
             (await (async function (e, t, a, l, m) {
               await waitGlobalInitialized("Mvu");
@@ -4228,10 +4267,16 @@
                 ),
                 _.set(c, "stat_data.主角.熟练项", e.prof || []),
                 _.set(c, "stat_data.主角.壮举", e.entryFeat || {}));
+              // ==== 属性键兼容读取（2026-10-10 修正）====
+              // 伙伴池 entrance/assets/data/partners.json 用中文键（力量/敏捷/…），
+              // 人物预设（如「奥菲莉娅的邀约」）用英文键（strength/dexterity/…）。
+              // 旧代码只读英文键 ⇒ 从伙伴池选入的伙伴 属性 全是 undefined，
+              // zod 的 prefault(0) 把它落成 0（实测莉亚拉只剩 {魅力:0}）。
+              // 统一成「英文键优先、中文键回退」；numv / attrOf / safeArr 见模块级定义。
               const d = _.fromPairs(
-                _.map(r, (e) => {
+                _.map(r, (o) => {
                   const t = _.fromPairs(
-                      _.chain(e.equip)
+                      _.chain(o.equip)
                         .filter((e) => !!e.name)
                         .map((e) => [
                           e.name,
@@ -4247,7 +4292,7 @@
                         .value(),
                     ),
                     a = _.fromPairs(
-                      _.map(e.skills, (e) => [
+                      _.map(o.skills, (e) => [
                         e.name,
                         {
                           品质: _.get($e, e.rarity, "普通"),
@@ -4264,37 +4309,129 @@
                       ]),
                     );
                   return [
-                    e.name,
+                    o.name,
                     {
                       在场: !0,
-                      生命层级: e.lifeLevel,
-                      等级: e.level,
-                      种族: e.race,
-                      身份: [...e.identity],
-                      职业: [...e.career],
-                      性格: e.personality,
-                      喜爱: e.like,
-                      外貌: e.app,
-                      着装: e.cloth,
+                      生命层级: o.lifeLevel,
+                      等级: o.level,
+                      种族: o.race,
+                      身份: safeArr(o.identity),
+                      职业: safeArr(o.career),
+                      性格: o.personality,
+                      喜爱: o.like,
+                      外貌: o.app,
+                      着装: o.cloth,
                       属性: {
-                        力量: e.attributes.strength,
-                        敏捷: e.attributes.dexterity,
-                        体质: e.attributes.constitution,
-                        智力: e.attributes.intelligence,
-                        感知: e.attributes.perception ?? e.attributes.mind,
-                        魅力: e.attributes.charisma ?? Math.max(0, Math.floor((e.attributes.mind || 0) / 2)),
+                        力量: attrOf(o.attributes, "strength", "力量"),
+                        敏捷: attrOf(o.attributes, "dexterity", "敏捷"),
+                        体质: attrOf(o.attributes, "constitution", "体质"),
+                        智力: attrOf(o.attributes, "intelligence", "智力"),
+                        感知: attrOf(o.attributes, "perception", "感知", (s) => numv(s.mind)),
+                        魅力: attrOf(o.attributes, "charisma", "魅力", (s) => null == numv(s.mind) ? null : Math.max(0, Math.floor(numv(s.mind) / 2))),
                       },
-                      熟练项: e.prof || [],
+                      熟练项: o.prof || [],
                         专长: {},
-                      好感度: e.affinity,
-                      心里话: e.comment || "",
-                      背景故事: e.backgroundInfo || "",
+                      好感度: _.get(o, "好感度", _.get(o, "affinity", 0)),
+                      心里话: o.comment || "",
+                      背景故事: o.backgroundInfo || "",
                       装备: t,
                       技能: a,
                     },
                   ];
                 }),
               );
+              // ==== 「开始旅途」确定性写入②：把预设声明的初始内容补进伙伴记录（2026-10-10）====
+              // 设计口径（用户）：初始内容应当在「踏上旅程」时**直接写进 mvu 变量**，
+              // 而不是塞进初始提示词让模型去猜。
+              // 键名与层级全部取自 delphian/initial/js_initial.json 的 关系列表 schema（p.shape 继承），
+              // 未在 schema 中声明的键（当前状态/身材/备注…）一律不写，避免校验失败被整条丢弃。
+              // 幂等性：本段是「覆盖」语义（每次都用预设原值重写这几项），
+              // 装备/技能/背包等对象不在此处累加，重复点「踏上旅程」不会叠加或翻倍。
+              const CLAMP100 = (v) => Math.min(100, Math.max(0, Math.round(Number(v) || 0))),
+                asText = (v) => {
+                  if (null == v) return "";
+                  if (_.isString(v)) return v;
+                  if (_.isArray(v)) return v.map(asText).filter((x) => "" !== x).join("；");
+                  if (_.isPlainObject(v)) return _.map(v, (t, k) => `${k}: ${asText(t)}`).filter((x) => !/:\s*$/.test(x)).join("\n");
+                  return String(v);
+                },
+                DIMS = ["道德沦丧", "共情泯灭", "欲望沉溺", "自我消解", "手段残酷", "罪责开脱"],
+                writtenPartnerFields = [];
+              for (const o of r) {
+                const rec = _.get(d, [o.name]);
+                if (!_.isPlainObject(rec)) continue;
+                // 性别/年龄/关系标签/侵蚀度/堕落度/堕落六维 恒写（缺字段 = 空/0，与 schema prefault 同值）
+                rec.性别 = _.get(o, "性别", _.get(o, "gender", ""));
+                rec.年龄 = asText(_.get(o, "年龄", _.get(o, "age", "")));
+                rec.关系标签 = _.uniq(safeArr(_.get(o, "关系标签", _.get(o, "tags", []))).map(String));
+                rec.侵蚀度 = CLAMP100(_.get(o, "侵蚀度", _.get(o, "erosion", 0)));
+                rec.堕落度 = CLAMP100(_.get(o, "堕落度", _.get(o, "corruption", 0)));
+                const dimsSrc = _.get(o, "堕落六维", {});
+                rec.堕落六维 = _.fromPairs(DIMS.map((k) => [k, CLAMP100(_.get(dimsSrc, k, 0))]));
+                // 文本类字段：缺就不写（不覆盖 schema 默认，也不塞空串污染提示词）
+                const cognition = _.get(o, "当前认知", _.get(o, "当前状态", ""));
+                if (!_.isEmpty(cognition)) rec.当前认知 = asText(cognition);
+                if (!_.isEmpty(_.get(o, "堕落节点", {}))) rec.堕落节点 = _.get(o, "堕落节点");
+                if (!_.isEmpty(_.get(o, "xp", {}))) rec.xp = _.get(o, "xp");
+                if (!_.isEmpty(_.get(o, "特殊项目", {}))) rec.特殊项目 = _.get(o, "特殊项目");
+                writtenPartnerFields.push(
+                  `${o.name}|属性=${JSON.stringify(rec.属性)}|侵蚀度=${rec.侵蚀度}|堕落度=${rec.堕落度}|六维=${JSON.stringify(rec.堕落六维)}|关系标签=${JSON.stringify(rec.关系标签)}|性别=${rec.性别}|年龄=${rec.年龄}`,
+                );
+              }
+              // ==== 「开始旅途」确定性写入③：预设「情报」→ /信息/情报-{名称}（2026-10-10）====
+              // 落点依据（不是拍脑袋）：schema 里 信息 是 record，值为 z.union([string, T_info])，
+              // T_info = {类型,内容,来源,备注}；而世界书里既有写法统一为 '/信息/情报-{名称}'，
+              // 例如 4-1327 神学讨论、4-1385 塞莉丝对立、YY1A1/YY1A2/YY1B3/YHS 事件块全部用 `信息.情报-…`。
+              // 名称里的 '/' 换成 '／'，避免被 _.set 当成层级分隔符把路径写歪。
+              const infoKey = (name) => "情报-" + String(name).replace(/\//g, "／"),
+                asInfo = (it) => ({
+                  类型: asText(_.get(it, "类型", "情报")),
+                  内容: asText(_.get(it, "内容", "")),
+                  来源: asText(_.get(it, "来源", "")),
+                  备注: asText(_.get(it, "备注", "")),
+                }),
+                presetInfo = _.get(e, "preset.情报", null),
+                infoWritten = [];
+              // 兜底：没有 preset 上下文（例如旧卡导出的预设、或以后有人把预设对象改成不带 preset）
+              // 时跳过，绝不让「情报」这一步把整段构建炸掉。
+              if (null === _.get(e, "preset", null) && _.isArray(presetInfo)) {
+                console.warn("⚠️ 当前人物预设缺少 preset 上下文，跳过「情报」确定性写入");
+              }
+              if (_.isArray(presetInfo) && null !== _.get(e, "preset", null)) {
+                for (const it of presetInfo) {
+                  const key = infoKey(_.get(it, "名称", ""));
+                  if ("情报-" === key) continue;
+                  _.set(c, ["stat_data", "信息", key], asInfo(it));
+                  infoWritten.push(key);
+                }
+              }
+              // ==== 「开始旅途」确定性写入④：预设「开局档案」→ 只写 schema 里确实存在的路径（2026-10-10）====
+              // 依据 js_initial.json 的 schema：
+              //   · 等级/生命层级 已由 level 推导并写入（主角.等级 / 主角.生命层级），本段不重复写；
+              //   · 金钱/命运点数 已分别由 money / destinyPoints 写入，本段不重复写；
+              //   · 「欲潮之书进度」在 schema 里**没有**对应字段（既不在 主角 也不在 事件/信息 下），
+              //     自造路径会被 zod 丢弃，因此只作为 `/信息/情报-开局档案` 的内容保留（只读锚定）。
+              const opening = _.get(e, "preset.开局档案", null);
+              if (_.isPlainObject(opening) && !_.isEmpty(opening)) {
+                _.set(c, ["stat_data", "信息", "情报-开局档案"], {
+                  类型: "开局档案",
+                  内容: asText(opening),
+                  来源: `预设「${_.get(e, "preset.name", "")}」`,
+                  备注: "later-save 开局锚定；只作只读锚定，运行中数值一律由关系列表与剧情结算推进。",
+                });
+              }
+              const firstTurn = _.get(e, "preset.首轮约束", null);
+              if (!_.isEmpty(firstTurn)) {
+                _.set(c, ["stat_data", "信息", "情报-首轮约束"], {
+                  类型: "首轮约束",
+                  内容: asText(firstTurn),
+                  来源: `预设「${_.get(e, "preset.name", "")}」`,
+                  备注: "预设自带的首轮约束，确定性写入，不依赖提示词。",
+                });
+              }
+              // 控制台自检（可在 console 里直接核对落盘结果）
+              console.log("✅ 伙伴扩展写入：", writtenPartnerFields.join(" ／ "));
+              console.log("✅ 情报写入路径：", infoWritten.map((k) => `stat_data.信息.${k}`).join(" , "));
               // ==== 自动填入：将全部已设定内容直写 stat_data（开始生成之前）====
               const fa = _.fromPairs(
                 _.map(x, (a) => [
@@ -4421,14 +4558,22 @@
                 }),
                 console.log("✅ 预设数据已成功写入消息楼层变量"));
             })(
-              l.value,
+              // 形参表 `(e, t, a, l, m)`：
+              //   e = character 对象（构建段全程用它读 姓名/等级/属性/金钱/性别/堕落档案 …）
+              //   t = selectedItems / a = selectedSkills / l = selectedPartners / m = selectedEquipments
+              // 额外数据走 e.preset：情报 / 开局档案 / 首轮约束 都不在 character 里，
+              // 挂一个额外键即可让构建段读到（character 是每次开局新建的副本，不影响 UI 与校验）。
+              _.assign(l.value, { preset: presetMetaRef && presetMetaRef.value ? presetMetaRef.value : null }),
               e.selectedItems,
               e.selectedSkills,
               e.selectedPartners,
               e.selectedEquipments,
             ),
               console.log("✅ 角色数据已写入 MVU 变量"));
-            const a = (function (e, t, a, l, o, n, r) {
+            const a = (function (e, t, a, l, o, n, r, SEL) {
+              // SEL = executeJourney(e) 收到的创建页选择（见 4175 附近的参数说明）。
+              // 它必须单独传参：下面这个 IIFE 形参表里已经有一个名字也叫 e 的形参
+              // （第一参数是 character 对象 l.value），若直接用外层 e 会被形参遮蔽。
               const c = [],
                 s = "自定义" === e.gender ? e.customGender : e.gender,
                 i = "自定义" === e.race ? e.customRace : e.race,
@@ -4554,7 +4699,7 @@
                     e.description && c.push(`  描述: ${e.description}`),
                     t < f.length - 1 && c.push(""));
                 }));
-              const V = _.filter(a, "isCustom");
+              const V = _.filter(SEL.selectedPartners, "isCustom");
               if (
                 (V.length > 0 &&
                   (c.push(""),
@@ -4573,13 +4718,15 @@
                       c.push(`  外貌: ${e.app}`),
                       c.push(`  着装: ${e.cloth}`),
                       c.push("  属性:"),
-                      c.push(`    力量: ${e.attributes.strength}`),
-                      c.push(`    敏捷: ${e.attributes.dexterity}`),
-                      c.push(`    体质: ${e.attributes.constitution}`),
-                      c.push(`    智力: ${e.attributes.intelligence}`),
-                      c.push(`    感知: ${e.attributes.perception ?? e.attributes.mind}`),
-                      c.push(`    魅力: ${e.attributes.charisma ?? Math.max(0, Math.floor((e.attributes.mind || 0) / 2))}`),
-                                            c.push(`  好感度: ${e.affinity}`),
+                      // 与构建段共用同一套「英文键优先、中文键回退」逻辑（见 2474 附近模块级 attrOf）。
+                      // 旧代码只读英文键 ⇒ 伙伴池伙伴在这里会打印 undefined。
+                      c.push(`    力量: ${attrOf(e.attributes, "strength", "力量")}`),
+                      c.push(`    敏捷: ${attrOf(e.attributes, "dexterity", "敏捷")}`),
+                      c.push(`    体质: ${attrOf(e.attributes, "constitution", "体质")}`),
+                      c.push(`    智力: ${attrOf(e.attributes, "intelligence", "智力")}`),
+                      c.push(`    感知: ${attrOf(e.attributes, "perception", "感知", (s) => numv(s.mind))}`),
+                      c.push(`    魅力: ${attrOf(e.attributes, "charisma", "魅力", (s) => null == numv(s.mind) ? null : Math.max(0, Math.floor(numv(s.mind) / 2)))}`),
+                                            c.push(`  好感度: ${_.get(e, "好感度", _.get(e, "affinity", 0))}`),
                       !_.isEmpty(e.equip))
                     ) {
                       const t = _.filter(e.equip, "name");
@@ -4642,6 +4789,7 @@
               e.selectedItems,
               e.selectedSkills,
               t.customBackgroundDescription,
+              e,
             );
             (console.log("✅ AI 提示词已生成：\n", a),
               await createChatMessages([{ role: "user", message: a }]),
