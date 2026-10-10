@@ -281,7 +281,7 @@
     },
     {
       "name": "兽人部落",
-      "description": "你是兽人，出生在北方苔原的部落，如今却成了无根的流寇。你的部族在帝国的清剿与霜狼的猎颅之间流散，活下来的要么归附、要么沦为劫道的野人。你力气大、性子直，也背着一身说不清的债。你厌恶被叫作「怪物」，却也不得不靠拳头讨生活。最近，一支溃散的兽人小队找上你，说北边出现了「大酋长的血旗」，所有流散的兽人都该回去——可那面旗，三十年前就该烧掉了。",
+      "description": "你是兽人，具有人形面容、兽耳与尾巴，自幼生长在北方苔原的部落。族人重视口头承诺和彼此照顾；战争使许多人流散，你也在城镇中寻找新的生活。最近，一支旧识组成的兽人小队找上你，说北边重新出现了“大酋长的血旗”。那面旗三十年前已被烧掉，它的重现究竟是召集故乡的信号，还是有人借旧誓设下的圈套？",
       "requiredRace": "兽人"
     },
     {
@@ -2538,6 +2538,7 @@
             entryFeat: {},
             // 人物预设的「专长」栏：{名称: {描述, 来源, 获得等级}}，开局时写入 stat_data.主角.专长
             专长: {},
+            奇遇: {},
             core: "",
             reincarnationPoints: 250,
             destinyPoints: 0,
@@ -3077,6 +3078,7 @@
         "feats",
         "entryFeat",
         "专长",
+        "奇遇",
         "core",
         "reincarnationPoints",
         "destinyPoints",
@@ -4399,7 +4401,7 @@
                   return [
                     o.name,
                     {
-                      在场: !0,
+                      在场: o.在场 !== false,
                       生命层级: o.lifeLevel,
                       等级: o.level,
                       种族: o.race,
@@ -4418,7 +4420,9 @@
                         魅力: attrOf(o.attributes, "charisma", "魅力", (s) => null == numv(s.mind) ? null : Math.max(0, Math.floor(numv(s.mind) / 2))),
                       },
                       熟练项: o.prof || [],
-                        专长: {},
+                      壮举: _.cloneDeep(o.壮举 || {}),
+                      专长: _.cloneDeep(o.专长 || {}),
+                      奇遇: _.cloneDeep(o.奇遇 || {}),
                       好感度: _.get(o, "好感度", _.get(o, "affinity", 0)),
                       心里话: o.comment || "",
                       背景故事: o.backgroundInfo || "",
@@ -4448,6 +4452,10 @@
               for (const o of r) {
                 const rec = _.get(d, [o.name]);
                 if (!_.isPlainObject(rec)) continue;
+                for (const key of ["生命值", "生命值上限", "法力值", "法力值上限", "体力值", "体力值上限"]) {
+                  const value = numv(o[key]);
+                  if (value !== null && value !== undefined) rec[key] = Math.max(0, value);
+                }
                 // 性别/年龄/关系标签/侵蚀度/堕落度/堕落六维 恒写（缺字段 = 空/0，与 schema prefault 同值）
                 rec.性别 = _.get(o, "性别", _.get(o, "gender", ""));
                 rec.年龄 = asText(_.get(o, "年龄", _.get(o, "age", "")));
@@ -4619,7 +4627,7 @@
                 _.set(c, "stat_data.主角.升级所需经验", needExp),
                 _.set(c, "stat_data.主角.冒险者等级", "未评级"),
                 _.set(c, "stat_data.主角.状态效果", {}),
-                _.set(c, "stat_data.主角.奇遇", {}),
+                _.set(c, "stat_data.主角.奇遇", _.cloneDeep(e.奇遇 || {})),
                 // 专长写入（2026-10-09 改为预设驱动）：
                 //   自身 = 创建页勾选的专长（用 FEATS 目录补描述）
                 //   叠加 = **人物预设的「专长」栏**（带 描述/来源/获得等级，同名覆盖）
@@ -4791,6 +4799,8 @@
                     e.description && c.push(`  描述: ${e.description}`),
                     t < f.length - 1 && c.push(""));
                 }));
+              c.push("【初始人物位置】");
+              for (const person of SEL.selectedPartners) c.push(`${person.name} 在场: ${person.在场 !== false}`);
               const V = _.filter(SEL.selectedPartners, "isCustom");
               if (
                 (V.length > 0 &&
@@ -4842,7 +4852,10 @@
                             a < t.length - 1 && c.push(""));
                         }));
                     }
-                    c.push("  专长: 无"),
+                    c.push(`  在场: ${e.在场 !== false}`),
+                    c.push(`  壮举: ${JSON.stringify(e.壮举 || {})}`),
+                    c.push(`  专长: ${JSON.stringify(e.专长 || {})}`),
+                    c.push(`  奇遇: ${JSON.stringify(e.奇遇 || {})}`),
                     (e.comment && c.push(`  心里话: ${e.comment}`),
                       e.backgroundInfo && c.push(`  背景: ${e.backgroundInfo}`),
                       e.skills.length > 0 &&
