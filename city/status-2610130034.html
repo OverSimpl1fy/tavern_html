@@ -2,12 +2,24 @@
      堕落系统重构：魔化(分种族)/淫化(力量替换)/恶堕六维；新增伙伴面板；临空市侵蚀度
      v2609101652：持有物改为条目卡，展示 类型/数量/效果/描述（schema 是 {类型,数量,效果,描述}）
      v2609152205：移除六维属性（DND）卡片、熟练项标签与相关计算（属性/熟练体系下线，堕落六维保留）
-     v2609190652：淫化卡改为「身体敏感程度」——淫化度只表示身体敏感度，不再呈现心理/力量替换；力量替换改标为「自动后果（魔力转化）」 -->
+     v2609190652：淫化卡改为「身体敏感程度」——淫化度只表示身体敏感度，不再呈现心理/力量替换；力量替换改标为「自动后果（魔力转化）」
+     v2610130034：可读性改造——五档文字阶梯（20/16.5/14/12/13px，字重 800/700/400）、
+              基础色板改为光面值（消除深色主题残留的「近白字压近白底」1.02:1）、
+              数值改青绿 + tabular-nums、去掉 opacity 假层级、进度条填充与轨道拉开 ≥3:1 -->
 <style>
+  /* ══════════════════════════════════════════════════════════════════════════════
+     基础色板 = **光面（纸面）值**。
+     历史包袱：本文件最早是深色霓虹主题，后来在文件后半段叠了一层浅色覆盖，但覆盖不全——
+     没被覆盖到的 var(--lk-*)（例如 .persona .pv 的 --lk-text）就成了「近白字压近白底」，
+     实测最低 1.02:1（几乎看不见）。现在把基础色板整体改成浅底深字，任何 var(--lk-*) 都自动安全。
+     所有取值都过了 WCAG AA（正文 ≥4.5:1，大字 ≥3:1），证据见 temp/audit-*.md。
+     ══════════════════════════════════════════════════════════════════════════════ */
   :root {
-    --lk-bg: #150a2b; --lk-bg2: #1d0f3d; --lk-card: #241244; --lk-line: #4a2a7a;
-    --lk-text: #f0e6ff; --lk-dim: #a88cd6; --lk-accent: #9d6bff; --lk-accent2: #7bd0a0;
-    --lk-gold: #e8c87a; --lk-good: #4fd68a; --lk-warn: #e8b04a; --lk-bad: #e0707a; --lk-deep: #c04860;
+    --lk-bg: #f4eef8; --lk-bg2: #efe4f8; --lk-card: #fbf8ff; --lk-line: #d8c6ea;
+    --lk-text: #2f2438; --lk-dim: #5c5170; --lk-accent: #6d28d9; --lk-accent2: #0d6b5f;
+    --lk-gold: #7d5400; --lk-good: #0f6b52; --lk-warn: #7d5400; --lk-bad: #b02a37; --lk-deep: #8c2242;
+    /* 五档文字阶梯：一级标题 / 二级标题 / 正文 / 次要 / 数值 */
+    --t1: #331a63; --t2: #5b21b6; --t3: #2f2438; --t4: #5c5170; --t5: #0d6b5f;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: #150a2b; font-family: "Noto Sans SC","Source Han Sans SC","Microsoft YaHei",sans-serif; color: #f0e6ff; font-size: 14px; min-height: 100%; position: relative; overflow-x: hidden; }
@@ -131,50 +143,105 @@
   .item .ih .badge.miss, .item .line .lv.miss { color: var(--lk-dim); opacity: 0.75; }
   .hidden { display: none !important; }
 
-  /* ── v2609102100：对齐 destiny/delphian 的浅色纸面视觉语言，保留临空市紫色主题 ── */
+  /* ══════════════════════════════════════════════════════════════════════════════
+     光面（纸面）主题层 —— 对齐 destiny/delphian 的浅色纸面视觉语言，保留临空市紫色主题。
+     本层必须**覆盖到每一个会显示文字的类**：任何漏网的选择器都会退回上面的基础色板，
+     而基础色板现在也是浅色安全值，所以漏网不再产生"看不见的字"。
+     文字层级（五档，字号相邻比 ≥1.15×，字重跨 800/700/400 三档）：
+       L1 一级标题 20px/800 --t1 深紫   · L2 二级标题 16.5px/700 --t2 魔都紫
+       L3 正文     14px/400 --t3 近黑   · L4 次要     12px/400 --t4 灰紫
+       L5 数值     13px/700 --t5 青绿 + font-variant-numeric: tabular-nums
+     数值另起色相（青绿）而非"更亮的同色"，避免"再浅一点"式的假层级。
+     ══════════════════════════════════════════════════════════════════════════════ */
   :root {
     --theme-window-bg: #f4eef8; --theme-window-border: #d8c6ea;
-    --theme-title-bar-bg: #eadff5; --theme-title-bar-text: #3a2b47; --theme-title-bar-icon: #7a5c9e;
+    --theme-title-bar-bg: #eadff5; --theme-title-bar-text: #331a63; --theme-title-bar-icon: #5c5170;
     --theme-card-bg: #fbf8ff; --theme-card-border: #d8c6ea;
     --theme-content-bg: #f4eef8;
-    --theme-text-primary: #3a2b47; --theme-text-secondary: #6b5a7a; --theme-text-muted: #9a8aa8;
-    --theme-primary-bg: #8b5cf6; --theme-primary-text: #ffffff;
-    --theme-success: #2a8a5e; --theme-warning: #b8860b; --theme-error: #c4453d;
-    --theme-resource-hp: #c4453d; --theme-resource-mp: #8b5cf6; --theme-resource-sp: #2a8a5e;
-    --theme-tab-bar-bg: #efe4f8; --theme-tab-text: #7a5c9e; --theme-tab-active-text: #3a2b47;
-    --theme-tab-indicator: #8b5cf6; --theme-tab-hover-bg: rgba(139,92,246,0.08);
-    --theme-affection: #c4453d; --theme-quality-rare: #8b5cf6;
+    --theme-text-primary: #2f2438; --theme-text-secondary: #5c5170; --theme-text-muted: #5c5170;
+    --theme-primary-bg: #6d28d9; --theme-primary-text: #ffffff;
+    --theme-success: #0f6b52; --theme-warning: #7d5400; --theme-error: #b02a37;
+    --theme-resource-hp: #b02a37; --theme-resource-mp: #6d28d9; --theme-resource-sp: #0f6b52;
+    --theme-tab-bar-bg: #efe4f8; --theme-tab-text: #5c5170; --theme-tab-active-text: #2f2438;
+    --theme-tab-indicator: #6d28d9; --theme-tab-hover-bg: rgba(109,40,217,0.08);
+    --theme-affection: #b02a37; --theme-quality-rare: #6d28d9;
+    --theme-bar-track: #eadff5;
   }
-  html, body { background: var(--theme-window-bg); color: var(--theme-text-primary); }
+  html, body { background: var(--theme-window-bg); color: var(--t3); }
   .starfield, .starfield-twi { display: none; }
   #app { max-width: 860px; padding: 14px 16px 40px; }
   .head { background: var(--theme-title-bar-bg); border: 1px solid var(--theme-window-border); border-radius: 10px; box-shadow: 0 1px 3px rgba(58,43,71,.10); }
   .head::before { display: none; }
-  .head h1 { color: var(--theme-title-bar-text); text-shadow: none; font-size: 18px; letter-spacing: .10em; }
-  .head .refresh, .head .hbtn { background: var(--theme-card-bg); border-color: var(--theme-card-border); color: var(--theme-title-bar-icon); }
-  .head .hbtn.on, .head .hbtn.save { background: var(--theme-primary-bg); color: #fff; border-color: var(--theme-primary-bg); }
+  .head .refresh, .head .hbtn { background: var(--theme-card-bg); border-color: var(--theme-card-border); color: var(--t4); font-size: 13px; }
+  .head .hbtn.on, .head .hbtn.save { background: var(--theme-primary-bg); color: #fff; border-color: var(--theme-primary-bg); font-weight: 700; }
   .tabs { gap: 4px; }
-  .tabs button { background: var(--theme-tab-bar-bg); border-color: var(--theme-card-border); color: var(--theme-tab-text); border-radius: 6px; }
-  .tabs button.active { background: var(--theme-primary-bg); color: #fff; border-color: var(--theme-primary-bg); box-shadow: none; }
+  .tabs button { background: var(--theme-tab-bar-bg); border-color: var(--theme-card-border); color: var(--t4); border-radius: 6px; font-size: 14px; font-weight: 600; }
+  .tabs button.active { background: var(--theme-primary-bg); color: #fff; border-color: var(--theme-primary-bg); box-shadow: none; font-weight: 700; }
   .tabs button.active::after { display: none; }
   .card { background: var(--theme-card-bg); border: 1px solid var(--theme-card-border); border-radius: 10px; box-shadow: 0 1px 3px rgba(58,43,71,.08); }
   .card::before { display: none; }
-  .card h3 { color: var(--theme-text-primary); text-shadow: none; letter-spacing: .06em; }
+  .card-toggle { border-color: var(--theme-card-border); color: var(--t4); font-size: 12px; }
+  .edit-input, .edit-num, .edit-sel { background: var(--theme-card-bg); color: var(--t3); border-color: var(--theme-card-border); font-size: 13px; }
+  .edit-hint { color: var(--t4); font-size: 12px; }
+  .bar { background: var(--theme-bar-track); border-color: var(--theme-card-border); }
+  .attr, .node, .stage-box, .item { background: var(--theme-content-bg); border-color: var(--theme-card-border); box-shadow: none; }
+
+  /* ── L1 一级标题 ── */
+  .head h1 { color: var(--t1); text-shadow: none; font-size: 20px; font-weight: 800; letter-spacing: .10em; }
+
+  /* ── L2 二级标题：卡片标题 + 条目/小节标题（同一色，字号按容器分两档） ── */
+  .card h3 { color: var(--t2); text-shadow: none; letter-spacing: .05em; font-size: 16.5px; font-weight: 700; margin-bottom: 10px; }
   .card h3::before { color: var(--theme-primary-bg); }
-  .card-toggle { border-color: var(--theme-card-border); color: var(--theme-text-muted); }
-  .empty, .hint, .subtrack, .rel-detail, .intel-item, .news-cat .line, .six-item .desc { color: var(--theme-text-muted); }
-  .kv .k, .edit-hint, .attr .nm, .track .lbl, .node .t, .node .ev, .rel .meta, .stat-pill, .rel .heart { color: var(--theme-text-secondary); }
-  .kv .v, .attr .sc, .node .h b, .rel .nm, .stat-pill b, .intel-item b { color: var(--theme-text-primary); }
-  .chip, .stat-pill, .rel-tier { background: var(--theme-tab-bar-bg); border-color: var(--theme-card-border); color: var(--theme-tab-text); }
+  .node .h b, .item .ih b { color: var(--t2); font-size: 14px; font-weight: 700; }
+  .rel .nm { color: var(--t2); font-size: 15px; font-weight: 700; }
+  .stage-box .st { color: var(--t2); font-size: 15px; font-weight: 700; }
+  .persona .pk { color: var(--t2); font-size: 13px; font-weight: 700; letter-spacing: .05em; margin: 8px 0 3px; }
+  .intel-item b { color: var(--t2); font-weight: 700; }
+  .news-cat .cat { color: var(--t2); font-size: 13px; font-weight: 700; margin-bottom: 4px; letter-spacing: .04em; }
+  .six-item .nm { color: var(--t2); font-size: 13px; font-weight: 600; }
+  .stage-box .sb b { color: var(--t2); font-weight: 700; }
+  .rel-detail-btn { color: var(--t2); font-size: 12.5px; font-weight: 600; }
+
+  /* ── L3 正文 ── */
+  .kv { font-size: 14px; }
+  .kv .v { color: var(--t3); }
+  .persona .pv { color: var(--t3); font-size: 14px; line-height: 1.75; opacity: 1; }
+  .persona .empty-inline { color: var(--t4); }
+  .stage-box .sb { color: var(--t3); font-size: 12.5px; line-height: 1.75; }
+  .node .ev { color: var(--t3); font-size: 13px; }
+  .rel-detail { color: var(--t3); font-size: 13px; line-height: 1.75; }
+  .intel-item { color: var(--t3); font-size: 13px; line-height: 1.7; }
+  .news-cat .line { color: var(--t3); font-size: 13px; line-height: 1.7; }
+  .item .line, .item .line .lv { color: var(--t3); font-size: 13px; }
+  .stat-pill b { color: var(--t3); font-weight: 700; }
+  .item .ih .badge.miss, .item .line .lv.miss { color: var(--t4); opacity: 1; }
+
+  /* ── L4 次要说明：低一档明度 + 小一号字，**不再用"更浅的灰"或透明度** ── */
+  .head .sub { color: var(--t4); font-size: 12px; }
+  .kv .k, .track .lbl, .subtrack { color: var(--t4); font-size: 12px; }
+  .item .line .lk { color: var(--t4); font-size: 12px; }
+  .rel .meta, .rel-detail .dk { color: var(--t4); font-size: 12px; }
+  .node .t { color: var(--t4); font-size: 12px; }
+  .six-item .desc, .empty, .hint { color: var(--t4); font-size: 12px; }
+  .attr .nm { color: var(--t4); font-size: 12px; }
+  .chip, .stat-pill { background: var(--theme-tab-bar-bg); border-color: var(--theme-card-border); color: var(--t4); }
   .chip.active, .opt.active, .bg.active { background: var(--theme-primary-bg); border-color: var(--theme-primary-bg); color: #fff; }
-  .bar { background: #eadff5; border-color: var(--theme-card-border); }
-  .attr, .node, .stage-box, .item { background: var(--theme-content-bg); border-color: var(--theme-card-border); }
-  .item .ih b, .item .line .lv { color: var(--theme-text-primary); }
-  .item .ih .badge { background: var(--theme-tab-bar-bg); border-color: var(--theme-card-border); color: var(--theme-tab-text); }
-  .item .line, .item .line .lk { color: var(--theme-text-secondary); }
-  .item .ih .qty { color: var(--theme-warning); }
-  .edit-input, .edit-num, .edit-sel { background: var(--theme-card-bg); color: var(--theme-text-primary); border-color: var(--theme-card-border); }
-  .news-cat .cat { color: var(--theme-primary-bg); }
+  .item .ih .badge { background: var(--theme-tab-bar-bg); border-color: var(--theme-card-border); color: var(--t4); }
+  .rel-tier { background: var(--theme-tab-bar-bg); border-color: var(--theme-card-border); }
+  /* 卡片/徽标里的括注：以前用 opacity:.6/.7 把字淡化（合出来 2.4~3.0:1），改成真实色阶 */
+  .mini { color: var(--t4); font-style: normal; font-size: 12px; opacity: 1; }
+
+  /* ── L5 数值：独立色相（青绿）+ 等宽数字 + 加重，不再和正文/次要混在一起 ── */
+  .track .val, .six-item .val, .item .ih .qty, .attr .sc, .rel .fav {
+    color: var(--t5); font-weight: 700; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1;
+  }
+  .track .val { font-size: 13px; }
+  .six-item .val { font-size: 13px; }
+  .item .ih .qty { font-size: 13px; }
+  .rel .fav { font-size: 13px; }
+  .stat-pill b, .item .ih .qty, .six-item .val { font-variant-numeric: tabular-nums; }
+  .chip, .stat-pill, .rel-tier, .mini { font-variant-numeric: tabular-nums; }
+  .node .badge { background: linear-gradient(135deg, #5b21b6, #7c3aed); color: #fff; font-weight: 700; font-size: 11.5px; }
 </style>
 
 <div class="starfield" aria-hidden="true"></div>
@@ -330,11 +397,15 @@
   function $ (id) { return document.getElementById(id); }
   function esc (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function num (v) { var n = Number(v); return isNaN(n) ? 0 : n; }
-  function barColor (v) { v = num(v); if (v <= 25) return '#4fd68a'; if (v <= 60) return '#e8b04a'; if (v <= 90) return '#e0707a'; return '#c04860'; }
-  function eroColor (v) { v = num(v); if (v <= 30) return '#7bd0a0'; if (v <= 60) return '#9d6bff'; if (v <= 80) return '#e0707a'; return '#c04860'; }
+  // 配色函数只改**色值**（纯样式），判定阈值与调用点不变。
+  // 原值是深色霓虹主题的亮色，铺在光面卡片上对比度只有 1.2~3.0:1；这里保持原有色相语义
+  // （绿=安全 / 琥珀=警戒 / 红=危险 / 深红=极危），只把明度压到浅底可读区间。
+  // 进度条填充还要与轨道 #eadff5 拉开 ≥3:1（非文本 UI 组件）。
+  function barColor (v) { v = num(v); if (v <= 25) return '#0f7a52'; if (v <= 60) return '#8a6400'; if (v <= 90) return '#b02a37'; return '#7d2f4a'; }
+  function eroColor (v) { v = num(v); if (v <= 30) return '#0b6b60'; if (v <= 60) return '#6d28d9'; if (v <= 80) return '#b02a37'; return '#8c2242'; }
   function pct (v) { v = num(v); return Math.max(0, Math.min(100, v)) + '%'; }
-  function favColor (v) { v = num(v); if (v < 0) return '#e0707a'; if (v >= 60) return '#e8c87a'; return '#7bd0a0'; }
-  function convColor (v) { return (!v || v === '无') ? '#a88cd6' : '#e0707a'; }
+  function favColor (v) { v = num(v); if (v < 0) return '#b02a37'; if (v >= 60) return '#7d5400'; return '#0f6b52'; }
+  function convColor (v) { return (!v || v === '无') ? '#5c5170' : '#b02a37'; }
   function fmtList (v) { return Array.isArray(v) ? v.join('、') : (v || '—'); }
   function has (v) { return v !== undefined && v !== null && String(v).trim() !== ''; }
   function stageOf (tables, form, val) {
@@ -520,7 +591,7 @@
     }
     var ab = st.异常 || {};
     $('pf-abnormal').innerHTML = Object.keys(ab).length
-      ? Object.keys(ab).map(function (k) { return '<span class="chip">' + esc(k) + '：' + esc((ab[k] || {}).效果) + ' <em style="opacity:.6">（' + esc((ab[k] || {}).剩余) + '）</em></span>'; }).join('')
+      ? Object.keys(ab).map(function (k) { return '<span class="chip">' + esc(k) + '：' + esc((ab[k] || {}).效果) + ' <em class="mini">（' + esc((ab[k] || {}).剩余) + '）</em></span>'; }).join('')
       : '';
 
     var mg = pj.魔力 || {};
@@ -537,7 +608,7 @@
       : '<div class="row"><span class="lbl">改造度</span><div class="bar"><i style="width:' + pct(mods.程度) + ';background:' + barColor(mods.程度) + '"></i></div><span class="val">' + num(mods.程度) + '</span></div>';
     var modList = mods.列表 || {};
     $('pf-modlist').innerHTML = Object.keys(modList).length
-      ? Object.keys(modList).map(function (k) { return '<span class="chip">' + esc(k) + '：' + esc((modList[k] || {}).类型) + ' <em style="opacity:.6">（' + esc((modList[k] || {}).位置) + '）</em></span>'; }).join('')
+      ? Object.keys(modList).map(function (k) { return '<span class="chip">' + esc(k) + '：' + esc((modList[k] || {}).类型) + ' <em class="mini">（' + esc((modList[k] || {}).位置) + '）</em></span>'; }).join('')
       : '';
 
     var items = pj.持有物 || {};
@@ -634,7 +705,7 @@
     var six = sixOf(a);
     var sixHtml = '<div class="six-grid">' + LIU.map(function (k) {
       var v = num(six[k]);
-      return '<div class="six-item"><div class="nm">' + esc(k) + ' <em style="opacity:.7;font-style:normal">' + esc(LIU_DESC[k]) + '</em></div>' +
+      return '<div class="six-item"><div class="nm">' + esc(k) + ' <em class="mini">' + esc(LIU_DESC[k]) + '</em></div>' +
         '<div class="row">' + (editMode ? editField('主角.堕落档案.堕落六维.' + k, v, true) : '<div class="bar"><i style="width:' + pct(v) + ';background:' + barColor(v) + '"></i></div><span class="val">' + v + '</span>') + '</div></div>';
     }).join('') + '</div>';
     $('cor-six').innerHTML = sixHtml;
@@ -647,12 +718,12 @@
       : (mg.转化 && mg.转化 !== '无' ? '身体淫化达到阈值后的自动后果：原始力量替换中（淫化≥40）——力量带上污染属性' : '原始力量纯净（淫化<40）——无转化');
     $('cor-magic').innerHTML =
       '<span class="k">当前转化</span><span class="v"><b style="color:' + convColor(mg.转化) + '">' + esc(mg.转化 || '无') + '</b></span>' +
-      '<span class="k">说明</span><span class="v" style="font-size:12px;color:#a88cd6">' + esc(convNote) + '</span>';
+      '<span class="k">说明</span><span class="v" style="font-size:12px;color:var(--t4)">' + esc(convNote) + '</span>';
 
     // ── 当前认知 ──
     $('cor-cognition').innerHTML = editMode
       ? editField('主角.堕落档案.当前认知', a.当前认知 || '')
-      : (a.当前认知 ? '<pre style="font-size:12px;color:#a88cd6;white-space:pre-wrap;line-height:1.7;font-family:inherit">' + esc(a.当前认知) + '</pre>' : '<div class="empty">尚未记录心态认知</div>');
+      : (a.当前认知 ? '<pre style="font-size:12px;color:var(--t4);white-space:pre-wrap;line-height:1.7;font-family:inherit">' + esc(a.当前认知) + '</pre>' : '<div class="empty">尚未记录心态认知</div>');
 
     // ── 欲望xp ──
     var xp = a.欲望xp || {};
@@ -671,12 +742,12 @@
 
   function relTier (v) {
     v = num(v);
-    if (v < 0) return { name: '敌对', color: '#e0707a' };
-    if (v <= 20) return { name: '冷淡', color: '#8aa0c0' };
-    if (v <= 50) return { name: '中立', color: '#9d6bff' };
-    if (v <= 80) return { name: '友善', color: '#7bd0a0' };
-    if (v <= 95) return { name: '亲密', color: '#e8c87a' };
-    return { name: '挚爱', color: '#ff6b9d' };
+    if (v < 0) return { name: '敌对', color: '#b02a37' };
+    if (v <= 20) return { name: '冷淡', color: '#4a6182' };
+    if (v <= 50) return { name: '中立', color: '#6d28d9' };
+    if (v <= 80) return { name: '友善', color: '#0f6b52' };
+    if (v <= 95) return { name: '亲密', color: '#7d5400' };
+    return { name: '挚爱', color: '#b3245e' };
   }
   function toggleRelDetail (btn) {
     var card = btn.parentNode;
@@ -712,7 +783,7 @@
   function relCardHtml (name, r, edit) {
     var tier = relTier(r.好感度);
     var detail = relDetailHtml(r);
-    var card = '<div class="card"><div class="rel"><div><div class="nm">✦ ' + esc(r.姓名 || name) + '<span class="rel-tier" style="background:rgba(0,0,0,0.3);color:' + tier.color + ';border:1px solid ' + tier.color + '">' + tier.name + '</span></div>' +
+    var card = '<div class="card"><div class="rel"><div><div class="nm">✦ ' + esc(r.姓名 || name) + '<span class="rel-tier" style="color:' + tier.color + ';border:1px solid ' + tier.color + '">' + tier.name + '</span></div>' +
       '<div class="meta">' + esc(r.种族 || '?') + ' · ' + esc(r.所属组织 || '无') + ' · ' + esc(fmtList(r.身份)) + '</div>' +
       (r.关系标签 && r.关系标签.length ? '<div class="heart">' + esc(r.关系标签.join('、')) + '</div>' : '') + '</div>' +
       '<div class="fav"><div>好感度 <b style="color:' + favColor(r.好感度) + '">' + (edit ? editField('关系列表.' + name + '.好感度', r.好感度 || 0, true) : num(r.好感度)) + '</b></div></div></div>' +
@@ -771,7 +842,7 @@
     if (!keys.length) { $('intel-list').innerHTML = '<div class="empty">暂无情报</div>'; return; }
     $('intel-list').innerHTML = keys.map(function (name) {
       var inf = info[name];
-      var body = typeof inf === 'string' ? '：' + esc(inf) : (inf && inf.内容 ? '：' + esc(inf.内容) + (inf.来源 ? ' <em style="opacity:.7">（来源：' + esc(inf.来源) + '）</em>' : '') : '');
+      var body = typeof inf === 'string' ? '：' + esc(inf) : (inf && inf.内容 ? '：' + esc(inf.内容) + (inf.来源 ? ' <em class="mini">（来源：' + esc(inf.来源) + '）</em>' : '') : '');
       return '<div class="intel-item"><b>✦ ' + esc(name) + '</b>' + body + '</div>';
     }).join('');
   }
