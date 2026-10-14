@@ -1,4 +1,5 @@
 <head>
+  <meta charset="utf-8">
   <script type="module">
     import {
       createPinia as e,
@@ -4075,7 +4076,8 @@
             });
             const character = _.cloneDeep(l.value);
             character.name = /^(男|男性|male)$/i.test(String(character.gender === "自定义" ? character.customGender : character.gender).trim()) ? "卡诺" : "克菈普忒";
-            character.preset = _.cloneDeep((0, c.unref)(presetMetaRef) || character.preset || null);
+            character.preset = buildStartPreset((0, c.unref)(presetMetaRef)?.name || "当前开局", journeyStore, t);
+            character.preset.首轮约束 = ["以玩家最终确认的开局名称、正文与人物状态为准，不沿用与之冲突的预设开场信息。", ...(Array.isArray(character.preset.首轮约束) ? character.preset.首轮约束 : character.preset.首轮约束 ? [String(character.preset.首轮约束)] : [])];
             const customDescription = (0, c.unref)(t.customBackgroundDescription) ?? e.selectedBackground?.description ?? "";
             const target = journeyContext();
             (await (async function (e, t, a, l, m) {
@@ -4685,7 +4687,7 @@
                   })),
                 l)
               ) {
-                (c.push(""), c.push("【初始开局剧情】"), c.push(`${l.name}`));
+                (c.push(""), c.push("【初始开局剧情】"), c.push(`${l.sourceName || l.name}`));
                 const e = "【自定义开局】" === l.name && r ? r : l.description;
                 e ? c.push(`描述: ${e}`) : c.push("描述: （本开局不预设剧情；以当前状态快照、世界设定与开场事件为准自行展开。）");
               }
@@ -4821,45 +4823,69 @@
         };
       }
     });
-    const OpeningPage = c.defineComponent({
-      name: "OpeningPage",
+
+    function updateOpeningDraft(store, custom, changes) {
+      const previous = store.selectedBackground || { name: "【自定义开局】", description: "" };
+      const description = changes.description ?? (previous.name === "【自定义开局】" ? custom.customBackgroundDescription : previous.description) ?? "";
+      const name = changes.name ?? previous.sourceName ?? (previous.name === "【自定义开局】" ? "自由开局" : previous.name);
+      store.setBackground({ ...previous, name: "【自定义开局】", sourceName: name, description });
+      custom.updateCustomBackgroundDescription(description);
+    }
+    const OpeningDraftEditor = c.defineComponent({
+      name: "OpeningDraftEditor",
       setup() {
-        const store = L(), custom = q(), group = c.ref("全部开局"), search = c.ref("");
-        const groups = ["全部开局", ...new Set(OPENING_CATALOG.map(opening => opening.group))];
-        const gender = () => /^(男|男性|male)$/i.test(store.character.gender === "自定义" ? store.character.customGender : store.character.gender) ? "男" : "女";
-        const selected = () => OPENING_CATALOG.find(opening => opening.id === store.presetMeta?.sourceOpeningId);
-        const free = () => {
-          const pool=store.character.eventPool, previousGender=gender();
-          store.resetCharacter(); store.clearAllSelections(); store.presetMeta=null;
-          store.updateCharacterField("eventPool",pool); store.updateCharacterField("gender",previousGender);
-          store.updateCharacterField("name",protagonistName(previousGender));
-          custom.updateCustomBackgroundDescription(""); store.setBackground({name:"【自定义开局】",description:""});
-        };
-        const setGender = next => { const opening = selected(); if (opening) chooseOpening(opening,next,store); else { store.updateCharacterField("gender",next); store.updateCharacterField("name",protagonistName(next)); } };
-        return () => {
-          const cards = OPENING_CATALOG.filter(opening => (group.value === "全部开局" || opening.group === group.value) && (!search.value.trim() || [opening.name,opening.description,opening.group].join(" ").includes(search.value.trim())));
-          const active = selected();
-          return c.h("section", { class: "opening-page", "data-page": "opening" }, [
-            c.h("h2", "第 1 页 · 选择你的开端"),
-            c.h("p", { class: "guide-intro" }, "选择开局会填入匹配的主角卡、眼前处境和可选同行者；之后仍可编辑属性、装备与伙伴。"),
-            c.h("div", { class: "opening-options" }, [
-              c.h("label", ["本次 DLC", c.h("select", { id: "opening-dlc", value: store.character.eventPool, onChange: event => store.updateCharacterField("eventPool",event.target.value) }, ["欲潮学院","欲潮涌动","欲潮行旅"].map(pool => c.h("option",{ value:pool },pool)))]),
-              c.h("div", { class: "opening-genders", "aria-label": "主角性别" }, ["男","女"].map(next => c.h("button", { type:"button", class:{active:gender()===next}, disabled: !!active?.femaleOnly && next === "男", onClick:()=>setGender(next) }, protagonistName(next)+" · "+next)))
-            ]),
-            c.h("div", { class: "opening-tools" }, [c.h("select", { value:group.value, onChange:event=>group.value=event.target.value, "aria-label":"开局分类" }, groups.map(name=>c.h("option",{value:name},name))), c.h("input", { placeholder:"搜索开局或处境", value:search.value, onInput:event=>search.value=event.target.value, "aria-label":"搜索开局" }), c.h("button", {type:"button",onClick:free}, "自由编写开局")]),
-            ...(!active && store.selectedBackground?.name === "【自定义开局】" ? [c.h("textarea", { class:"opening-custom", rows:6, placeholder:"填写自由开局，不会自动加载固定人物。", value:custom.customBackgroundDescription, onInput:event=> {custom.updateCustomBackgroundDescription(event.target.value); store.setBackground({name:"【自定义开局】",description:event.target.value});} })] : []),
-            c.h("div", {class:"opening-grid"}, cards.map(opening => {
-              const preset=opening.variants[gender()] || opening.variants["女"];
-              return c.h("article", {class:["opening-card",{selected:active?.id===opening.id}], "data-opening-id":opening.id}, [
-                c.h("h3",opening.name), c.h("p",{class:"guide-tags"},[opening.group,...(opening.tags||[]),...(opening.femaleOnly?["女性主角"]:[])].join(" · ")),
-                c.h("p",opening.description),
-                c.h("details",[c.h("summary","主角与同行者"),c.h("p",preset.character.name+" · "+preset.character.race+" · "+preset.character.customIdentity+" · "+preset.character.career.join(" / ")),c.h("p",preset.character.personality),c.h("p",preset.character.appearance),c.h("p","同行者："+(preset.partners.length?preset.partners.map(partner=>partner.name+"（"+partner.race+"）").join("、"):"无固定伙伴"))]),
-                c.h("button", {type:"button",onClick:()=>chooseOpening(opening,gender(),store)}, active?.id===opening.id?"已选中 · 再次载入":"采用此开局")
-              ]);
-            })),
-            ...(active ? [c.h("p",{class:"guide-note"},"当前开局："+active.name+"。同行者和背景已填入，后续页面可以调整；再次载入会恢复这份开局卡。")] : [])
+        const store=L(),custom=q();
+        return ()=>{
+          const background=store.selectedBackground;
+          if(!background)return null;
+          return c.h("div",{class:"opening-draft-editor"},[
+            c.h("label",{class:"form-field"},["开局名称",c.h("input",{class:"opening-custom","aria-label":"开局名称",value:background.sourceName||background.name,onInput:event=>updateOpeningDraft(store,custom,{name:event.target.value})})]),
+            c.h("label",{class:"form-field"},["开局剧情（可自由修改）",c.h("textarea",{class:"opening-custom",rows:8,"aria-label":"开局剧情",value:background.name==="【自定义开局】"?custom.customBackgroundDescription:background.description,onInput:event=>updateOpeningDraft(store,custom,{description:event.target.value})})]),
+            c.h("p",{class:"guide-note"},"开始时采用这里确认的名称与正文；修改会随人物预设保存。")
           ]);
         };
+      }
+    });
+    const OpeningPage = c.defineComponent({
+      name: "OpeningPage",
+      __scopeId: "data-v-2e7bfa8a",
+      setup() {
+        const store=L(), custom=q();
+        const selected=()=>OPENING_CATALOG.find(opening=>opening.id===store.presetMeta?.sourceOpeningId);
+        const backgrounds=Object.fromEntries(Object.entries(BUILTIN["backgrounds.json"]).map(([name,items])=>[name,[...items]]));
+        for(const opening of OPENING_CATALOG){
+          const items=backgrounds[opening.group] ||= [];
+          if(!items.some(item=>item.name===opening.name))items.push({name:opening.name,description:opening.description});
+        }
+        const group=c.ref(selected()?.group || Object.keys(backgrounds)[0]);
+        const groups=c.computed(()=>Object.keys(backgrounds));
+        const gender=()=>/^(男|男性|male)$/i.test(store.character.gender==="自定义"?store.character.customGender:store.character.gender)?"男":"女";
+        const free=()=>{
+          const pool=store.character.eventPool, previousGender=gender();
+          store.resetCharacter();store.clearAllSelections();store.presetMeta=null;
+          store.updateCharacterField("eventPool",pool);store.updateCharacterField("gender",previousGender);
+          store.updateCharacterField("name",protagonistName(previousGender));
+          custom.updateCustomBackgroundDescription("");store.setBackground({name:"【自定义开局】",description:""});
+        };
+        const choose=item=>{
+          if(item.name==="【自定义开局】")return free();
+          const opening=OPENING_CATALOG.find(opening=>opening.name===item.name);
+          if(opening)chooseOpening(opening,opening.femaleOnly?"女":gender(),store);
+        };
+        const setGender=next=>{const opening=selected();if(opening)chooseOpening(opening,next,store);else{store.updateCharacterField("gender",next);store.updateCharacterField("name",protagonistName(next));}};
+        return ()=>c.h("div",{class:"background-page","data-page":"opening"},[
+          c.h("div",{class:"opening-options"},[
+            c.h("label",["本次 DLC",c.h("select",{id:"opening-dlc",value:store.character.eventPool,onChange:event=>store.updateCharacterField("eventPool",event.target.value)},["欲潮学院","欲潮涌动","欲潮行旅"].map(pool=>c.h("option",{value:pool},pool)))]),
+            c.h("div",{class:"opening-genders","aria-label":"主角性别"},["男","女"].map(next=>c.h("button",{type:"button",class:{active:gender()===next},disabled:!!selected()?.femaleOnly&&next==="男",onClick:()=>setGender(next)},protagonistName(next)+" · "+next)))
+          ]),
+          c.h("section",{class:"background-section"},[
+            c.h("h2",{class:"section-title"},"选择初始开局剧情"),
+            c.h(Ft,{modelValue:group.value,"onUpdate:modelValue":value=>group.value=value,categories:groups.value},{content:()=>[
+              c.h(la,{items:backgrounds[group.value]||[],selectedItem:store.selectedBackground?{...store.selectedBackground,name:selected()?.name||store.selectedBackground.name}:null,characterRace:store.character.race,characterLocation:store.character.startLocation,characterIdentity:store.character.identity,allowPresetSelection:true,onSelect:choose,"onUpdate:customDescription":description=>updateOpeningDraft(store,custom,{description})})
+            ]})
+          ]),
+          ...(selected()?[c.h("p",{class:"guide-note"},"已载入「"+selected().name+"」的人物卡与同行者。可以继续调整人物，并在确认页修改开局剧情。")]:[])
+        ]);
       }
     });
     const Ue = [
@@ -5743,6 +5769,7 @@
       aa = (0, c.defineComponent)({
         __name: "BackgroundList",
         props: {
+          allowPresetSelection: Boolean,
           items: {},
           selectedItem: {},
           characterRace: {},
@@ -5759,6 +5786,7 @@
             s = (e) => a.selectedItem?.name === e.name,
             i = (e, t) => !e || e === t,
             d = (e) => {
+              if (a.allowPresetSelection) return true;
               return (
                 !!i(e.requiredRace, a.characterRace) &&
                 !!i(e.requiredIdentity, a.characterIdentity) &&
@@ -15274,31 +15302,7 @@
                                   : (0, c.createCommentVNode)("v-if", !0),
                               ]))
                             : (0, c.createCommentVNode)("v-if", !0),
-                          (0, c.createCommentVNode)(
-                            " 自定义开局显示用户输入的内容，否则显示预设描述 ",
-                          ),
-                          "【自定义开局】" ===
-                            (0, c.unref)(t).selectedBackground.name &&
-                          (0, c.unref)(a).customBackgroundDescription
-                            ? ((0, c.openBlock)(),
-                              (0, c.createElementBlock)(
-                                "p",
-                                lm,
-                                (0, c.toDisplayString)(
-                                  (0, c.unref)(a).customBackgroundDescription,
-                                ),
-                                1,
-                              ))
-                            : ((0, c.openBlock)(),
-                              (0, c.createElementBlock)(
-                                "p",
-                                om,
-                                (0, c.toDisplayString)(
-                                  (0, c.unref)(t).selectedBackground
-                                    .description,
-                                ),
-                                1,
-                              )),
+                          (0, c.h)(OpeningDraftEditor),
                         ]))
                       : ((0, c.openBlock)(),
                         (0, c.createElementBlock)(
@@ -24659,24 +24663,22 @@
 .dlc-choice select { width: 100%; padding: 10px 12px; border: 1px solid #a78bfa66; border-radius: 8px; background: #242035; color: #f3edff; font: inherit; }
 .dlc-description,.dlc-summary { color: #c4b5fd; line-height: 1.6; }
 
-    .world-guide,.opening-page { padding: 16px; max-width: 1200px; margin: auto; }
+    .world-guide { padding: 16px; max-width: 1200px; margin: auto; }
     .guide-eyebrow,.guide-tags { color: var(--text-light,#79694f); font-size: 13px; }
     .guide-intro,.guide-note { line-height: 1.8; margin: 14px 0; }
     .guide-note { background: rgba(141,110,63,.09); padding: 12px; border-radius: 8px; }
-    .guide-tabs,.opening-tools,.opening-options,.opening-genders { display:flex; flex-wrap:wrap; gap:10px; margin:14px 0; align-items:center; }
-    .guide-tabs button,.guide-enter,.opening-page button { padding:10px 14px; border:1px solid var(--border-color,#bca98a); border-radius:8px; background:var(--card-bg,#f0e6d2); color:var(--text-color,#44372a); cursor:pointer; }
+    .guide-tabs,.opening-options,.opening-genders { display:flex; flex-wrap:wrap; gap:10px; margin:14px 0; align-items:center; }
+    .guide-tabs button,.guide-enter,.opening-genders button { padding:10px 14px; border:1px solid var(--border-color,#bca98a); border-radius:8px; background:var(--card-bg,#f0e6d2); color:var(--text-color,#44372a); cursor:pointer; }
     .guide-tabs button.active,.opening-genders button.active { background:#705839; color:#fff8e8; }
-    .guide-search,.opening-tools input,.opening-tools select,.opening-options select,.opening-custom { padding:10px; border:1px solid var(--border-color,#bca98a); border-radius:8px; background:var(--input-bg,#fff8ed); color:var(--text-color,#44372a); }
+    .guide-search,.opening-options select,.opening-custom { padding:10px; border:1px solid var(--border-color,#bca98a); border-radius:8px; background:var(--input-bg,#fff8ed); color:var(--text-color,#44372a); }
     .guide-search,.opening-custom { width:100%; box-sizing:border-box; }
     .opening-options label { display:flex; gap:10px; align-items:center; }
-    .guide-grid,.opening-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr)); gap:16px; }
-    .guide-card,.opening-card { padding:18px; border:1px solid var(--border-color,#bca98a); border-radius:12px; background:var(--card-bg,#f0e6d2); }
-    .guide-card p,.opening-card p { line-height:1.8; margin-top:10px; }
-    .opening-card.selected { outline:2px solid #876839; }
-    .opening-card details { margin:14px 0; font-size:14px; }
-    .opening-card summary { cursor:pointer; }
-    .opening-card>button { width:100%; }
-    .opening-page button:disabled { opacity:.45; cursor:not-allowed; }
+    .guide-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr)); gap:16px; }
+    .guide-card { padding:18px; border:1px solid var(--border-color,#bca98a); border-radius:12px; background:var(--card-bg,#f0e6d2); }
+    .guide-card p { line-height:1.8; margin-top:10px; }
+    .opening-genders button:disabled { opacity:.45; cursor:not-allowed; }
+    .opening-draft-editor { display:grid; gap:14px; }
+    .opening-draft-editor .form-field { display:flex; flex-direction:column; gap:8px; }
   </style>
 </head>
 
