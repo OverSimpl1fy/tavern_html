@@ -2875,8 +2875,39 @@
       ],
       O = { 力量: 0, 敏捷: 0, 体质: 0, 智力: 0, 感知: 0, 魅力: 0 },
       K = ["力量", "敏捷", "体质", "智力", "感知", "魅力"];
-    function H(e, t) {
-      e = normalizeStartPreset(e);
+    function startPresetPool(preset) {
+      return preset.character?.eventPool || preset.eventPool || "欲潮涌动";
+    }
+    function adaptStartPreset(preset, pool) {
+      const result = _.cloneDeep(preset);
+      const sourcePool = startPresetPool(result);
+      result.character.eventPool = pool;
+      // 人物模板不能替玩家切换DLC，更不能把另一DLC的固定室友和事件锚点带进行旅。
+      if (pool === "欲潮行旅" && sourcePool !== pool) {
+        const identity = result.character.customIdentity || result.character.identity || "旅人";
+        const location = result.character.customStartLocation || result.character.startLocation || "当前地点";
+        const description = `你以${identity}的身份来到${location}。从眼前的处境开始，自由决定下一步；需要的新人物按当地背景生成，其身份、关系与来历尚未预定。`;
+        result.character.backgroundInfo = "";
+        result.partners = [];
+        result.background = { name: "【自定义开局】", sourceName: result.name.replace(/ · 内置$/, "") + " · 主角模板", description };
+        result.customBackgroundDescription = description;
+        result.情报 = [];
+        result.开局档案 = result.开局档案?.世界时间 ? { 世界时间: result.开局档案.世界时间 } : {};
+        result.首轮约束 = ["本局采用欲潮行旅；其他DLC的人物、室友分配、既有关系和事件均未发生。", "需要的新NPC按玩家要求与当地指南生成，默认女性，优先非人类；不复用其他DLC的固定人物。"];
+        delete result.开场;
+        delete result.backgroundInfo;
+        result.templateSourcePool = sourcePool;
+      }
+      return result;
+    }
+    function setJourneyPool(store, pool) {
+      if (store.character.eventPool === pool) return;
+      if (pool === "欲潮行旅" && store.presetMeta && startPresetPool(store.presetMeta) !== pool) {
+        H(buildStartPreset(store.presetMeta.name, store, q()), store, pool);
+      } else store.updateCharacterField("eventPool", pool);
+    }
+    function H(e, t, pool = t.character.eventPool || "欲潮行旅") {
+      e = normalizeStartPreset(adaptStartPreset(e, pool));
       (t.resetCharacter(), t.clearAllSelections());
       const a = (function (e) {
         if (!("basePoints" in e)) {
@@ -2900,7 +2931,7 @@
         }
         return e;
       })(e.character);
-      a.eventPool = e.character.eventPool || e.eventPool || "欲潮涌动";
+      a.eventPool = pool;
       (_.forEach(G, (e) => {
         _.has(a, e) && t.updateCharacterField(e, _.get(a, e));
       }),
@@ -2911,15 +2942,25 @@
         t.setBackground(e.background),
         q().updateCustomBackgroundDescription(e.customBackgroundDescription || ""),
         (t.presetMeta = e),
-        toastr.success(`已加载预设「${e.name}」`));
+        toastr.success(`已加载预设「${e.name}」；本局：${pool}${e.templateSourcePool ? "（仅采用主角模板，其他人物自由生成）" : ""}`));
+      return e;
     }
     function buildStartPreset(name, store, customStore) {
       const now = Date.now();
       const description = (0, c.unref)(customStore.customBackgroundDescription) || "";
       const background = _.cloneDeep(store.selectedBackground);
       if (background?.name === "【自定义开局】") background.description = description;
+      const metadata = _.omit(_.cloneDeep(store.presetMeta || {}), ["character", "equipments", "items", "skills", "partners", "background", "bundledStart"]);
+      const originalDescription = store.presetMeta?.customBackgroundDescription ?? store.presetMeta?.background?.description;
+      if (originalDescription != null && background?.description !== originalDescription) {
+        // 确认正文已改写时，不能让不可见的旧首轮约束/情报把删去的人物重新固定回来。
+        metadata.情报 = [];
+        metadata.首轮约束 = [];
+        metadata.开局档案 = metadata.开局档案?.世界时间 ? { 世界时间: metadata.开局档案.世界时间 } : {};
+        delete metadata.开场;
+      }
       return {
-        ..._.omit(_.cloneDeep(store.presetMeta || {}), ["character", "equipments", "items", "skills", "partners", "background", "bundledStart"]),
+        ...metadata,
         name, createdAt: now, updatedAt: now,
         character: _.cloneDeep(store.character), equipments: _.cloneDeep(store.selectedEquipments),
         items: _.cloneDeep(store.selectedItems), skills: _.cloneDeep(store.selectedSkills),
@@ -3706,22 +3747,14 @@
                                                               "action-button load-button",
                                                             onClick: (t) =>
                                                               ((e) => {
-                                                                H(e, n);
-                                                                const t =
-                                                                  "【自定义开局】" ===
-                                                                  e.background
-                                                                    ?.name
-                                                                    ? (e
-                                                                        .background
-                                                                        ?.description ??
-                                                                      "")
-                                                                    : "";
+                                                                const loaded = H(e, n);
+                                                                const t = loaded.customBackgroundDescription || "";
                                                                 (r.updateCustomBackgroundDescription(
                                                                   t,
                                                                 ),
                                                                   l(
                                                                     "loaded",
-                                                                    e,
+                                                                    loaded,
                                                                   ),
                                                                   l("close"));
                                                               })(e),
@@ -4007,7 +4040,7 @@
     }
     function Le() {
       const resolveJourneyWorld = (character) => {
-        const pool = character.eventPool || "欲潮涌动";
+        const pool = character.eventPool || "欲潮行旅";
         if (!["欲潮学院", "欲潮涌动", "欲潮行旅"].includes(pool)) throw new Error("请选择有效的DLC");
         return { pool, world: "德尔菲安-" + pool };
       };
@@ -4087,6 +4120,11 @@
                 r = l,
                 ra = raceAttrFor("自定义" === e.race ? e.customRace : e.race),
                 c = _.cloneDeep(Mvu.getMvuData({ type: "message", message_id: target.messageId }));
+              // 开始新旅程时重建开局资料，不能继承该开场消息上一次保存的NPC锚点和事件。
+              _.set(c, "stat_data.信息", {});
+              _.set(c, "stat_data.事件", {});
+              _.set(c, "stat_data.任务列表", {});
+              _.set(c, "stat_data.世界.欲潮之书进度", { 炼制: false, 训练: false, 欲术: false, 秘文: false, 初潮之仪: false });
               _.set(c, "stat_data.命运点数", e.core ? e.destinyPoints : 0);
               _.set(c, "stat_data.世界.地点", "自定义" === e.startLocation ? e.customStartLocation : e.startLocation),
               _.set(c, "stat_data.世界.时间", "庭院纪元633年-1月-1日-神曜日-08:00"),
@@ -4691,7 +4729,8 @@
                 const e = "【自定义开局】" === l.name && r ? r : l.description;
                 e ? c.push(`描述: ${e}`) : c.push("描述: （本开局不预设剧情；以当前状态快照、世界设定与开场事件为准自行展开。）");
               }
-              if (_.isPlainObject(e.preset)) c.push("<gateway_opening>" + JSON.stringify({ 情报: e.preset.情报 || [], 开局档案: e.preset.开局档案 || {}, 首轮约束: e.preset.首轮约束 || null, 预设名: e.preset.name || "" }) + "</gateway_opening>");
+              c.push("【本局世界】" + resolveJourneyWorld(e).world);
+              if (_.isPlainObject(e.preset)) c.push("<gateway_opening>" + JSON.stringify({ world: resolveJourneyWorld(e).world, eventPool: resolveJourneyWorld(e).pool, 情报: e.preset.情报 || [], 开局档案: e.preset.开局档案 || {}, 首轮约束: e.preset.首轮约束 || null, 预设名: e.preset.name || "" }) + "</gateway_opening>");
               return `\`\`\`text\n${c.join("\n")}\n\`\`\`\n\n---\n根据当前状态快照和以上内容，生成一个符合情景与设定的初始剧情！`;
             })(
               character,
@@ -4797,8 +4836,7 @@
       const preset = opening.variants[gender] || opening.variants["女"] || opening.variants["男"];
       if (!preset) return false;
       const pool = store.character.eventPool || "欲潮行旅";
-      H(preset, store);
-      store.updateCharacterField("eventPool", pool);
+      H({ ...preset, character: { ...preset.character, eventPool: pool } }, store, pool);
       return true;
     }
     const WorldGuidePage = c.defineComponent({
@@ -4839,6 +4877,7 @@
           const background=store.selectedBackground;
           if(!background)return null;
           return c.h("div",{class:"opening-draft-editor"},[
+            ...(store.presetMeta?.templateSourcePool ? [c.h("p",{class:"guide-note"},"已从「"+store.presetMeta.templateSourcePool+"」载入主角模板；固定NPC、旧关系与事件未载入。请确认下面的行旅开局。")]:[]),
             c.h("label",{class:"form-field"},["开局名称",c.h("input",{class:"opening-custom","aria-label":"开局名称",value:background.sourceName||background.name,onInput:event=>updateOpeningDraft(store,custom,{name:event.target.value})})]),
             c.h("label",{class:"form-field"},["开局剧情（可自由修改）",c.h("textarea",{class:"opening-custom",rows:8,"aria-label":"开局剧情",value:background.name==="【自定义开局】"?custom.customBackgroundDescription:background.description,onInput:event=>updateOpeningDraft(store,custom,{description:event.target.value})})]),
             c.h("p",{class:"guide-note"},"开始时采用这里确认的名称与正文；修改会随人物预设保存。")
@@ -4875,7 +4914,7 @@
         const setGender=next=>{const opening=selected();if(opening)chooseOpening(opening,next,store);else{store.updateCharacterField("gender",next);store.updateCharacterField("name",protagonistName(next));}};
         return ()=>c.h("div",{class:"background-page","data-page":"opening"},[
           c.h("div",{class:"opening-options"},[
-            c.h("label",["本次 DLC",c.h("select",{id:"opening-dlc",value:store.character.eventPool,onChange:event=>store.updateCharacterField("eventPool",event.target.value)},["欲潮学院","欲潮涌动","欲潮行旅"].map(pool=>c.h("option",{value:pool},pool)))]),
+            c.h("label",["本次 DLC",c.h("select",{id:"opening-dlc",value:store.character.eventPool,onChange:event=>setJourneyPool(store,event.target.value)},["欲潮学院","欲潮涌动","欲潮行旅"].map(pool=>c.h("option",{value:pool},pool)))]),
             c.h("div",{class:"opening-genders","aria-label":"主角性别"},["男","女"].map(next=>c.h("button",{type:"button",class:{active:gender()===next},disabled:!!selected()?.femaleOnly&&next==="男",onClick:()=>setGender(next)},protagonistName(next)+" · "+next)))
           ]),
           c.h("section",{class:"background-section"},[
@@ -5389,7 +5428,8 @@
             }, 300);
           });
           const g = () => {
-              s();
+              // 载入人物后回到可编辑开局；第0页只读，不能成为载入后的车卡页。
+              i(1);
             },
             b = () => {
               V.value && ((V.value = !1), v(), k());
@@ -13065,7 +13105,7 @@
                   (0, c.h)("label", { for: "delphian-dlc" }, "DLC"),
                   (0, c.h)("select", {
                     id: "delphian-dlc", value: (0, c.unref)(l).eventPool,
-                    onChange: (event) => { (0, c.unref)(l).eventPool = event.target.value; },
+                    onChange: (event) => { setJourneyPool(L(), event.target.value); },
                   }, ["欲潮行旅", "欲潮涌动", "欲潮学院"].map((pool) => (0, c.h)("option", { value: pool }, pool))),
                   (0, c.h)("p", { class: "dlc-description" }, (0, c.unref)(l).eventPool === "欲潮行旅"
                     ? ((0, c.unref)(l).gender === "男" ? "自由开局 · 与书共谋，建立自己的势力" : "自由开局 · 承载蜕变，争取书契与权柄的主导权")
@@ -13998,7 +14038,7 @@
                       ]),
                     ]),
                   ]),
-                  (0, c.h)("p", { class: "dlc-summary" }, "本局：德尔菲安-" + ((0, c.unref)(t).character.eventPool || "欲潮涌动")
+                  (0, c.h)("p", { class: "dlc-summary" }, "本局：德尔菲安-" + ((0, c.unref)(t).character.eventPool || "欲潮行旅")
                     + ((0, c.unref)(t).character.eventPool === "欲潮行旅" ? ((0, c.unref)(t).character.gender === "男" ? " · 共谋扩张" : " · 承载蜕变") : "")),
                   (0, c.createCommentVNode)(" 基本信息 "),
                   (0, c.createElementVNode)("section", Ri, [
