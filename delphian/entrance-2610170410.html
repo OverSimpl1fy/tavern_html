@@ -2112,7 +2112,7 @@
       SKILLS = ["察觉", "洞察", "调查", "侦察", "潜行", "说服", "威吓", "欺瞒", "表演", "医药", "奥术", "运动", "生存", "诱惑", "调教", "驾驶", "魔力感知"],
       RECON = ["察觉", "侦察", "洞察", "魔力感知"],
       abilityMod = (v) => Math.floor((Number(v) - 10) / 2),
-      pbFor = (lv) => Math.min(6, 2 + Math.floor((Math.max(1, lv || 1) - 1) / 4)),
+      pbFor = (lv) => Math.min(6, 2 + Math.floor((Math.max(0, lv ?? 1) - 1) / 4)),
       w = (e) =>
         e >= 1 && e <= 4
           ? 0
@@ -2126,7 +2126,7 @@
                   ? 4
                   : 0,
       S = (e) =>
-        e >= 1 && e <= 4
+        e === 0 ? "无层级/凡民" : e >= 1 && e <= 4
           ? "第一层级/普通"
           : e >= 5 && e <= 8
             ? "第二层级/中坚"
@@ -4243,7 +4243,7 @@
                     o.name,
                     {
                       在场: o.在场 !== false,
-                      生命层级: o.lifeLevel,
+                      生命层级: o.level === 0 ? "无层级/凡民" : o.lifeLevel,
                       等级: o.level,
                       种族: o.race,
                       身份: safeArr(o.identity),
@@ -4298,6 +4298,15 @@
                   if (value !== null && value !== undefined) rec[key] = Math.max(0, value);
                 }
                 // 性别/年龄/关系标签/侵蚀度/堕落度/堕落六维 恒写（缺字段 = 空/0，与 schema prefault 同值）
+                if (rec.等级 === 0) {
+                  rec.生命层级 = "无层级/凡民";
+                  const ordinaryResources = { 生命值上限: Math.max(1, 6 + abilityMod(rec.属性.体质)), 法力值上限: 0, 体力值上限: Math.max(1, rec.属性.力量 + rec.属性.敏捷) };
+                  for (const [maxKey, maxValue] of Object.entries(ordinaryResources)) {
+                    const currentKey = maxKey.replace("上限", "");
+                    if (o[maxKey] == null) rec[maxKey] = maxValue;
+                    if (o[currentKey] == null) rec[currentKey] = rec[maxKey];
+                  }
+                }
                 rec.性别 = _.get(o, "性别", _.get(o, "gender", ""));
                 rec.年龄 = asText(_.get(o, "年龄", _.get(o, "age", "")));
                 rec.关系标签 = _.uniq(safeArr(_.get(o, "关系标签", _.get(o, "tags", []))).map(String));
@@ -4394,19 +4403,19 @@
               const HP_MULT = [130, 520, 1350, 5200, 23500],
                 R_MULT = [32, 97, 194, 387, 726],
                 TIER_START = [1, 5, 9, 13, 17],
-                tierIdx = TIER_START.filter((s) => s <= e.level).length - 1,
-                grow = 1 + 0.1 * (e.level - TIER_START[tierIdx]),
+                tierIdx = Math.max(0, TIER_START.filter((s) => s <= e.level).length - 1),
+                grow = e.level === 0 ? 1 : 1 + 0.1 * (e.level - TIER_START[tierIdx]),
                 conMod = abilityMod(fa["体质"]),
-                hpMax = Math.round((5.5 + conMod) * HP_MULT[tierIdx] * grow),
-                mpMax = Math.round((fa["智力"] + fa["感知"]) * R_MULT[tierIdx] * grow),
-                spMax = Math.round((fa["力量"] + fa["敏捷"]) * R_MULT[tierIdx] * grow),
+                hpMax = e.level === 0 ? Math.max(1, 6 + conMod) : Math.round((5.5 + conMod) * HP_MULT[tierIdx] * grow),
+                mpMax = e.level === 0 ? 0 : Math.round((fa["智力"] + fa["感知"]) * R_MULT[tierIdx] * grow),
+                spMax = e.level === 0 ? Math.max(1, fa["力量"] + fa["敏捷"]) : Math.round((fa["力量"] + fa["敏捷"]) * R_MULT[tierIdx] * grow),
                 EXP_TABLE = [
                   120, 480, 1200, 2280, 3880, 7480, 11800, 16840, 23240, 39440,
                   57440, 77240, 101240, 148040, 198440, 252440, 316440, 469440,
                   631440,
                 ],
                 cumExp = EXP_TABLE.slice(0, Math.max(0, e.level - 1)).reduce((x, y) => x + y, 0),
-                needExp = e.level >= 20 ? "MAX" : EXP_TABLE[e.level - 1];
+                needExp = e.level >= 20 ? "MAX" : e.level === 0 ? 120 : EXP_TABLE[e.level - 1];
               _.set(
                 c,
                 "stat_data.主角.装备",
@@ -4485,7 +4494,7 @@
                     _.fromPairs(
                       _.map(e.feats || [], (featName) => {
                         const feat = _.find(FEATS, { n: featName }) || {};
-                        return [featName, { 描述: feat.d || "", 来源: "开局", 获得等级: 1 }];
+                        return [featName, { 描述: feat.d || "", 来源: "开局", 获得等级: e.level }];
                       }),
                     ),
                     _.isPlainObject(e.专长) ? e.专长 : {},
@@ -10445,6 +10454,7 @@
                 n.resetCustomPartnerForm());
             },
             m = {
+              0: { name: "无层级/凡民", minGrade: 0, maxGrade: 0 },
               1: { name: "第一层级 (普通)", minGrade: 1, maxGrade: 4 },
               2: { name: "第二层级 (中坚)", minGrade: 5, maxGrade: 8 },
               3: { name: "第三层级 (精英)", minGrade: 9, maxGrade: 12 },
@@ -10543,8 +10553,8 @@
             T = (0, c.ref)(!1),
             A = (0, c.computed)(() =>
               (function (e) {
-                if (e < 1 || e > 5) throw new Error("层级必须在 1 到 5 之间");
-                return oo[e - 1];
+                if (e < 0 || e > 5) throw new Error("层级必须在 0 到 5 之间");
+                return oo[Math.max(0, e - 1)];
               })(f.value),
             ),
             M = (0, c.computed)(() => m[f.value]),
@@ -10571,10 +10581,11 @@
             fillFormByPartner: (e) => {
               const t = ((e) => {
                   if (!e.trim()) return 1;
+                  if (/无层级|凡民/.test(e)) return 0;
                   const t = _.findKey(m, (t) => e.includes(t.name));
                   return t ? Number(t) : 1;
                 })(e.lifeLevel || ""),
-                a = e.level || m[t].minGrade;
+                a = e.level ?? m[t].minGrade;
               (n.setCustomPartnerForm({
                 itemName: e.name || "",
                 itemLevel: t,
@@ -10756,7 +10767,7 @@
                           (0, c.createElementBlock)(
                             c.Fragment,
                             null,
-                            (0, c.renderList)(5, (e) =>
+                            (0, c.renderList)([0, 1, 2, 3, 4, 5], (e) =>
                               (0, c.createElementVNode)(
                                 "button",
                                 {
@@ -10767,7 +10778,7 @@
                                   ]),
                                   onClick: (t) => (f.value = e),
                                 },
-                                " 第" +
+                                e === 0 ? "凡民 (Lv.0)" : " 第" +
                                   (0, c.toDisplayString)(
                                     ["一", "二", "三", "四", "五"][
                                       e - 1
@@ -13224,7 +13235,7 @@
                           modelValue: (0, c.unref)(l).level,
                           "onUpdate:modelValue":
                             a[4] || (a[4] = (e) => ((0, c.unref)(l).level = e)),
-                          min: (0, c.unref)(1),
+                          min: (0, c.unref)(0),
                           max: (0, c.unref)(20),
                         },
                         null,
