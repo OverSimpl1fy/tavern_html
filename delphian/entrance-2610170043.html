@@ -1934,8 +1934,8 @@
         const o = await a.text(),
           n = l.parse(o);
         return (console.log(`成功加载自定义${t}数据`), n);
-      } catch (e) {
-        return (console.log(`未找到自定义${t}数据或格式错误，使用内置数据:`, e), BUILTIN[e] ?? {});
+      } catch (error) {
+        return (console.log(`未找到自定义${t}数据或格式错误，使用内置数据:`, error), BUILTIN[e] ?? {});
       }
     }
     function E(e, t) {
@@ -4940,11 +4940,9 @@
           const opening=OPENING_CATALOG.find(opening=>opening.name===item.name);
           if(opening)chooseOpening(opening,opening.femaleOnly?"女":gender(),store);
         };
-        const setGender=next=>{const opening=selected();if(opening)chooseOpening(opening,next,store);else{store.updateCharacterField("gender",next);store.updateCharacterField("name",protagonistName(next));}};
         return ()=>c.h("div",{class:"background-page","data-page":"opening"},[
           c.h("div",{class:"opening-options"},[
-            c.h("label",["本次 DLC",c.h("select",{id:"opening-dlc",value:store.character.eventPool,onChange:event=>setJourneyPool(store,event.target.value)},["欲潮学院","欲潮涌动","欲潮行旅"].map(pool=>c.h("option",{value:pool},pool)))]),
-            c.h("div",{class:"opening-genders","aria-label":"主角性别"},["男","女"].map(next=>c.h("button",{type:"button",class:{active:gender()===next},disabled:!!selected()?.femaleOnly&&next==="男",onClick:()=>setGender(next)},protagonistName(next)+" · "+next)))
+            c.h("label",["本次 DLC",c.h("select",{id:"opening-dlc",value:store.character.eventPool,onChange:event=>setJourneyPool(store,event.target.value)},["欲潮学院","欲潮涌动","欲潮行旅"].map(pool=>c.h("option",{value:pool},pool)))])
           ]),
           c.h("section",{class:"background-section"},[
             c.h("h2",{class:"section-title"},"选择初始开局剧情"),
@@ -4954,6 +4952,22 @@
           ]),
           ...(selected()?[c.h("p",{class:"guide-note"},"已载入「"+selected().name+"」的人物卡与同行者。可以继续调整人物，并在确认页修改开局剧情。")]:[])
         ]);
+      }
+    });
+    const CreatorPageHeading = c.defineComponent({
+      props: { number: String, title: String, description: String },
+      setup: props => () => c.h("header", { class: "creator-page-heading" }, [
+        c.h("span", { class: "creator-page-number", "aria-hidden": "true" }, props.number),
+        c.h("div", [c.h("h2", props.title), c.h("p", props.description)])
+      ])
+    });
+    const ConfirmReviewNav = c.defineComponent({
+      setup() {
+        return () => c.h("nav", { class: "confirm-review-nav", "aria-label": "返回调整开局设置" },
+          [["Opening", "修改开局"], ["BasicInfo", "调整人物"], ["Selections", "调整装备与技能"], ["Background", "调整伙伴"]].map(([name, label]) =>
+            c.h("button", { type: "button", onClick: () => hp.push({ name }) }, label)
+          )
+        );
       }
     });
     const Ue = [
@@ -12609,9 +12623,7 @@
                   t.setBackground({ ...t.selectedBackground, description: e }));
             },
             k = () => {
-              (t.clearPartners(),
-                t.setBackground(null),
-                a.updateCustomBackgroundDescription(""));
+              t.clearPartners();
             };
           return (
             (0, c.onMounted)(() => {
@@ -12621,6 +12633,7 @@
             (e, a) => (
               (0, c.openBlock)(),
               (0, c.createElementBlock)("div", ks, [
+                c.h(CreatorPageHeading, { number: "04", title: "同行之人", description: "可保留开局自带的同行者，也可以另选或创建伙伴；独自出发同样可以。" }),
                 (0, c.createCommentVNode)(" 伙伴区域 "),
                 (0, c.createElementVNode)("section", Ns, [
                   a[2] ||
@@ -12714,7 +12727,7 @@
                           (0, c.createElementBlock)(
                             "button",
                             { key: 0, class: "clear-btn", onClick: k },
-                            " 清空选择 ",
+                            " 清空伙伴 ",
                           ))
                         : (0, c.createCommentVNode)("v-if", !0),
                     ]),
@@ -12885,7 +12898,7 @@
       Os = { class: "form-container" },
       Ks = { class: "form-row" },
       Hs = { class: "form-field" },
-      Js = { class: "form-field" },
+      Js = { class: "form-field protagonist-gender" },
       Qs = { class: "form-row" },
       Ws = { class: "form-field" },
       Xs = { class: "form-field" },
@@ -13070,6 +13083,7 @@
           return (e, a) => (
             (0, c.openBlock)(),
             (0, c.createElementBlock)("div", { ...Gs, key: (0, c.unref)(uiTick) }, [
+              c.h(CreatorPageHeading, { number: "02", title: "塑造你的主角", description: "在这里统一设置性别、身份与外貌，再分配属性。已载入的人物卡仍可继续修改。" }),
               (0, c.createElementVNode)("div", Os, [
                 (0, c.createCommentVNode)(" 第一行：姓名和性别 "),
                 (0, c.createElementVNode)("div", Ks, [
@@ -13143,7 +13157,7 @@
                 (0, c.createVNode)(CorruptionPanel),
                 (0, c.h)("section", { class: "guide-card protagonist-profile" }, [
                   (0, c.h)("h3", "主角设定"),
-                  ...[["personality","性格"],["appearance","外貌"],["backgroundInfo","背景故事"]].map(([key,label]) => (0, c.h)("label", { style: "display:block;margin:12px 0" }, [label, (0,c.h)("textarea", { rows: key === "backgroundInfo" ? 5 : 2, class: "opening-custom", value: (0,c.unref)(l)[key] || "", onInput: event => { (0,c.unref)(l)[key] = event.target.value; } })])),
+                  ...[["personality","性格"],["appearance","外貌"],["backgroundInfo","背景故事"]].map(([key,label]) => (0, c.h)("label", { class: "protagonist-profile-field" }, [c.h("span", label), (0,c.h)("textarea", { rows: key === "backgroundInfo" ? 5 : 2, class: "opening-custom", "aria-label": label, value: (0,c.unref)(l)[key] || "", onInput: event => { (0,c.unref)(l)[key] = event.target.value; } })])),
                 ]),
                 (0, c.createCommentVNode)(" 昵称和口癖 "),
                 (0, c.createElementVNode)("div", Qs, [
@@ -13763,7 +13777,7 @@
                   ]),
                 ]),
                 (0, c.createVNode)(LuckPanel),
-                (0, c.createElementVNode)("div", { style: "margin-top:10px" }, [
+                (0, c.createElementVNode)("div", { class: "proficiency-panel" }, [
                   (0, c.createElementVNode)("h3", { style: "font-size:13px;margin-bottom:6px" }, "熟练项（选择2~4项，金色为侦察类）"),
                   (0, c.createElementVNode)("div", { class: "dnd-prof-chips" }, [
                     ((0, c.openBlock)(!0),
@@ -13787,17 +13801,17 @@
                     )),
                   ]),
                   (0, c.createElementVNode)("div", { class: "dnd-prof-hint" }, [
-                    "已选熟练项：",
-                    (0, c.toDisplayString)(
+                    c.createTextVNode("已选熟练项："),
+                    c.createTextVNode((0, c.toDisplayString)(
                       (0, c.unref)(l).prof.length
                         ? (0, c.unref)(l).prof.join("、")
                         : "（尚未选择）",
-                    ),
+                    )),
                   ]),
                   (0, c.createElementVNode)("div", { class: "dnd-recon-card" }, [
-                    "侦察能力（DND）：被动察觉 DC ",
+                    c.createTextVNode("被动察觉 DC "),
                     (0, c.createElementVNode)("b", null, (0, c.toDisplayString)((0, c.unref)(ub)), 1),
-                    "（10 + 感知修正 + 侦察类熟练加成）；主动侦察 d20 + 感知修正 + 熟练加成",
+                    c.createTextVNode("（10 + 感知修正 + 侦察类熟练加成）；主动侦察 d20 + 感知修正 + 熟练加成"),
                   ]),
                 ]),
               ]),
@@ -13986,13 +14000,14 @@
                       (0, c.createElementVNode)(
                         "p",
                         { class: "panel-subtitle" },
-                        "非自定义数据（除了装备）会直接写入 MVU 变量中，不会发送给 AI",
+                        "核对人物、装备与同行者；下方的开局名称和剧情可以直接修改。",
                       ),
                     ],
                     -1,
                   )),
                 (0, c.createCommentVNode)(" 文档内容 "),
                 (0, c.createElementVNode)("div", Pi, [
+                  c.h(ConfirmReviewNav),
                   (0, c.createCommentVNode)(" 点数统计 "),
                   (0, c.createElementVNode)("section", Fi, [
                     (0, c.createElementVNode)("div", Ii, [
@@ -17357,6 +17372,7 @@
           return (e, a) => (
             (0, c.openBlock)(),
             (0, c.createElementBlock)("div", fp, [
+              c.h(CreatorPageHeading, { number: "03", title: "准备踏上旅途", description: "挑选专长、装备、道具与技能；开局自带的项目已列在已选清单中。" }),
               (0, c.createVNode)(FeatSelector),
               (0, c.createElementVNode)("div", Vp, [
                 (0, c.createCommentVNode)(" 上半部分：选择区域 "),
@@ -24736,16 +24752,15 @@
     .guide-eyebrow,.guide-tags { color: var(--text-light,#79694f); font-size: 13px; }
     .guide-intro,.guide-note { line-height: 1.8; margin: 14px 0; }
     .guide-note { background: rgba(141,110,63,.09); padding: 12px; border-radius: 8px; }
-    .guide-tabs,.opening-options,.opening-genders { display:flex; flex-wrap:wrap; gap:10px; margin:14px 0; align-items:center; }
-    .guide-tabs button,.guide-enter,.opening-genders button { padding:10px 14px; border:1px solid var(--border-color,#bca98a); border-radius:8px; background:var(--card-bg,#f0e6d2); color:var(--text-color,#44372a); cursor:pointer; }
-    .guide-tabs button.active,.opening-genders button.active { background:#705839; color:#fff8e8; }
+    .guide-tabs,.opening-options { display:flex; flex-wrap:wrap; gap:10px; margin:14px 0; align-items:center; }
+    .guide-tabs button,.guide-enter { padding:10px 14px; border:1px solid var(--border-color,#bca98a); border-radius:8px; background:var(--card-bg,#f0e6d2); color:var(--text-color,#44372a); cursor:pointer; }
+    .guide-tabs button.active { background:#705839; color:#fff8e8; }
     .guide-search,.opening-options select,.opening-custom { padding:10px; border:1px solid var(--border-color,#bca98a); border-radius:8px; background:var(--input-bg,#fff8ed); color:var(--text-color,#44372a); }
     .guide-search,.opening-custom { width:100%; box-sizing:border-box; }
     .opening-options label { display:flex; gap:10px; align-items:center; }
     .guide-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr)); gap:16px; }
     .guide-card { padding:18px; border:1px solid var(--border-color,#bca98a); border-radius:12px; background:var(--card-bg,#f0e6d2); }
     .guide-card p { line-height:1.8; margin-top:10px; }
-    .opening-genders button:disabled { opacity:.45; cursor:not-allowed; }
     .opening-draft-editor { display:grid; gap:14px; }
     .opening-draft-editor .form-field { display:flex; flex-direction:column; gap:8px; }
 
@@ -24840,6 +24855,82 @@
     @media (max-width: 360px) {
       .creator-app:has(.world-guide) .steps .step { flex: 1 1 0; min-width: 0; box-sizing: border-box; align-self: stretch; padding-inline: 7px; }
       .creator-app:has(.world-guide) .steps .step .title { min-width: 0; overflow-wrap: anywhere; word-break: normal; }
+    }
+    /* 车卡页延续纸色与金色重点，保留开局分类及原有伙伴视图。 */
+    .creator-app :is(.basic-info,.selections,.confirm-page) { max-width: 1200px; margin-inline: auto; }
+    .creator-app :is(.basic-info,.selections,.background-page,.confirm-page) { min-width: 0; }
+    .creator-app .creator-page-heading { display: flex; gap: 14px; align-items: flex-start; padding: 6px 0 18px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+    .creator-app .creator-page-number { color: var(--border-color-strong); font: 28px/1.4 var(--font-title); opacity: .7; }
+    .creator-app .creator-page-heading h2 { margin: 0 0 6px; font-size: 1.4rem; letter-spacing: .5px; }
+    .creator-app .creator-page-heading p { margin: 0; color: var(--text-light); font-size: 13px; line-height: 1.8; }
+    .creator-app .basic-info > .form-container { padding: 22px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); }
+    .creator-app .basic-info .form-field { min-width: 0; }
+    .creator-app .basic-info .form-field label { color: var(--title-color); }
+    .creator-app .basic-info .dlc-choice { margin: 18px 0; padding: 16px 18px; border: 1px solid var(--border-color); border-left: 3px solid var(--accent-color); border-radius: var(--radius-md); background: var(--primary-bg); }
+    .creator-app .basic-info .dlc-choice label { color: var(--title-color); }
+    .creator-app .basic-info .dlc-choice select { background: var(--input-bg); color: var(--text-color); border-color: var(--border-color); font: inherit; border-radius: var(--radius-md); }
+    .creator-app .basic-info .dlc-description { color: var(--text-light); font-size: 13px; margin-bottom: 0; }
+    .creator-app .basic-info .protagonist-profile { padding: 18px; margin-bottom: 20px; border-radius: var(--radius-md); background: var(--primary-bg); }
+    .creator-app .basic-info .protagonist-profile h3 { margin: 0 0 14px; font-size: 1.1rem; }
+    .creator-app .protagonist-profile-field { display: grid; gap: 8px; margin-top: 14px; font-size: 13px; font-weight: 600; color: var(--title-color); }
+    .creator-app .opening-custom { font: inherit; line-height: 1.8; resize: vertical; border-radius: var(--radius-md); }
+    .creator-app .opening-custom:focus { outline: 2px solid var(--accent-color); outline-offset: 1px; }
+    .creator-app .basic-info :is(.attributes-panel,.luck-panel,.proficiency-panel) { border: 1px solid var(--border-color); border-radius: var(--radius-lg); background: var(--input-bg); margin: 20px 0 0; }
+    .creator-app .basic-info .proficiency-panel { padding: 18px 20px; }
+    .creator-app .basic-info .proficiency-panel h3 { color: var(--title-color); }
+    .creator-app .basic-info .dnd-prof-chip { padding: 7px 11px; color: var(--text-color); border-color: var(--border-color); background: var(--primary-bg); border-radius: var(--radius-md); }
+    .creator-app .basic-info .dnd-prof-chip.active { background: var(--accent-color); border-color: var(--accent-color); color: var(--title-color); font-weight: 600; }
+    .creator-app .basic-info .dnd-prof-chip.recon { border-color: var(--border-color-strong); }
+    .creator-app .basic-info .dnd-prof-hint { margin-top: 12px; font-size: 13px; color: var(--text-light); line-height: 1.8; }
+    .creator-app .basic-info .dnd-recon-card { padding: 12px; margin-top: 10px; background: var(--primary-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-color); font-size: 13px; line-height: 1.8; }
+    .creator-app .basic-info :is(.base-select,.roll-pick) { color: var(--text-color); background: var(--input-bg); border-color: var(--border-color); }
+    .creator-app .basic-info .roll-pick.active { background: var(--accent-color); color: var(--title-color); }
+    .creator-app .basic-info .corruption-dims { grid-template-columns: repeat(auto-fit,minmax(min(100%,300px),1fr)); }
+    .creator-app .basic-info .corruption-dim { flex-wrap: wrap; }
+    .creator-app .basic-info .corruption-dim-desc { flex-basis: 100%; }
+    .creator-app .basic-info .corruption-header { flex-wrap: wrap; }
+    .creator-app .selections .feat-selector-section { background: var(--input-bg); padding: 20px; border-radius: var(--radius-lg); }
+    .creator-app .selections .feat-list { grid-template-columns: repeat(auto-fit,minmax(min(100%,260px),1fr)); gap: 12px; }
+    .creator-app .selections .feat-card { background: var(--primary-bg); padding: 14px; line-height: 1.7; }
+    .creator-app .selections .feat-card.disabled { opacity: .68; }
+    .creator-app .selections .feat-card-header { flex-wrap: wrap; gap: 4px 10px; }
+    .creator-app .selections .feat-prereq { white-space: normal; }
+    .creator-app .selections .feat-card.selected { border-color: var(--accent-color); box-shadow: inset 3px 0 var(--accent-color); }
+    .creator-app .selections .summary-area { height: auto; min-height: 0; }
+    .creator-app .selections .selected-panel { max-height: none; }
+    .creator-app .confirm-page .confirm-panel { background: var(--input-bg); }
+    .creator-app .confirm-page .panel-subtitle { line-height: 1.8; }
+    .creator-app .confirm-review-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+    .creator-app .confirm-review-nav button { font: inherit; font-size: 13px; color: var(--title-color); background: var(--primary-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 9px 14px; cursor: pointer; }
+    .creator-app .confirm-review-nav button:hover { border-color: var(--accent-color); background: var(--card-bg); }
+    .creator-app .confirm-page .dlc-summary { padding: 12px 16px; color: var(--title-color); background: var(--primary-bg); border-left: 3px solid var(--accent-color); border-radius: var(--radius-sm); line-height: 1.8; }
+    .creator-app .confirm-page .opening-draft-editor { background: var(--primary-bg); box-shadow: none; }
+    .creator-app .confirm-page .opening-draft-editor .guide-note { margin: 0; padding: 0; background: none; color: var(--text-light); font-size: 13px; }
+    .creator-app .navigation .nav-button { min-height: 44px; }
+    .creator-app :is(.confirm-review-nav button,.dnd-prof-chip,.opening-options select):focus-visible { outline: 2px solid var(--border-color-strong); outline-offset: 3px; }
+    @media (max-width: 768px) {
+      .creator-app .basic-info > .form-container { padding: 16px; }
+      .creator-app .basic-info .attributes-panel .panel-content { padding: 12px; }
+      .creator-app .basic-info .attributes-panel .attr-row { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; padding: 14px 0; }
+      .creator-app .basic-info .attributes-panel .attr-row:not(:has(.col-extra)) { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .creator-app .basic-info .attributes-panel .attr-row :is(.col-base,.col-tier,.col-extra) { align-items: center; }
+      .creator-app .basic-info .attributes-panel .attr-row .col-result { align-items: flex-end; }
+      .creator-app .basic-info .attributes-panel .attr-row .col-name { font-size: 1rem; }
+      .creator-app .basic-info .attributes-panel .form-stepper { min-width: 0; }
+      .creator-app .basic-info .luck-buy { flex-wrap: wrap; }
+      .creator-app .basic-info .proficiency-panel { padding: 16px; }
+      .creator-app .selections .feat-selector-section { padding: 14px; }
+      .creator-app .selections .category-selection-layout { min-height: 280px; }
+      .creator-app .confirm-page .confirm-review-nav { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+      .creator-app .confirm-page .confirm-review-nav button { padding: 10px 6px; }
+      .creator-app .confirm-page .opening-draft-editor { padding: 16px; }
+      .creator-app .creator-page-heading { gap: 10px; padding-bottom: 14px; margin-bottom: 16px; }
+      .creator-app .creator-page-heading h2 { font-size: 1.2rem; }
+      .creator-app .creator-page-number { font-size: 24px; }
+    }
+    @media (max-width: 360px) {
+      .creator-app .steps .step { flex: 1 1 0; min-width: 0; box-sizing: border-box; align-self: stretch; padding-inline: 7px; }
+      .creator-app .steps .step .title { min-width: 0; overflow-wrap: anywhere; word-break: normal; }
     }
   </style>
 </head>
