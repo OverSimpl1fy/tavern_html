@@ -349,8 +349,29 @@
   }
 
 
-      var current = {};
-      function mount() { render(root, current); }
+      var current = {}, inline = null, inlineKey = "";
+      function mount() {
+        var editing = window.DelphianStatusEditing?.enabled() === true;
+        var key = state.selected + ":" + state.section;
+        if (inline && editing && key === inlineKey && has(current[state.selected])) {
+          inline.update(window.DelphianDataEditor.partnerGroups(state.selected, state.section, current[state.selected]));
+          return;
+        }
+        inline?.destroy(); inline = null;
+        render(root, current);
+        if (editing && state.selected !== null && has(current[state.selected])) {
+          inlineKey = state.selected + ":" + state.section;
+          inline = window.DelphianDataEditor.mount(root.querySelector(".yd-pane"), window.DelphianDataEditor.partnerGroups(state.selected, state.section, current[state.selected]));
+        } else if (editing) {
+          var add = document.createElement("button"); add.textContent = "＋"; add.title = "添加伙伴"; add.setAttribute("aria-label", "添加伙伴"); add.className = "yd-back";
+          add.addEventListener("click", () => {
+            var name = prompt("伙伴名称"); if (!name) return;
+            if (Object.hasOwn(current, name)) { toastr.error("已存在同名伙伴"); return; }
+            window.DelphianDataEditor.commit(["关系列表", name], { exists: false }, {}).catch(error => toastr.error(error.message));
+          });
+          root.querySelector(".yd-head").appendChild(add);
+        }
+      }
       function handleClick(event) {
     var target = event.target;
     if (!target || !target.closest) return;
@@ -381,7 +402,7 @@
       root.addEventListener("click", handleClick);
       return {
         update: function (partners) { current = has(partners) ? partners : {}; mount(); },
-        destroy: function () { root.removeEventListener("click", handleClick); root.replaceChildren(); }
+        destroy: function () { inline?.destroy(); root.removeEventListener("click", handleClick); root.replaceChildren(); }
       };
     }
     /*! For license information please see index.js.LICENSE.txt */
@@ -13592,7 +13613,7 @@
         setEnabled: async value => { b.getState().setEditEnabled(value); await b.getState().saveSettings(); },
         subscribe: callback => b.subscribe(callback),
         refresh: () => F.getState().refresh(),
-      }, window.dispatchEvent(new Event("delphian-status-editing-ready")), true),
+      }, true),
       A = {
         id: "ivory",
         name: "米黄羊皮纸",
@@ -20446,6 +20467,7 @@
             (0, i.jsx)(Y, {
               children: (() => {
                 if (n) return (0, i.jsx)(iu, {});
+                if (ee && e !== "partners") return (0, i.jsx)(InlineDataTab, { tab: e });
                 switch (e) {
                   case "quests":
                     return (0, i.jsx)(Uo, {});
@@ -20498,15 +20520,30 @@
         });
       };
 
+    const InlineDataTab = ({ tab }) => {
+      const { data, lastRefreshTime } = F();
+      const host = (0, u.useRef)(null), view = (0, u.useRef)(null);
+      (0, u.useEffect)(() => {
+        const raw = window.DelphianDataEditor.readData();
+        view.current = window.DelphianDataEditor.mount(host.current, window.DelphianDataEditor.tabGroups(tab, raw));
+        return () => { view.current?.destroy(); view.current = null; };
+      }, [tab]);
+      (0, u.useEffect)(() => {
+        const raw = window.DelphianDataEditor.readData();
+        view.current?.update(window.DelphianDataEditor.tabGroups(tab, raw));
+      }, [data, lastRefreshTime, tab]);
+      return (0, i.jsx)("div", { ref: host, "data-inline-tab": tab });
+    };
     const NativePartnersTab = () => {
-      const { data } = F();
+      const { data, lastRefreshTime } = F();
+      const editEnabled = b(state => state.editEnabled);
       const host = (0, u.useRef)(null), view = (0, u.useRef)(null);
       const partners = data?.关系列表 ?? _.get(getVariables({ type: "message", message_id: getCurrentMessageId() }), "stat_data.关系列表", {});
       (0, u.useEffect)(() => {
         view.current = createDelphianPartnerView(host.current);
         return () => { view.current?.destroy(); view.current = null; };
       }, []);
-      (0, u.useEffect)(() => { view.current?.update(partners); }, [partners]);
+      (0, u.useEffect)(() => { view.current?.update(partners); }, [partners, editEnabled, lastRefreshTime]);
       return (0, i.jsx)("div", { id: "yd-partner-root", className: "yd-partner-root", ref: host, "data-partner-view": "v10-native" });
     };
     $(() => {
@@ -29427,6 +29464,38 @@
 #yd-partner-root .yd-coin .k{display:block;font-size:.66rem;letter-spacing:.1em;color:var(--yd-muted)}
 #yd-partner-root .yd-coin .v{display:block;font-size:1.15rem;font-weight:700;color:var(--yd-seal);margin-top:2px}
 </style>
+<style>
+/* Edit mode shares the status panel's cards, paper, borders and typography. */
+.dse-inline { display:flex; flex-direction:column; gap:12px; min-width:0; }
+.dse-inline .dse-card { overflow:visible; min-width:0; }
+.dse-inline .dse-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.dse-inline .dse-body { min-width:0; }
+.dse-inline .dse-field { display:flex; align-items:flex-start; gap:6px; padding:7px 0; border-bottom:1px solid color-mix(in srgb,var(--theme-card-border) 35%,transparent); min-width:0; }
+.dse-inline .dse-row { display:flex; flex:1; align-items:baseline; gap:12px; min-width:0; font-size:12px; }
+.dse-inline .dse-label { flex:0 0 100px; color:var(--theme-text-secondary); overflow-wrap:anywhere; }
+.dse-inline input:not([type=checkbox]),.dse-inline textarea,.dse-inline select { box-sizing:border-box; min-width:0; max-width:100%; border:1px solid var(--theme-card-border); border-radius:4px; padding:5px 7px; color:var(--theme-text-primary); background:var(--theme-input-bg,var(--theme-card-bg)); font:inherit; }
+.dse-inline .dse-row input:not([type=checkbox]),.dse-inline textarea { flex:1; width:100%; }
+.dse-inline textarea { line-height:1.6; resize:vertical; }
+.dse-inline input:focus,.dse-inline textarea:focus,.dse-inline select:focus { outline:1px solid var(--theme-titlebar-icon); outline-offset:1px; }
+.dse-inline input[type=checkbox] { accent-color:var(--theme-titlebar-icon); }
+.dse-inline button { color:var(--theme-text-secondary); background:transparent; border:0; border-radius:3px; font:inherit; cursor:pointer; padding:4px 7px; }
+.dse-inline button:hover { background:color-mix(in srgb,var(--theme-card-border) 22%,transparent); }
+.dse-inline .dse-group { flex:1; min-width:0; }
+.dse-inline .dse-group>summary { font-size:12px; color:var(--theme-text-secondary); cursor:pointer; padding:2px 0; overflow-wrap:anywhere; }
+.dse-inline .dse-children { margin:6px 0 0 8px; padding-left:10px; border-left:1px solid var(--theme-card-border); }
+.dse-inline .dse-actions { position:relative; flex-shrink:0; font-size:12px; }
+.dse-inline .dse-actions>summary { cursor:pointer; list-style:none; color:var(--theme-text-muted); padding:0 5px; font-size:18px; line-height:24px; }
+.dse-inline .dse-actions>summary::-webkit-details-marker { display:none; }
+.dse-inline .dse-options { position:absolute; top:24px; right:0; display:flex; gap:4px; padding:6px; border:1px solid var(--theme-card-border); background:var(--theme-card-bg); border-radius:4px; z-index:10; box-shadow:0 3px 9px #0002; white-space:nowrap; }
+.dse-inline .dse-muted { font-size:12px; color:var(--theme-text-muted); }
+@media(max-width:520px) {
+  .dse-inline .dse-row { flex-wrap:wrap; gap:4px; }
+  .dse-inline .dse-label { flex:1 0 100%; }
+  .dse-inline .dse-row input:not([type=checkbox]),.dse-inline textarea { flex:1 0 100%; }
+  .dse-inline .dse-children { margin-left:2px; padding-left:6px; }
+}
+
+</style>
 </head>
 
 <body>
@@ -29435,10 +29504,12 @@
 <script>
 (function (host) {
   'use strict';
-  const clone = value => JSON.parse(JSON.stringify(value));
+  // Shared by the existing tab bodies. No toolbar, toggle, or document-level UI.
+  const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
   const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
   const kind = value => value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
   const own = (target, key, value) => Object.defineProperty(target, key, { value, enumerable: true, writable: true, configurable: true });
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   function mergeView(parsed, raw) {
     if (object(parsed) && object(raw)) {
       const result = { ...parsed };
@@ -29449,28 +29520,109 @@
     if (kind(parsed) === kind(raw)) return clone(raw);
     return parsed;
   }
+  function at(data, path) {
+    for (const key of path) {
+      if (data === null || typeof data !== 'object' || !Object.hasOwn(data, key)) return { exists: false };
+      data = data[key];
+    }
+    return { exists: true, value: data };
+  }
+  function expectedAt(data, path) {
+    const expected = clone(at(data, path));
+    expected.arrays = [];
+    for (let length = 0; length < path.length; length++) {
+      const parent = at(data, path.slice(0, length));
+      if (Array.isArray(parent.value)) expected.arrays.push({ path: path.slice(0, length), value: clone(parent.value) });
+    }
+    return expected;
+  }
   function changeAt(data, path, value) {
     if (!path.length) return value;
     let parent = data;
-    for (const key of path.slice(0, -1)) { if (!Object.hasOwn(parent, key)) throw new Error('字段路径不存在'); parent = parent[key]; }
+    for (const key of path.slice(0, -1)) {
+      if (parent === null || typeof parent !== 'object' || !Object.hasOwn(parent, key)) throw new Error('字段路径不存在');
+      parent = parent[key];
+    }
+    if (parent === null || typeof parent !== 'object') throw new Error('字段路径不存在');
     own(parent, path.at(-1), value);
     return data;
   }
   function removeAt(data, path) {
     if (!path.length) throw new Error('完整数据须保持为对象');
-    let parent = data;
-    for (const key of path.slice(0, -1)) { if (!Object.hasOwn(parent, key)) throw new Error('字段路径不存在'); parent = parent[key]; }
+    const parent = at(data, path.slice(0, -1)).value;
+    if (parent === null || typeof parent !== 'object') throw new Error('字段路径不存在');
     if (Array.isArray(parent)) parent.splice(Number(path.at(-1)), 1);
     else delete parent[path.at(-1)];
     return data;
   }
-  const api = { mergeView, changeAt, removeAt };
+  // Merge only the edited field, retaining newer changes elsewhere and MVU metadata.
+  function applyEdit(envelope, path, expected, value, action = 'set', newKey) {
+    for (const array of expected.arrays || []) if (!same(at(envelope.stat_data, array.path).value, array.value)) throw new Error('此列表已被更新，请核对最新值后再修改');
+    const latest = at(envelope.stat_data, path);
+    if (latest.exists !== expected.exists || !same(latest.value, expected.value)) throw new Error('此字段已被更新，请核对最新值后再修改');
+    const result = clone(envelope);
+    if (action === 'rename') {
+      const parent = at(result.stat_data, path.slice(0, -1)).value;
+      if (!newKey || Object.hasOwn(parent, newKey)) throw new Error('名称为空或已存在');
+      own(parent, newKey, clone(latest.value));
+      removeAt(result.stat_data, path);
+    } else if (action === 'delete') removeAt(result.stat_data, path);
+    else {
+      let parent = result.stat_data;
+      for (const key of path.slice(0, -1)) {
+        if (!Object.hasOwn(parent, key)) own(parent, key, {});
+        parent = parent[key];
+        if (parent === null || typeof parent !== 'object') throw new Error('上级字段格式有误，请先修正');
+      }
+      result.stat_data = changeAt(result.stat_data, path, clone(value));
+    }
+    return result;
+  }
+  const assetKeys = ['金钱', '学分', '背包', '装备'];
+  const featKeys = ['壮举', '专长', '奇遇'];
+  const partnerSections = {
+    status: ['状态效果'], skills: ['技能'], equipment: ['装备'],
+    background: ['背景故事', '心里话', '奇遇', '专长', '壮举'],
+    assets: ['金钱', '学分', '背包'],
+    depravity: ['堕落度', '侵蚀度', '堕落六维', '当前认知', 'xp', '特殊项目', '堕落节点'],
+  };
+  const group = (label, path, keys) => ({ label, path, ...(keys ? { keys } : {}) });
+  function tabGroups(tab, data) {
+    switch (tab) {
+      case 'items': return assetKeys.map(key => group(key, ['主角', key]));
+      case 'feats': return featKeys.map(key => group(key, ['主角', key]));
+      case 'quests': return ['任务列表', '事件'].map(key => group(key, [key]));
+      case 'news': return [group('新闻', ['新闻'])];
+      case 'intel': return [group('情报', ['信息'])];
+      case 'map': return [group('世界', ['世界'])];
+      case 'depravity': return [group('堕落档案', ['主角', '堕落档案']), group('世界侵蚀度', ['世界', '欲潮侵蚀度'])];
+      default: {
+        const other = Object.keys(data).filter(key => !['世界', '主角', '关系列表', '任务列表', '事件', '新闻', '信息'].includes(key));
+        const profile = Object.keys(object(data.主角) ? data.主角 : {}).filter(key => ![...assetKeys, ...featKeys, ...(data.主角?.性别 === '男' ? [] : ['堕落档案'])].includes(key));
+        return [group('主角档案', ['主角'], profile), group('世界', ['世界']), group('其他记录', [], other),
+          ...(!object(data.关系列表) && data.关系列表 !== undefined ? [group('关系列表', ['关系列表'])] : [])];
+      }
+    }
+  }
+  function partnerGroups(name, section, data) {
+    const path = ['关系列表', name];
+    if (section === 'overview') {
+      const elsewhere = Object.values(partnerSections).flat();
+      return [group(name, path, Object.keys(object(data) ? data : {}).filter(key => !elsewhere.includes(key)))];
+    }
+    return (partnerSections[section] || []).map(key => group(key, path.concat(key)));
+  }
+  const api = { mergeView, changeAt, removeAt, at, expectedAt, applyEdit, tabGroups, partnerGroups };
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (!host.document) return;
   host.DelphianDataEditor = api;
   const doc = host.document;
-  let bridge, draft, original, anchor, dirty = false, invalid = new Set(), expanded = new Set(['/']);
+  api.readData = () => {
+    const target = { type: 'message', message_id: host.getCurrentMessageId() };
+    return clone((host.Mvu?.getMvuData ? host.Mvu.getMvuData(target) : host.getVariables(target))?.stat_data ?? {});
+  };
   const pointer = path => '/' + path.map(part => String(part).replace(/~/g, '~0').replace(/\//g, '~1')).join('/');
+  const enabled = () => host.DelphianStatusEditing?.enabled() === true;
   const identity = () => {
     const context = host.SillyTavern?.getContext?.() || {};
     return JSON.stringify([context.chatId ?? null, context.characterId ?? null, context.groupId ?? null, String(host.getCurrentMessageId())]);
@@ -29481,124 +29633,154 @@
     for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, value);
     return el;
   };
-  let root, panel, tree, status, toggle;
-  const tell = (message, error = false) => { status.textContent = message; status.dataset.error = String(error); };
-  const enabled = () => bridge?.enabled() === true;
-  const mark = () => { dirty = true; tell('修改尚未保存'); };
-  const button = (label, action) => { const el = element('button', label, { type: 'button' }); el.addEventListener('click', action); return el; };
-  async function load() {
-    if (!enabled()) return;
-    try {
+  let queue = Promise.resolve();
+  function commit(path, expected, value, action, newKey, anchor = identity()) {
+    const operation = queue.catch(() => {}).then(async () => {
+      if (!enabled()) throw new Error('请先开启允许编辑数据');
       await host.waitGlobalInitialized('Mvu');
-      const data = host.Mvu.getMvuData({ type: 'message', message_id: host.getCurrentMessageId() });
-      const raw = data?.stat_data ?? {};
-      if (!object(raw)) throw new Error('当前完整数据不是对象，请先修正其外层格式');
-      draft = clone(raw); original = JSON.stringify(raw); anchor = identity(); dirty = false; invalid.clear();
-      panel.hidden = false; render(); tell('已载入当前楼层的完整数据。修改后点击保存。');
-    } catch (error) { tell(String(error.message || error), true); }
+      if (!enabled()) throw new Error('编辑已关闭，此次修改未写入');
+      if (identity() !== anchor) throw new Error('聊天或楼层已切换，此次修改未写入');
+      const target = { type: 'message', message_id: host.getCurrentMessageId() };
+      const result = applyEdit(host.Mvu.getMvuData(target), path, expected, value, action, newKey);
+      await host.Mvu.replaceMvuData(result, target);
+      host.DelphianStatusEditing.refresh();
+    });
+    queue = operation;
+    return operation;
   }
-  async function save() {
-    if (!enabled()) { tell('请先开启允许编辑数据', true); return; }
-    if (invalid.size) { tell('有未填写完整的数字，请先修正', true); return; }
-    if (!draft) return;
-    try {
-      if (identity() !== anchor) throw new Error('聊天或楼层已切换，请重新载入，避免改错存档');
-      const latest = clone(host.Mvu.getMvuData({ type: 'message', message_id: host.getCurrentMessageId() }));
-      if (JSON.stringify(latest.stat_data ?? {}) !== original) throw new Error('原数据已被其他操作更新，请重新载入后修改');
-      const saved = clone(draft);
-      latest.stat_data = saved;
-      await host.Mvu.replaceMvuData(latest, { type: 'message', message_id: host.getCurrentMessageId() });
-      const actual = host.Mvu.getMvuData({ type: 'message', message_id: host.getCurrentMessageId() });
-      if (JSON.stringify(actual.stat_data) !== JSON.stringify(saved)) throw new Error('数据被其他脚本改写，请重新载入核对');
-      original = JSON.stringify(saved); dirty = false; bridge.refresh(); tell('已保存完整数据');
-    } catch (error) { tell(String(error.message || error), true); }
-  }
-  function render() {
-    tree.replaceChildren(); invalid.clear();
-    tree.appendChild(node(draft, [], '完整数据', true));
-  }
-  function node(value, path, label, open = false) {
-    const type = kind(value), box = element('div', null, { class: 'fde-node', 'data-path': pointer(path) });
-    const row = element('div', null, { class: 'fde-row' });
-    row.appendChild(element('span', label, { class: 'fde-label' }));
-    if (path.length) {
-      const select = element('select', null, { 'aria-label': label + '的数据类型' });
-      const names = { string: '文本', number: '数字', boolean: '开关', object: '分组', array: '列表', null: '空值' };
-      for (const [key, name] of Object.entries(names)) { const option = element('option', name, { value: key }); option.selected = key === type; select.appendChild(option); }
+  api.commit = commit;
+  api.mount = function mount(container, initialGroups) {
+    let groups = initialGroups, destroyed = false;
+    const expanded = new Set();
+    container.classList.add('dse-inline');
+    const report = error => host.toastr?.error(String(error.message || error));
+    const button = (text, title, action) => {
+      const el = element('button', text, { type: 'button', title, 'aria-label': title });
+      el.addEventListener('click', event => { event.stopPropagation(); action(); });
+      return el;
+    };
+    function draw() {
+      if (destroyed || !enabled()) return;
+      const raw = api.readData();
+      const anchor = identity();
+      container.replaceChildren();
+      for (const spec of groups) {
+        const current = at(raw, spec.path);
+        const card = element('section', null, { class: 'dse-card Card-module__card--6ovEH' });
+        const heading = element('div', spec.label, { class: 'dse-heading Card-module__cardHeader--M1jVm' });
+        card.appendChild(heading);
+        const body = element('div', null, { class: 'dse-body Card-module__cardBody--zkEv0' });
+        if (spec.keys && object(current.value)) {
+          for (const key of spec.keys) if (Object.hasOwn(current.value, key)) body.appendChild(node(current.value[key], spec.path.concat(key), key, 0, anchor, raw));
+          body.appendChild(addControl(current.value, spec.path, anchor));
+          // The partner record itself can be renamed/deleted in its existing overview.
+          if (spec.path[0] === '关系列表') heading.appendChild(actions(current.value, spec.path, anchor, raw));
+        } else if (object(current.value) || Array.isArray(current.value)) {
+          children(body, current.value, spec.path, 0, anchor, raw);
+        } else if (current.exists) body.appendChild(node(current.value, spec.path, spec.label, 0, anchor, raw));
+        else {
+          const hint = element('span', '暂无数据', { class: 'dse-muted' });
+          const key = spec.path.at(-1);
+          const initial = ['金钱', '学分', '堕落度', '侵蚀度', '欲潮侵蚀度'].includes(key) ? 0 : ['背景故事', '心里话', '当前认知'].includes(key) ? '' : {};
+          body.append(hint, button('＋', '添加' + spec.label, () => perform(spec.path, current, initial, undefined, undefined, anchor)));
+        }
+        card.appendChild(body); container.appendChild(card);
+      }
+    }
+    async function perform(path, expected, value, action, newKey, anchor) {
+      try { await commit(path, expected, value, action, newKey, anchor); if (!destroyed) draw(); }
+      catch (error) { report(error); }
+    }
+    function actions(value, path, anchor, raw) {
+      const menu = element('details', null, { class: 'dse-actions' });
+      menu.appendChild(element('summary', '⋯', { 'aria-label': '字段操作：' + path.at(-1), title: '字段操作' }));
+      const options = element('div', null, { class: 'dse-options' });
+      const expected = expectedAt(raw, path);
+      const parent = at(raw, path.slice(0, -1)).value;
+      if (!Array.isArray(parent)) options.appendChild(button('改名', '改名：' + path.at(-1), () => {
+        const name = host.prompt('新名称', String(path.at(-1)));
+        if (name && name !== String(path.at(-1))) perform(path, expected, undefined, 'rename', name, anchor);
+      }));
+      options.appendChild(button('删除', '删除：' + path.at(-1), () => {
+        if (host.confirm('删除「' + path.at(-1) + '」？')) perform(path, expected, undefined, 'delete', undefined, anchor);
+      }));
+      const select = element('select', null, { 'aria-label': path.at(-1) + '的数据类型' });
+      const types = { string: '文本', number: '数字', boolean: '开关', object: '分组', array: '列表', null: '空值' };
+      for (const [key, name] of Object.entries(types)) { const option = element('option', name, { value: key }); option.selected = key === kind(value); select.appendChild(option); }
       select.addEventListener('change', () => {
         const values = { string: '', number: 0, boolean: false, object: {}, array: [], null: null };
-        draft = changeAt(draft, path, values[select.value]); mark(); render();
+        if (host.confirm('将「' + path.at(-1) + '」改为' + types[select.value] + '？原值将被替换。')) perform(path, expected, values[select.value], undefined, undefined, anchor);
+        else select.value = kind(value);
       });
-      row.appendChild(select);
-      let parent = draft;
-      for (const key of path.slice(0, -1)) parent = parent[key];
-      if (!Array.isArray(parent)) row.appendChild(button('改名', () => {
-        const key = host.prompt('字段新名称', String(path.at(-1)));
-        if (key === null || key === '' || key === String(path.at(-1))) return;
-        if (Object.hasOwn(parent, key)) { tell('已存在同名字段', true); return; }
-        own(parent, key, parent[path.at(-1)]); delete parent[path.at(-1)]; mark(); render();
-      }));
-      row.appendChild(button('删除', () => { draft = removeAt(draft, path); mark(); render(); }));
+      options.appendChild(select); menu.appendChild(options); return menu;
     }
-    box.appendChild(row);
-    if (type === 'object' || type === 'array') {
-      const details = element('details', null); details.open = open || expanded.has(pointer(path));
-      details.appendChild(element('summary', (type === 'array' ? '列表' : '分组') + ' · ' + Object.keys(value).length + ' 项'));
-      const children = element('div', null, { class: 'fde-children' });
-      let built = false;
-      const build = () => {
-        if (!details.open || built) return; built = true;
-        for (const key of Object.keys(value)) children.appendChild(node(value[key], path.concat(Array.isArray(value) ? Number(key) : key), Array.isArray(value) ? '第 ' + (Number(key) + 1) + ' 项' : key));
-        children.appendChild(button(type === 'array' ? '添加一项' : '添加字段', () => {
-          if (type === 'array') value.push('');
-          else {
-            const key = host.prompt('新字段名称');
-            if (key === null || key === '') return;
-            if (Object.hasOwn(value, key)) { tell('已存在同名字段', true); return; }
-            own(value, key, '');
-          }
-          mark(); render();
-        }));
-      };
-      details.addEventListener('toggle', () => { if (details.open) expanded.add(pointer(path)); else expanded.delete(pointer(path)); build(); }); build(); details.appendChild(children); box.appendChild(details);
-    } else if (type !== 'null') {
-      const input = element(type === 'boolean' ? 'select' : type === 'number' ? 'input' : 'textarea', null, { 'data-field': pointer(path), 'aria-label': label });
-      if (type === 'number') { input.type = 'number'; input.step = 'any'; }
-      if (type === 'boolean') for (const [key, name] of [['true', '是'], ['false', '否']]) input.appendChild(element('option', name, { value: key }));
-      input.value = String(value);
-      input.addEventListener('input', () => {
-        if (type === 'number' && (input.value === '' || !Number.isFinite(Number(input.value)))) { invalid.add(pointer(path)); tell('数字不能为空或无效', true); return; }
-        invalid.delete(pointer(path));
-        const next = type === 'number' ? Number(input.value) : type === 'boolean' ? input.value === 'true' : input.value;
-        draft = changeAt(draft, path, next); mark();
+    function addControl(value, path, anchor) {
+      return button('＋', Array.isArray(value) ? '添加一项' : '添加字段', async () => {
+        const name = Array.isArray(value) ? value.length : host.prompt('新字段名称');
+        if (name === null || name === '') return;
+        if (Object.hasOwn(value, name)) { report('已存在同名字段'); return; }
+        // Append by comparing the collection, so a shifted array never receives an old index.
+        const next = clone(value); own(next, name, '');
+        await perform(path, { exists: true, value }, next, undefined, undefined, anchor);
       });
-      box.appendChild(input);
     }
-    return box;
-  }
-  function connect() {
-    if (!host.DelphianStatusEditing || root) return;
-    bridge = host.DelphianStatusEditing;
-    root = element('section', null, { id: 'delphian-full-data-editor' });
-    const bar = element('div', null, { class: 'fde-toolbar' }), label = element('label', ' 允许编辑数据');
-    toggle = element('input', null, { type: 'checkbox', id: 'fde-enable' }); label.prepend(toggle);
-    toggle.addEventListener('change', async () => { await bridge.setEnabled(toggle.checked); });
-    bar.append(label, button('编辑全部数据', load)); root.appendChild(bar);
-    panel = element('div', null, { id: 'fde-panel' }); panel.hidden = true;
-    panel.appendChild(element('p', '可修改所有分组、字段和列表，包括未在普通页展示的数据。数字不受面板上下限约束，保存到当前楼层。'));
-    const actions = element('div', null, { class: 'fde-toolbar' });
-    actions.append(button('载入当前数据', load), button('保存修改', save), button('放弃修改', () => { draft = null; dirty = false; panel.hidden = true; tell('已放弃未保存修改'); }));
-    status = element('div', '', { role: 'status', 'aria-live': 'polite' }); tree = element('div', null, { id: 'fde-tree' });
-    panel.append(actions, status, tree); root.appendChild(panel);
-    const style = element('style', '#delphian-full-data-editor{box-sizing:border-box;max-width:1100px;margin:12px auto;padding:12px;background:var(--theme-window-bg,#f1e8dc);color:var(--theme-primary-text,#443220);border:1px solid #c3a97c;border-radius:8px;font:14px/1.5 sans-serif}#delphian-full-data-editor [hidden]{display:none!important}.fde-toolbar,.fde-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0}.fde-label{overflow-wrap:anywhere;flex:1;min-width:80px}.fde-node{padding:6px;border-top:1px solid #c3a97c55}.fde-children{margin-left:12px}.fde-node input:not([type=checkbox]),.fde-node textarea{box-sizing:border-box;width:100%;padding:6px;border:1px solid #b79b70;border-radius:4px;color:inherit;background:#fff8}.fde-node textarea{min-height:60px;resize:vertical}.fde-row select, .fde-toolbar button,.fde-row button,.fde-children>button{padding:5px 9px;font:inherit;max-width:100%}#fde-panel [data-error=true]{color:#ae2c2c}@media(max-width:480px){.fde-children{margin-left:4px}.fde-node{padding:4px}}');
-    doc.head.appendChild(style); doc.body.appendChild(root);
-    const sync = () => { toggle.checked = enabled(); bar.querySelector('button').disabled = !enabled(); if (!enabled()) { panel.hidden = true; draft = null; dirty = false; } };
-    bridge.subscribe(sync); sync();
-    host.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
-  }
-  host.addEventListener('delphian-status-editing-ready', connect);
-  if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', connect, { once: true });
-  else connect();
+    function children(parent, value, path, depth, anchor, raw) {
+      for (const key of Object.keys(value)) parent.appendChild(node(value[key], path.concat(Array.isArray(value) ? Number(key) : key), Array.isArray(value) ? '第 ' + (Number(key) + 1) + ' 项' : key, depth, anchor, raw));
+      parent.appendChild(addControl(value, path, anchor));
+    }
+    function node(value, path, label, depth, anchor, raw) {
+      const box = element('div', null, { class: 'dse-field', 'data-path': pointer(path) });
+      if (object(value) || Array.isArray(value)) {
+        const details = element('details', null, { class: 'dse-group' });
+        details.open = expanded.has(pointer(path)) || (depth === 0 && path.at(-1) === '属性');
+        const summary = element('summary', label + ' · ' + Object.keys(value).length);
+        details.appendChild(summary);
+        let built = false;
+        const build = () => {
+          if (!details.open || built) return; built = true;
+          const inner = element('div', null, { class: 'dse-children' });
+          children(inner, value, path, depth + 1, anchor, raw); details.appendChild(inner);
+        };
+        details.addEventListener('toggle', () => { if (details.open) expanded.add(pointer(path)); else expanded.delete(pointer(path)); build(); });
+        build(); box.appendChild(details); box.appendChild(actions(value, path, anchor, raw));
+      } else {
+        const row = element('label', null, { class: 'dse-row' });
+        row.appendChild(element('span', label, { class: 'dse-label' }));
+        const type = kind(value), input = element(type === 'string' ? 'textarea' : 'input', null, { 'data-field': pointer(path), 'aria-label': label });
+        if (type === 'boolean') { input.type = 'checkbox'; input.checked = value; }
+        else if (type === 'number') { input.type = 'number'; input.step = 'any'; input.value = String(value); }
+        else { input.value = value === null ? '' : String(value); if (type === 'null') input.placeholder = '空值'; }
+        if (type === 'string') { input.rows = value.includes('\n') || value.length > 60 ? 3 : 1; }
+        let dirty = false, saving = false;
+        input.addEventListener('input', () => { dirty = true; input.dataset.dirty = 'true'; input.setCustomValidity(''); });
+        const save = async () => {
+          if (!dirty || saving) return;
+          if (type === 'number' && (input.value === '' || !Number.isFinite(Number(input.value)))) { input.setCustomValidity('请填写有效数字'); input.reportValidity(); return; }
+          const next = type === 'boolean' ? input.checked : type === 'number' ? Number(input.value) : input.value;
+          if (same(next, value)) { dirty = false; delete input.dataset.dirty; return; }
+          saving = true;
+          try {
+            await commit(path, expectedAt(raw, path), next, undefined, undefined, anchor);
+            dirty = false; delete input.dataset.dirty;
+            if (!destroyed) draw();
+          } catch (error) { report(error); input.setCustomValidity(String(error.message || error)); input.reportValidity(); }
+          finally { saving = false; }
+        };
+        input.addEventListener(type === 'boolean' ? 'change' : 'blur', save);
+        input.addEventListener('keydown', event => {
+          if (event.key === 'Escape') { dirty = false; delete input.dataset.dirty; if (type === 'boolean') input.checked = value; else input.value = value === null ? '' : String(value); input.setCustomValidity(''); input.blur(); }
+          if (event.key === 'Enter' && (type !== 'string' || !event.shiftKey)) { event.preventDefault(); input.blur(); }
+        });
+        row.appendChild(input); box.append(row, actions(value, path, anchor, raw));
+      }
+      return box;
+    }
+    draw();
+    return {
+      update(nextGroups) { groups = nextGroups; if (!container.querySelector('[data-dirty="true"]')) draw(); },
+      destroy() { destroyed = true; container.replaceChildren(); },
+    };
+  };
 })(typeof window === 'object' ? window : globalThis);
 
 </script>
