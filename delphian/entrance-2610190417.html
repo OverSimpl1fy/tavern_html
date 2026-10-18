@@ -4376,9 +4376,7 @@
                 });
               }
               const firstTurn = _.get(e, "preset.首轮约束", null);
-              if (customDescription) _.set(c, ["stat_data", "信息", "情报-自定义开局"], {
-                类型: "开场", 内容: customDescription, 来源: "前端自定义开局", 备注: "开始旅程时由用户确认并直接保存的开场内容。",
-              });
+              // 开局正文只发送给首轮生成，不作为情报落盘；独立预设情报按上文写入。
               if (!_.isEmpty(firstTurn)) {
                 _.set(c, ["stat_data", "信息", "情报-首轮约束"], {
                   类型: "首轮约束",
@@ -4745,7 +4743,7 @@
               }
               c.push("【本局世界】" + resolveJourneyWorld(e).world);
               if (_.isPlainObject(e.preset)) c.push("<gateway_opening>" + JSON.stringify({ world: resolveJourneyWorld(e).world, eventPool: resolveJourneyWorld(e).pool, 情报: e.preset.情报 || [], 开局档案: e.preset.开局档案 || {}, 首轮约束: e.preset.首轮约束 || null, 预设名: e.preset.name || "" }) + "</gateway_opening>");
-              return `\`\`\`text\n${c.join("\n")}\n\`\`\`\n\n---\n根据当前状态快照和以上内容，生成一个符合情景与设定的初始剧情！`;
+              return `\`\`\`text\n${c.join("\n")}\n\`\`\`\n\n---\n根据当前状态快照和以上内容，生成一个符合情景与设定的初始剧情！\n开局正文仅用于首轮叙述，不要将开场白全文或剧情摘要另存为情报；需要后续使用的独立线索仍按情报规则记录。`;
             })(
               character,
               e.selectedEquipments,
