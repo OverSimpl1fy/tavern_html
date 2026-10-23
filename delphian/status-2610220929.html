@@ -2,6 +2,98 @@
   <meta charset="utf-8">
 <!-- 信息 record 与 initial 保持一致；MVU 原生 schema 的条目扩展由初始化/更新前兼容钩子维护。 -->
   <script type="module">
+// DELPHIAN_SKILL_RUNTIME_START
+const DelphianSkills = (() => {
+'use strict'
+
+// Pure rules shared with the embedded character/entrance schemas by the build tool.
+// Resource cost and effect budget are independently fixed by skill tier and quality.
+const SKILL_TIERS = Object.freeze([
+  { cost: 12, power: 90, armor: 100 }, { cost: 40, power: 300, armor: 250 }, { cost: 120, power: 1300, armor: 500 },
+  { cost: 260, power: 3900, armor: 1000 }, { cost: 560, power: 15500, armor: 2000 }, { cost: 1100, power: 75000, armor: 4000 },
+])
+const SKILL_QUALITIES = Object.freeze({
+  普通: [1, 1], 优良: [1, 1.15], 稀有: [1.05, 1.30],
+  史诗: [1.10, 1.45], 传说: [1.15, 1.60], 神话: [1.20, 1.75],
+})
+const QUALITY_ALIASES = Object.freeze({ common: '普通', uncommon: '优良', rare: '稀有', epic: '史诗', legendary: '传说', mythic: '神话', 优秀: '优良' })
+const SKILL_SCALES = Object.freeze({ 基础: .25, 轻型: .5, 标准: 1, 重型: 1.5 })
+function skillTier(value, fallback = 1) {
+  if (value === null || value === undefined || value === '') return fallback
+  if (Number.isInteger(Number(value)) && Number(value) >= 0 && Number(value) <= 5) return Number(value)
+  if (/无层级|凡民/u.test(String(value))) return 0
+  const m = String(value).match(/(?:第)?([一二三四五1-5])(?:层级|层)/u)
+  return m ? ('一二三四五'.indexOf(m[1]) >= 0 ? '一二三四五'.indexOf(m[1]) + 1 : Number(m[1])) : fallback
+}
+function skillQuality(value) { return QUALITY_ALIASES[value] || (SKILL_QUALITIES[value] ? value : '普通') }
+function skillScale(tags) { return (Array.isArray(tags) ? tags : []).find(x => ['轻型', '标准', '重型'].includes(x)) || '标准' }
+function skillBudget(options = {}) {
+  const tier = skillTier(options.tier)
+  const quality = skillQuality(options.quality)
+  const scale = SKILL_SCALES[options.scale] || 1, base = SKILL_TIERS[tier], q = SKILL_QUALITIES[quality]
+  const level = Number.isFinite(Number(options.level)) ? Math.max(0, Number(options.level)) : (tier === 0 ? 0 : (tier - 1) * 4 + 1)
+  const ownerTier = level === 0 ? 0 : Math.ceil(level / 4)
+  const step = tier === 0 ? 0 : Math.min(3, Math.max(0, level - ((tier - 1) * 4 + 1)))
+  const growth = 1 + step * (tier >= 3 ? .15 : .10)
+  const attribute = Math.min(26, Math.max(0, Number(options.attribute ?? 10)))
+  const attributeMultiplier = 1 + Math.floor((attribute - 10) / 2) * .05
+  const basePower = Math.round(base.power * q[1] * scale * growth * attributeMultiplier)
+  const weaponContribution = options.kind === '治疗' || options.kind === '护盾' ? 0 : Math.max(0, Math.min(Math.floor(basePower * .1), Math.floor((Number(options.weaponPower) || 0) * growth * attributeMultiplier)))
+  const effectiveProficiency = Math.min(level === 0 ? 1 : Math.min(6, 2 + Math.floor((level - 1) / 4)), tier + 1)
+  return { tier, quality, scale, usable: ownerTier >= tier,
+    cost: Math.ceil(base.cost * q[0] * scale),
+    power: basePower + weaponContribution, basePower, weaponContribution, growth, attributeMultiplier, effectiveProficiency }
+}
+function skillFormula(kind = '伤害', share = 1) {
+  const recovery = kind === '治疗' || kind === '护盾'
+  return (recovery ? 'round' : 'floor') + '(round(层级威力基数×品质威力系数×规模×封顶层内成长×(1+关联属性修正×5%))×' + share + (recovery ? '×0.8' : '') + ')；先算一次总预算再分配，按《技能层级与预算》结算，不按目标数、段数或回合数复制'
+}
+// Compatibility is deliberately limited to pre-rework records. Explicit current records
+// (including manually edited cost/effects) survive unchanged except for numeric tier spelling.
+function normalizeSkill(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return input
+  const out = { ...input }
+  const tier = skillTier(out.层级 ?? out.tier)
+  const old = out.层级 === undefined && out.tier === undefined || /转化比/u.test(JSON.stringify(out.效果 ?? out.effect ?? {}))
+  out.层级 = tier
+  if (!old) return out
+  const english = Object.hasOwn(out, 'rarity') || Object.hasOwn(out, 'consume')
+  const quality = skillQuality(out.品质 ?? out.rarity), tags = out.标签 ?? out.tag ?? []
+  const passive = /被动/u.test(out.类型 ?? out.type ?? '')
+  const effects = { ...(out.效果 ?? out.effect ?? {}) }
+  const direct = Object.keys(effects).filter(k => /伤害|治疗|恢复生命|护盾/u.test(k))
+  const mechanism = Object.keys(effects).some(k => /控制|净化|减益|迟缓|禁锢|沉默|眩晕/u.test(k)) ? .4 : 0
+  const share = direct.length ? Math.floor((1 - mechanism) / direct.length * 1000) / 1000 : 0
+  for (const key of Object.keys(effects)) {
+    if (/转化比/u.test(key)) { delete effects[key]; continue }
+    if (!passive && /伤害|治疗|恢复生命|护盾/u.test(key)) effects[key] = skillFormula(/治疗|恢复生命/u.test(key) ? '治疗' : /护盾/u.test(key) ? '护盾' : '伤害', share)
+    else if (/转化比/u.test(String(effects[key]))) effects[key] = '按《技能层级与预算》的对应效果预算结算'
+    else if (/检定|护甲等级/u.test(String(effects[key]))) {
+      const cap = Math.min(tier + 1, Object.keys(SKILL_QUALITIES).indexOf(quality) + 1)
+      effects[key] = String(effects[key]).replace(/([+＋]\s*)(\d+)(?![\d.%])/gu, (_, sign, amount) => sign + Math.min(cap, Number(amount)))
+        .replace(/免疫突袭/gu, '可主动检定察觉突袭，不自动发现无来源的隐蔽者')
+    }
+  }
+  if (mechanism) effects.机制预算 = '占总预算40%；控制须有豁免、持续与解除，不能另获完整伤害/治疗量'
+  const rawCost = String(out.消耗 ?? out.consume ?? ''), resource = /SP/i.test(rawCost) ? 'SP' : /HP/i.test(rawCost) ? 'HP' : /MP/i.test(rawCost) ? 'MP' : /魔法|神术|法术/u.test(tags.join(' ')) ? 'MP' : 'SP'
+  const suffix = rawCost.match(/(?:与|及|另需)[^;\n]+/u)?.[0] || ''
+  const extraCost = /MP|SP|HP/i.test(suffix) ? '' : suffix
+  const cost = passive ? '无' : resource + ' ' + skillBudget({ tier, quality, scale: skillScale(tags) }).cost + extraCost
+  if (english) { out.tier = tier; out.consume = cost; out.effect = effects }
+  else { out.品质 = quality; out.消耗 = cost; out.效果 = effects }
+  return out
+}
+function mitigateDamage(power, options = {}) {
+  const rating = Math.max(0, Number(options.rating ?? 1)), intent = Math.max(0, Number(options.intent ?? 1))
+  const defense = Math.max(0, Number(options.defense ?? 0)) * (1 - Math.min(1, Math.max(0, Number(options.penetration ?? 0))))
+  const reduction = Math.min(1, Math.max(0, Number(options.reduction ?? 0))), dr = Math.min(1, Math.max(0, Number(options.dr ?? 0)))
+  const armorBase = SKILL_TIERS[skillTier(options.tier)].armor
+  const mitigation = options.type === '真实' ? 1 : armorBase / (defense + armorBase) * (1 - reduction) * (1 - dr)
+  return Math.max(0, Math.floor(Number(power) * rating * intent * mitigation))
+}
+return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, skillScale, skillBudget, skillFormula, normalizeSkill, mitigateDamage };
+})();
+// DELPHIAN_SKILL_RUNTIME_END
     // The stable v10 view is owned by the actual React tab, with no DOM polling.
     function createDelphianPartnerView(root) {
   var DIMENSIONS = ["道德沦丧", "共情泯灭", "欲望沉溺", "自我消解", "手段残酷", "罪责开脱"];
@@ -88,7 +180,7 @@
       rows.push('<span>' + esc(label) + ' <b>' + esc(text) + '</b></span>');
     }
     meta("类型", it.类型);
-    if (kind === "skill") { meta("消耗", it.消耗); meta("目标豁免", it.目标豁免); meta("伤害", it.伤害); }
+    if (kind === "skill") { it = DelphianSkills.normalizeSkill(it); meta("层级", it.层级 === 0 ? "世俗技巧" : "第" + it.层级 + "层级"); meta("消耗", it.消耗); meta("目标豁免", it.目标豁免); meta("伤害", it.伤害); }
     if (kind === "equipment") { meta("位置", it.位置); meta("数量", it.数量); }
     if (kind === "item") { meta("数量", it.数量); }
     if (kind === "skill" || kind === "equipment") { /* 状态/补充见下 */ }
@@ -13151,6 +13243,7 @@
         }).optional().prefault(void 0),
       }),
       xk = x.extend({
+        层级: z.coerce.number().prefault(1).transform(x => Math.min(5, Math.max(0, Math.round(x)))),
         目标豁免: z.string().prefault(""),
         伤害: z
           .object({
@@ -13165,10 +13258,11 @@
         补充: z.string().prefault(""),
       }),
       w = x.extend({ 位置: z.string().prefault("") }),
-      k = xk
-        .extend({ 消耗: z.string().prefault("") })
+      k = z.preprocess(DelphianSkills.normalizeSkill, xk
+        .extend({ 消耗: z.string().prefault("") }))
         .transform((e) =>
           _.pick(e, [
+            "层级",
             "品质",
             "类型",
             "消耗",
@@ -16826,7 +16920,7 @@
                         e.消耗
                           ? (0, i.jsx)("span", {
                               className: ss,
-                              children: e.消耗,
+                              children: (e.层级 === 0 ? "世俗技巧" : "第" + (e.层级 ?? 1) + "层级") + " · " + e.消耗,
                             })
                           : null,
                     );
