@@ -1,0 +1,482 @@
+[
+  {
+    "name": "基础斩击",
+    "type": "主动",
+    "rarity": "common",
+    "tag": ["剑术", "物理", "近战"],
+    "effect": { "伤害": "对单个目标造成 60 点物理伤害" },
+    "consume": "6 SP",
+    "description": "剑术入门的基本横斩，力从腰发，稳准兼顾。",
+    "cost": 1
+  },
+  {
+    "name": "精准刺击",
+    "type": "主动",
+    "rarity": "common",
+    "tag": ["剑术", "物理", "近战"],
+    "effect": { "伤害": "对单个目标造成 70 点物理伤害" },
+    "consume": "7 SP",
+    "description": "瞄准护甲缝隙的直线突刺，讲究一击中的。",
+    "cost": 1
+  },
+  {
+    "name": "疾风连斩",
+    "type": "主动",
+    "rarity": "common",
+    "tag": ["剑术", "物理", "近战"],
+    "effect": { "伤害": "对单个目标连续造成 80 点物理伤害" },
+    "consume": "8 SP",
+    "description": "一息之间连出数剑，以攻势压制对手。",
+    "cost": 2
+  },
+  {
+    "name": "盾牌格挡",
+    "type": "被动",
+    "rarity": "common",
+    "tag": ["剑术", "防御", "近战"],
+    "effect": { "防御加成": "持盾时护甲等级 +1" },
+    "consume": "",
+    "description": "以盾御敌的守势，习得后常伴其身。",
+    "cost": 0
+  },
+  {
+    "name": "蓄力射击",
+    "type": "主动",
+    "rarity": "common",
+    "tag": ["弓术", "物理", "远程"],
+    "effect": { "伤害": "对单个目标造成 75 点物理伤害" },
+    "consume": "6 SP",
+    "description": "张弓引满后再放，箭势更沉更稳。",
+    "cost": 1
+  },
+  {
+    "name": "连珠箭",
+    "type": "主动",
+    "rarity": "common",
+    "tag": ["弓术", "物理", "远程"],
+    "effect": { "伤害": "对单个目标造成 65 点物理伤害，有 10% 概率追加一箭" },
+    "consume": "7 SP",
+    "description": "手不停歇地连发两箭，看天吃饭的手艺。",
+    "cost": 1
+  },
+  {
+    "name": "火球术",
+    "type": "主动",
+    "rarity": "common",
+    "tag": ["魔法", "火焰", "远程"],
+    "effect": { "伤害": "对单个目标造成 80 点火焰伤害" },
+    "consume": "8 MP",
+    "description": "凝聚火元素成球掷出，法师学徒的第一课。",
+    "cost": 2
+  },
+  {
+    "name": "冰锥术",
+    "type": "主动",
+    "rarity": "common",
+    "tag": ["魔法", "冰霜", "远程"],
+    "effect": { "伤害": "对单个目标造成 70 点冰霜伤害并使其行动迟缓" },
+    "consume": "7 MP",
+    "description": "寒气凝锥，命中处结满霜花。",
+    "cost": 1
+  },
+  {
+    "name": "风刃",
+    "type": "主动",
+    "rarity": "common",
+    "tag": ["魔法", "风", "远程"],
+    "effect": { "伤害": "对单个目标造成 60 点风属性伤害，可及远" },
+    "consume": "6 MP",
+    "description": "以风为刃，无影无形的切割。",
+    "cost": 1
+  },
+  {
+    "name": "治疗微光",
+    "type": "主动",
+    "rarity": "common",
+    "tag": ["神术", "治疗", "增益"],
+    "effect": { "治疗": "为一名友方恢复 55 点生命值" },
+    "consume": "8 MP",
+    "description": "掌心泛起微光，抚平细小伤口。",
+    "cost": 1
+  },
+  {
+    "name": "圣光弹",
+    "type": "主动",
+    "rarity": "common",
+    "tag": ["神术", "光耀", "远程"],
+    "effect": { "伤害": "对单个目标造成 65 点光耀伤害" },
+    "consume": "7 MP",
+    "description": "凝聚信仰之光击向目标，对邪祟略增威势。",
+    "cost": 1
+  },
+  {
+    "name": "盾击",
+    "type": "主动",
+    "rarity": "common",
+    "tag": ["武技", "物理", "近战"],
+    "effect": { "伤害": "对单个目标造成 60 点物理伤害并小概率使其失衡" },
+    "consume": "5 SP",
+    "description": "以盾身猛撞，把人撞个踉跄。",
+    "cost": 1
+  },
+  {
+    "name": "采集术",
+    "type": "主动",
+    "rarity": "common",
+    "tag": ["生产技能", "采集"],
+    "effect": { "生产加成": "进行一次草药或矿物采集检定，成功率提升" },
+    "consume": "3 MP",
+    "description": "辨认可采之物的眼力，荒野求生之本。",
+    "cost": 0
+  },
+  {
+    "name": "巧言术",
+    "type": "主动",
+    "rarity": "common",
+    "tag": ["社交技能", "说服"],
+    "effect": { "检定加成": "下一次说服或欺瞒检定获得 +2 加值" },
+    "consume": "3 MP",
+    "description": "三寸不烂之舌，能把黑的说成白的。",
+    "cost": 0
+  },
+  {
+    "name": "恐吓威压",
+    "type": "主动",
+    "rarity": "common",
+    "tag": ["社交技能", "威吓"],
+    "effect": { "检定加成": "下一次威吓检定获得 +2 加值" },
+    "consume": "3 SP",
+    "description": "以气势压人，让对方先软了腿。",
+    "cost": 0
+  },
+  {
+    "name": "潜行隐匿",
+    "type": "主动",
+    "rarity": "common",
+    "tag": ["武技", "潜行"],
+    "effect": { "检定加成": "下一次潜行或侦察检定获得 +2 加值" },
+    "consume": "2 SP",
+    "description": "放轻脚步、屏息藏形，避开耳目。",
+    "cost": 0
+  },
+  {
+    "name": "银叶剑舞",
+    "type": "主动",
+    "rarity": "uncommon",
+    "tag": ["剑术", "物理", "近战"],
+    "effect": { "伤害": "对单个目标造成 160 点物理伤害" },
+    "consume": "15 SP",
+    "description": "如银叶纷落的剑势，奥列留斯军中流传的剑舞。",
+    "cost": 7
+  },
+  {
+    "name": "破甲斩",
+    "type": "主动",
+    "rarity": "uncommon",
+    "tag": ["剑术", "物理", "近战"],
+    "effect": { "伤害": "对单个目标造成 140 点物理伤害，无视 10% 护甲" },
+    "consume": "18 SP",
+    "description": "专破重甲的斜斩，力透甲缝。",
+    "cost": 8
+  },
+  {
+    "name": "流星箭",
+    "type": "主动",
+    "rarity": "uncommon",
+    "tag": ["弓术", "物理", "远程"],
+    "effect": { "伤害": "对单个目标造成 150 点物理伤害" },
+    "consume": "14 SP",
+    "description": "箭若流星，转瞬已至。",
+    "cost": 6
+  },
+  {
+    "name": "灼热之矢",
+    "type": "主动",
+    "rarity": "uncommon",
+    "tag": ["弓术", "火焰", "远程"],
+    "effect": { "伤害": "对单个目标造成 130 点火焰伤害" },
+    "consume": "12 SP",
+    "description": "箭镞裹火，破风时如一道火线。",
+    "cost": 6
+  },
+  {
+    "name": "烈焰冲击",
+    "type": "主动",
+    "rarity": "uncommon",
+    "tag": ["魔法", "火焰", "范围"],
+    "effect": { "伤害": "对范围内目标造成 180 点火焰伤害" },
+    "consume": "20 MP",
+    "description": "火浪奔涌，吞没身前一片。",
+    "cost": 8
+  },
+  {
+    "name": "寒冰护甲",
+    "type": "主动",
+    "rarity": "uncommon",
+    "tag": ["魔法", "冰霜", "防御"],
+    "effect": { "护盾": "获得 120 点冰霜护盾" },
+    "consume": "15 MP",
+    "description": "冰晶覆体，在身周结成临时屏障。",
+    "cost": 6
+  },
+  {
+    "name": "治愈之光",
+    "type": "主动",
+    "rarity": "uncommon",
+    "tag": ["神术", "治疗", "增益"],
+    "effect": { "治疗": "为一名友方恢复 150 点生命值" },
+    "consume": "16 MP",
+    "description": "圣光笼罩，伤口以肉眼可见的速度愈合。",
+    "cost": 7
+  },
+  {
+    "name": "圣光护佑",
+    "type": "被动",
+    "rarity": "uncommon",
+    "tag": ["神术", "防御", "增益"],
+    "effect": { "状态抵抗": "对恐惧、魅惑的抵抗检定获得 +2 加值" },
+    "consume": "",
+    "description": "心灯不灭，邪念难侵。",
+    "cost": 5
+  },
+  {
+    "name": "回旋斩",
+    "type": "主动",
+    "rarity": "uncommon",
+    "tag": ["武技", "物理", "近战"],
+    "effect": { "伤害": "对周围目标造成 130 点物理伤害" },
+    "consume": "16 SP",
+    "description": "旋身横扫，逼退四周来敌。",
+    "cost": 7
+  },
+  {
+    "name": "锻造精通",
+    "type": "被动",
+    "rarity": "uncommon",
+    "tag": ["生产技能", "锻造"],
+    "effect": { "生产加成": "锻造相关检定获得 +3 加值" },
+    "consume": "",
+    "description": "炉火前的多年锤炼，锻出的器物更见精良。",
+    "cost": 5
+  },
+  {
+    "name": "表演魅惑",
+    "type": "主动",
+    "rarity": "uncommon",
+    "tag": ["社交技能", "表演"],
+    "effect": { "检定加成": "下一次表演或诱惑检定获得 +3 加值" },
+    "consume": "10 MP",
+    "description": "一颦一笑，皆能牵动人心。",
+    "cost": 5
+  },
+  {
+    "name": "双持技艺",
+    "type": "被动",
+    "rarity": "uncommon",
+    "tag": ["武技", "近战", "增益"],
+    "effect": { "加成": "双持武器时攻击检定获得 +1 加值" },
+    "consume": "",
+    "description": "左右开弓，双手皆可为刃。",
+    "cost": 6
+  },
+  {
+    "name": "剑气外放",
+    "type": "主动",
+    "rarity": "rare",
+    "tag": ["剑术", "物理", "远程"],
+    "effect": { "伤害": "对远距离目标造成 320 点物理伤害" },
+    "consume": "30 SP",
+    "description": "剑未至而气先达，隔空伤人。",
+    "cost": 17
+  },
+  {
+    "name": "千幻剑影",
+    "type": "主动",
+    "rarity": "rare",
+    "tag": ["剑术", "物理", "近战"],
+    "effect": { "伤害": "对单个目标造成 400 点物理伤害，命中后造成出血" },
+    "consume": "35 SP",
+    "description": "剑影千重，虚实难辨，中者血流不止。",
+    "cost": 18
+  },
+  {
+    "name": "破空神箭",
+    "type": "主动",
+    "rarity": "rare",
+    "tag": ["弓术", "物理", "远程"],
+    "effect": { "伤害": "对单个目标造成 380 点物理伤害，无视部分掩体" },
+    "consume": "32 SP",
+    "description": "一箭破空，穿林透石。",
+    "cost": 18
+  },
+  {
+    "name": "雷霆箭",
+    "type": "主动",
+    "rarity": "rare",
+    "tag": ["弓术", "雷电", "远程"],
+    "effect": { "伤害": "对单个目标造成 350 点雷电伤害" },
+    "consume": "30 SP",
+    "description": "箭出如雷，电光在命中处炸开。",
+    "cost": 17
+  },
+  {
+    "name": "陨石术",
+    "type": "主动",
+    "rarity": "rare",
+    "tag": ["魔法", "火焰", "范围"],
+    "effect": { "伤害": "对范围内目标造成 450 点火焰伤害" },
+    "consume": "40 MP",
+    "description": "自天外召来火石，轰然坠落。",
+    "cost": 19
+  },
+  {
+    "name": "连锁闪电",
+    "type": "主动",
+    "rarity": "rare",
+    "tag": ["魔法", "雷电", "范围"],
+    "effect": { "伤害": "对多个目标造成 300 点雷电伤害并在目标间弹跳" },
+    "consume": "38 MP",
+    "description": "电光在敌群中跳跃，逐一灼烧。",
+    "cost": 19
+  },
+  {
+    "name": "高阶治疗术",
+    "type": "主动",
+    "rarity": "rare",
+    "tag": ["神术", "治疗", "增益"],
+    "effect": { "治疗": "为一名友方恢复 400 点生命值" },
+    "consume": "35 MP",
+    "description": "断骨重续、深创闭合的神圣之术。",
+    "cost": 18
+  },
+  {
+    "name": "神圣制裁",
+    "type": "主动",
+    "rarity": "rare",
+    "tag": ["神术", "光耀", "远程"],
+    "effect": { "伤害": "对单个目标造成 320 点光耀伤害，对邪祟额外加成" },
+    "consume": "32 MP",
+    "description": "神罚之光，令污秽之物无所遁形。",
+    "cost": 17
+  },
+  {
+    "name": "龙鳞战意",
+    "type": "被动",
+    "rarity": "rare",
+    "tag": ["武技", "增益", "战斗"],
+    "effect": { "加成": "生命值低于一半时，攻击力 +10%" },
+    "consume": "",
+    "description": "越伤越勇，愈战愈狂的血性。",
+    "cost": 15
+  },
+  {
+    "name": "宗师锻造",
+    "type": "被动",
+    "rarity": "rare",
+    "tag": ["生产技能", "锻造"],
+    "effect": { "生产加成": "锻造与附魔相关检定获得 +5 加值" },
+    "consume": "",
+    "description": "可造传世之器的宗师手笔。",
+    "cost": 15
+  },
+  {
+    "name": "剑圣奥义·断空",
+    "type": "主动",
+    "rarity": "epic",
+    "tag": ["剑术", "物理", "近战"],
+    "effect": { "伤害": "对单个目标造成 1100 点物理伤害，可斩断能量" },
+    "consume": "60 SP",
+    "description": "一剑断空，连流动的魔力都能劈开。",
+    "cost": 50
+  },
+  {
+    "name": "流星陨落",
+    "type": "主动",
+    "rarity": "epic",
+    "tag": ["魔法", "火焰", "范围"],
+    "effect": { "伤害": "对大片范围造成 1300 点火焰伤害" },
+    "consume": "70 MP",
+    "description": "天火如雨，把一片战场化为焦土。",
+    "cost": 60
+  },
+  {
+    "name": "神圣复生",
+    "type": "主动",
+    "rarity": "epic",
+    "tag": ["神术", "治疗", "增益"],
+    "effect": { "治疗": "为一名友方恢复 1000 点生命值并移除大部分负面状态" },
+    "consume": "65 MP",
+    "description": "从死亡边缘把人拉回的神迹。",
+    "cost": 55
+  },
+  {
+    "name": "死亡之眼",
+    "type": "主动",
+    "rarity": "epic",
+    "tag": ["弓术", "物理", "远程"],
+    "effect": { "伤害": "对单个目标造成 900 点物理伤害，必定命中要害" },
+    "consume": "50 SP",
+    "description": "锁定致命破绽的一箭，例无虚发。",
+    "cost": 45
+  },
+  {
+    "name": "领域感知",
+    "type": "被动",
+    "rarity": "epic",
+    "tag": ["武技", "侦查", "增益"],
+    "effect": { "检定加成": "察觉与侦察检定获得 +8 加值，免疫突袭" },
+    "consume": "",
+    "description": "周遭一切风吹草动，皆在感知之内。",
+    "cost": 30
+  },
+  {
+    "name": "时间缓流",
+    "type": "主动",
+    "rarity": "epic",
+    "tag": ["魔法", "控制", "范围"],
+    "effect": { "控制": "使目标行动迟缓一回合，范围内生效" },
+    "consume": "75 MP",
+    "description": "扰动时光，令敌手如陷泥沼。",
+    "cost": 55
+  },
+  {
+    "name": "万剑归宗",
+    "type": "主动",
+    "rarity": "legendary",
+    "tag": ["剑术", "物理", "范围"],
+    "effect": { "伤害": "对范围内所有目标造成 3000 点物理伤害" },
+    "consume": "120 SP",
+    "description": "万剑齐出，如百川归海，无物不斩。",
+    "cost": 200
+  },
+  {
+    "name": "禁咒·焚天",
+    "type": "主动",
+    "rarity": "legendary",
+    "tag": ["魔法", "火焰", "范围"],
+    "effect": { "伤害": "对超大范围造成 3500 点火焰伤害" },
+    "consume": "130 MP",
+    "description": "焚尽天穹的禁咒，吟诵时天地变色。",
+    "cost": 250
+  },
+  {
+    "name": "大回天圣愈",
+    "type": "主动",
+    "rarity": "legendary",
+    "tag": ["神术", "治疗", "增益"],
+    "effect": { "治疗": "为全体友方恢复 2500 点生命值" },
+    "consume": "110 MP",
+    "description": "圣光普照，伤者尽愈、濒死者复生。",
+    "cost": 180
+  },
+  {
+    "name": "万象归一",
+    "type": "主动",
+    "rarity": "mythic",
+    "tag": ["魔法", "混合", "范围"],
+    "effect": { "伤害": "对超大范围造成 6500 点混合伤害，短暂扭曲局部现实" },
+    "consume": "200 MP",
+    "description": "将森罗万象之力归一而放，神话造物，凡人不可制作。",
+    "cost": 600
+  }
+]
