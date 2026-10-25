@@ -20037,7 +20037,1702 @@ const DATA = {
         1
       ]
     }
-  ]
+  ],
+  "worldSpecies": {
+    "version": "WORLD2024-1",
+    "abilityPolicy": "replace-background",
+    "custom": {
+      "id": "world:custom",
+      "name": "自定义",
+      "coreCount": 1,
+      "supportCount": 2,
+      "options": {
+        "cantrip": "minor-illusion",
+        "spell1": "charm-person",
+        "spell2": "suggestion",
+        "attribute": "魅力",
+        "skill": "察觉",
+        "element": "火焰",
+        "tool": "书法工具",
+        "主属性": "力量",
+        "副属性": "体质",
+        "size": "中型",
+        "creatureType": "类人"
+      }
+    },
+    "traits": {
+      "versatile": {
+        "id": "versatile",
+        "name": "多才多艺",
+        "kind": "core",
+        "description": "额外选择一项起源专长；不能换为通用专长或属性值提升。",
+        "effects": {
+          "originFeat": 1
+        }
+      },
+      "innate-magic": {
+        "id": "innate-magic",
+        "name": "天生施法",
+        "kind": "core",
+        "description": "1级获得一道戏法；3级获得一道1环法术，5级获得一道2环法术。两道有环法术各每长休免费一次；仍须原动作、成分、专注与豁免，也可用法术位施展。",
+        "effects": {
+          "magic": true
+        }
+      },
+      "vitality": {
+        "id": "vitality",
+        "name": "坚韧体魄",
+        "kind": "core",
+        "description": "每个总角色等级增加1点生命值上限；不提供额外治疗或免伤。",
+        "effects": {
+          "hpPerLevel": 1
+        }
+      },
+      "lucky": {
+        "id": "lucky",
+        "name": "险中求生",
+        "kind": "core",
+        "description": "D20检定掷出天然1时可以重掷，必须使用新结果；不能对重掷结果再次发动。",
+        "effects": {}
+      },
+      "magic-guard": {
+        "id": "magic-guard",
+        "name": "灵性屏障",
+        "kind": "core",
+        "description": "智力、感知、魅力豁免具有优势；不增加DC、AC或普通能力检定。",
+        "effects": {}
+      },
+      "blood-bite": {
+        "id": "blood-bite",
+        "name": "汲血",
+        "kind": "core",
+        "description": "攻击动作内一次近战命中后可消耗一次汲血，额外造成1d4暗蚀并恢复等于该骰结果的HP；5/11/17级改为d6/d8/d10。每长休PB次，尸体、构装体及无血目标无效；不能超过HP上限。",
+        "effects": {
+          "pool": "汲血",
+          "uses": "PB"
+        }
+      },
+      "adrenaline": {
+        "id": "adrenaline",
+        "name": "激昂冲锋",
+        "kind": "core",
+        "description": "附赠动作疾走并获得PB临时HP；每短休或长休恢复PB次。临时HP不叠加。",
+        "effects": {
+          "pool": "激昂冲锋",
+          "uses": "PB",
+          "recovery": "短休或长休"
+        }
+      },
+      "claws": {
+        "id": "claws",
+        "name": "利爪与利齿",
+        "kind": "core",
+        "description": "可用力量进行1d6挥砍或穿刺徒手攻击，加力量调整值；只替代原徒手骰，不叠加武僧武艺骰，不额外增加攻击次数。",
+        "effects": {}
+      },
+      "guardian": {
+        "id": "guardian",
+        "name": "警觉护卫",
+        "kind": "core",
+        "description": "5尺内盟友受到可见敌人的攻击命中时，用反应使该次伤害减少1d6+PB；每长休PB次，不同时使用另一反应。",
+        "effects": {
+          "pool": "警觉护卫",
+          "uses": "PB"
+        }
+      },
+      "natural-armor": {
+        "id": "natural-armor",
+        "name": "天然甲胄",
+        "kind": "core",
+        "description": "未穿护甲时可选择13+敏捷调整值作为基础AC，可持盾；与无甲防御、法师护甲等基础公式取其一，不相加。",
+        "effects": {
+          "naturalArmor": 13
+        }
+      },
+      "constrict": {
+        "id": "constrict",
+        "name": "盘绕束缚",
+        "kind": "core",
+        "description": "可用尾部进行正常擒抱，使用力量或敏捷确定擒抱DC；成功后维持需占用尾部，不免费附带伤害，也不提供额外动作。",
+        "effects": {
+          "grapple": true
+        }
+      },
+      "charge": {
+        "id": "charge",
+        "name": "奔踏冲势",
+        "kind": "core",
+        "description": "自己回合直线移动至少20尺后，首次近战命中可额外1d6钝击；每回合至多一次，每长休PB次。",
+        "effects": {
+          "pool": "奔踏冲势",
+          "uses": "PB"
+        }
+      },
+      "flight": {
+        "id": "flight",
+        "name": "展翼",
+        "kind": "core",
+        "description": "5级起可用附赠动作获得等于步行速度的飞行速度，持续10分钟，每长休一次；不能穿中甲或重甲，失能时结束。0–4级仅具有翅膀外形，不得到永久飞行。",
+        "effects": {
+          "pool": "展翼",
+          "uses": 1,
+          "minLevel": 5
+        }
+      },
+      "aquatic": {
+        "id": "aquatic",
+        "name": "水生适应",
+        "kind": "core",
+        "description": "具有等于步行速度的游泳速度，可以呼吸空气和水；不自动获得水下武器熟练或寒冷免疫。",
+        "effects": {
+          "swim": true,
+          "amphibious": true
+        }
+      },
+      "breath": {
+        "id": "breath",
+        "name": "元素吐息",
+        "kind": "core",
+        "description": "攻击动作中替换一次攻击，15尺锥形；敏捷豁免DC=8+体质调整+PB，失败受1d10指定元素伤害，成功减半。5/11/17级为2/3/4d10。每长休PB次。",
+        "effects": {
+          "pool": "元素吐息",
+          "uses": "PB"
+        }
+      },
+      "giant-form": {
+        "id": "giant-form",
+        "name": "巨人之姿",
+        "kind": "core",
+        "description": "5级起附赠动作变为大型10分钟，力量检定优势、速度+10尺，每长休一次；不额外增加武器伤害或攻击次数。",
+        "effects": {
+          "pool": "巨人之姿",
+          "uses": 1,
+          "minLevel": 5
+        }
+      },
+      "fey-step": {
+        "id": "fey-step",
+        "name": "越隙",
+        "kind": "core",
+        "description": "3级起附赠动作传送至30尺内可见且未占据空间，每长休PB次；不穿越位面封锁，也不附加控制。",
+        "effects": {
+          "pool": "越隙",
+          "uses": "PB",
+          "minLevel": 3
+        }
+      },
+      "rooted": {
+        "id": "rooted",
+        "name": "根须护持",
+        "kind": "core",
+        "description": "站在泥土或石面时被命中，可用反应获得1d6+PB临时HP，先承受该次伤害；每长休PB次，临时HP不叠加。",
+        "effects": {
+          "pool": "根须护持",
+          "uses": "PB"
+        }
+      },
+      "nimble": {
+        "id": "nimble",
+        "name": "灵巧脱身",
+        "kind": "core",
+        "description": "可用附赠动作脱离或躲藏；仍需满足躲藏的遮蔽与条件，不额外授予潜行成功。",
+        "effects": {}
+      },
+      "regeneration": {
+        "id": "regeneration",
+        "name": "有限再生",
+        "kind": "core",
+        "description": "附赠动作恢复1d6+体质调整HP（至少1），每长休PB次；自上回合结束后受过火焰或强酸伤害则本回合不能使用，0HP不能发动，不再生失去的肢体。",
+        "effects": {
+          "pool": "有限再生",
+          "uses": "PB"
+        }
+      },
+      "fluid": {
+        "id": "fluid",
+        "name": "流体缓冲",
+        "kind": "core",
+        "description": "被命中时可用反应减少1d6+PB点非魔法钝击、穿刺或挥砍伤害，每长休PB次；没有永久物理抗性。",
+        "effects": {
+          "pool": "流体缓冲",
+          "uses": "PB"
+        }
+      },
+      "crafted": {
+        "id": "crafted",
+        "name": "人造生机",
+        "kind": "core",
+        "description": "无需进食饮水或呼吸，仍须按正常长休维护、修复并恢复资源；保留正常受伤、死亡豁免与治疗规则，不自动免疫毒素、心灵或控制。",
+        "effects": {}
+      },
+      "undead-tenacity": {
+        "id": "undead-tenacity",
+        "name": "残存生机",
+        "kind": "core",
+        "description": "降至0HP但未立即死亡时，可改为1HP，每长休一次；光耀伤害或暴击导致的0HP不能使用，不免疫死亡。",
+        "effects": {
+          "pool": "残存生机",
+          "uses": 1
+        }
+      },
+      "darkvision": {
+        "id": "darkvision",
+        "name": "夜视",
+        "kind": "support",
+        "description": "黑暗视觉60尺；黑暗中只见灰阶，仍受实际遮蔽影响。",
+        "effects": {
+          "darkvision": 60
+        }
+      },
+      "keen": {
+        "id": "keen",
+        "name": "敏锐感官",
+        "kind": "support",
+        "description": "选择一项技能熟练：察觉、洞察或生存；不增加额外熟练倍数。",
+        "effects": {
+          "skill": [
+            "察觉",
+            "洞察",
+            "生存"
+          ]
+        }
+      },
+      "trained": {
+        "id": "trained",
+        "name": "灵活学习",
+        "kind": "support",
+        "description": "自选一项标准技能熟练，不重复叠加已熟练项。",
+        "effects": {
+          "skill": "any"
+        }
+      },
+      "craft": {
+        "id": "craft",
+        "name": "天生巧手",
+        "kind": "support",
+        "description": "自选一种工匠工具或乐器熟练，不直接获得装备或成品。",
+        "effects": {
+          "tool": true
+        }
+      },
+      "resourceful": {
+        "id": "resourceful",
+        "name": "蓄势待发",
+        "kind": "support",
+        "description": "每次完成长休获得英雄激励；不能重复储存多份。",
+        "effects": {
+          "inspiration": true
+        }
+      },
+      "fey-mind": {
+        "id": "fey-mind",
+        "name": "灵性自持",
+        "kind": "support",
+        "description": "避免或结束魅惑状态的豁免具有优势；不免疫所有心灵魔法。",
+        "effects": {}
+      },
+      "brave": {
+        "id": "brave",
+        "name": "坚定心志",
+        "kind": "support",
+        "description": "避免或结束恐慌状态的豁免具有优势。",
+        "effects": {}
+      },
+      "small-slip": {
+        "id": "small-slip",
+        "name": "穿隙而行",
+        "kind": "support",
+        "description": "可穿过体型比自己大的生物所在空间，不能在该空间结束移动。",
+        "effects": {}
+      },
+      "climb": {
+        "id": "climb",
+        "name": "善攀",
+        "kind": "support",
+        "description": "具有等于步行速度的攀爬速度；不能无条件倒挂光滑天花板。",
+        "effects": {
+          "climb": true
+        }
+      },
+      "swim": {
+        "id": "swim",
+        "name": "善泳",
+        "kind": "support",
+        "description": "具有等于步行速度的游泳速度；仍需呼吸。",
+        "effects": {
+          "swim": true
+        }
+      },
+      "hold-breath": {
+        "id": "hold-breath",
+        "name": "长时屏息",
+        "kind": "support",
+        "description": "可屏息15分钟；不免疫窒息或毒气的其他效果。",
+        "effects": {}
+      },
+      "powerful": {
+        "id": "powerful",
+        "name": "强壮身躯",
+        "kind": "support",
+        "description": "计算负重及推拉举重时视为大一级体型；不增加攻击范围或伤害。",
+        "effects": {}
+      },
+      "glide": {
+        "id": "glide",
+        "name": "滑翔",
+        "kind": "support",
+        "description": "未失能且翅膀不受束缚时，坠落中可用反应滑翔，每下降5尺至多水平移动10尺，并减少至多60尺的坠落伤害计算；不能向上爬升。",
+        "effects": {}
+      },
+      "amorphous": {
+        "id": "amorphous",
+        "name": "柔软躯体",
+        "kind": "support",
+        "description": "未携带不能通过的装备时，可缓慢穿过至少1英寸宽的缝隙；不穿越实心墙，物品不会随身体变形。",
+        "effects": {}
+      },
+      "telepathy": {
+        "id": "telepathy",
+        "name": "近距心语",
+        "kind": "support",
+        "description": "可向30尺内看得见且理解至少一种语言的生物传递简短话语；不读心，不强迫回复，不绕过秘密与知情边界。",
+        "effects": {}
+      },
+      "sustenance": {
+        "id": "sustenance",
+        "name": "特殊生计",
+        "kind": "support",
+        "description": "日常食物需求可由水分、阳光或本族明确能源替代，仍受力竭、休息和资源恢复规则约束。",
+        "effects": {}
+      },
+      "relentless": {
+        "id": "relentless",
+        "name": "坚韧不屈",
+        "kind": "support",
+        "description": "降至0HP但未立即死亡时可改为1HP，每长休一次。",
+        "effects": {
+          "pool": "坚韧不屈",
+          "uses": 1
+        }
+      },
+      "fire-resistance": {
+        "id": "fire-resistance",
+        "name": "耐火",
+        "kind": "support",
+        "description": "获得火焰伤害抗性，伤害减半；不等于状态、环境或同类型魔法免疫。",
+        "effects": {
+          "resistance": "火焰"
+        }
+      },
+      "cold-resistance": {
+        "id": "cold-resistance",
+        "name": "耐寒",
+        "kind": "support",
+        "description": "获得寒冷伤害抗性，伤害减半；不等于状态、环境或同类型魔法免疫。",
+        "effects": {
+          "resistance": "寒冷"
+        }
+      },
+      "poison-resistance": {
+        "id": "poison-resistance",
+        "name": "耐毒",
+        "kind": "support",
+        "description": "获得毒素伤害抗性，伤害减半；不等于状态、环境或同类型魔法免疫。",
+        "effects": {
+          "resistance": "毒素"
+        }
+      },
+      "necrotic-resistance": {
+        "id": "necrotic-resistance",
+        "name": "暗蚀适应",
+        "kind": "support",
+        "description": "获得暗蚀伤害抗性，伤害减半；不等于状态、环境或同类型魔法免疫。",
+        "effects": {
+          "resistance": "暗蚀"
+        }
+      },
+      "acid-resistance": {
+        "id": "acid-resistance",
+        "name": "耐酸",
+        "kind": "support",
+        "description": "获得强酸伤害抗性，伤害减半；不等于状态、环境或同类型魔法免疫。",
+        "effects": {
+          "resistance": "强酸"
+        }
+      },
+      "lightning-resistance": {
+        "id": "lightning-resistance",
+        "name": "耐雷电",
+        "kind": "support",
+        "description": "获得闪电伤害抗性，伤害减半；不等于状态、环境或同类型魔法免疫。",
+        "effects": {
+          "resistance": "闪电"
+        }
+      }
+    },
+    "species": [
+      {
+        "id": "world:human",
+        "name": "人类",
+        "group": "世界种族",
+        "attributes": {
+          "力量": 2,
+          "魅力": 1
+        },
+        "core": "versatile",
+        "support": [
+          "trained",
+          "resourceful"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:elf",
+        "name": "精灵",
+        "group": "世界种族",
+        "attributes": {
+          "敏捷": 2,
+          "智力": 1
+        },
+        "core": "innate-magic",
+        "support": [
+          "darkvision",
+          "fey-mind"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:dwarf",
+        "name": "矮人",
+        "group": "世界种族",
+        "attributes": {
+          "体质": 2,
+          "力量": 1
+        },
+        "core": "vitality",
+        "support": [
+          "darkvision",
+          "poison-resistance"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:halfling",
+        "name": "半身人",
+        "group": "世界种族",
+        "attributes": {
+          "敏捷": 2,
+          "魅力": 1
+        },
+        "core": "lucky",
+        "support": [
+          "brave",
+          "small-slip"
+        ],
+        "size": "小型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:gnome",
+        "name": "侏儒",
+        "group": "世界种族",
+        "attributes": {
+          "智力": 2,
+          "敏捷": 1
+        },
+        "core": "magic-guard",
+        "support": [
+          "darkvision",
+          "craft"
+        ],
+        "size": "小型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:demonkin",
+        "name": "魔裔",
+        "group": "世界种族",
+        "attributes": {
+          "魅力": 2,
+          "体质": 1
+        },
+        "core": "innate-magic",
+        "support": [
+          "darkvision",
+          "fire-resistance"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "邪魔",
+        "options": {
+          "cantrip": "thaumaturgy",
+          "spell1": "hellish-rebuke",
+          "spell2": "darkness",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:vampire",
+        "name": "血族",
+        "group": "世界种族",
+        "attributes": {
+          "魅力": 2,
+          "敏捷": 1
+        },
+        "core": "blood-bite",
+        "support": [
+          "darkvision",
+          "necrotic-resistance"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:fox",
+        "name": "狐族",
+        "group": "世界种族",
+        "attributes": {
+          "魅力": 2,
+          "敏捷": 1
+        },
+        "core": "innate-magic",
+        "support": [
+          "keen",
+          "fey-mind"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:salamander",
+        "name": "蝾螈",
+        "group": "世界种族",
+        "attributes": {
+          "体质": 2,
+          "智力": 1
+        },
+        "core": "breath",
+        "support": [
+          "fire-resistance",
+          "climb"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:mouse",
+        "name": "鼠族",
+        "group": "世界种族",
+        "attributes": {
+          "敏捷": 2,
+          "智力": 1
+        },
+        "core": "nimble",
+        "support": [
+          "darkvision",
+          "keen"
+        ],
+        "size": "小型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:cat",
+        "name": "猫人",
+        "group": "世界种族",
+        "attributes": {
+          "敏捷": 2,
+          "魅力": 1
+        },
+        "core": "claws",
+        "support": [
+          "climb",
+          "keen"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:dog",
+        "name": "犬人",
+        "group": "世界种族",
+        "attributes": {
+          "感知": 2,
+          "力量": 1
+        },
+        "core": "guardian",
+        "support": [
+          "keen",
+          "brave"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:orc",
+        "name": "兽人",
+        "group": "世界种族",
+        "attributes": {
+          "力量": 2,
+          "体质": 1
+        },
+        "core": "adrenaline",
+        "support": [
+          "relentless",
+          "darkvision"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": "兽人可具有完整吻部、皮毛、爪足、尾巴等furry体貌，不限定为人身兽耳。"
+      },
+      {
+        "id": "world:lizard",
+        "name": "蜥蜴人",
+        "group": "世界种族",
+        "attributes": {
+          "体质": 2,
+          "感知": 1
+        },
+        "core": "natural-armor",
+        "support": [
+          "swim",
+          "hold-breath"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:lamia",
+        "name": "蛇女",
+        "group": "世界种族",
+        "attributes": {
+          "魅力": 2,
+          "敏捷": 1
+        },
+        "core": "constrict",
+        "support": [
+          "darkvision",
+          "poison-resistance"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:centaur",
+        "name": "半人马",
+        "group": "世界种族",
+        "attributes": {
+          "力量": 2,
+          "感知": 1
+        },
+        "core": "charge",
+        "support": [
+          "powerful",
+          "brave"
+        ],
+        "size": "中型",
+        "speed": 40,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:wingfolk",
+        "name": "翼民",
+        "group": "世界种族",
+        "attributes": {
+          "敏捷": 2,
+          "感知": 1
+        },
+        "core": "flight",
+        "support": [
+          "glide",
+          "keen"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:merfolk",
+        "name": "人鱼",
+        "group": "世界种族",
+        "attributes": {
+          "魅力": 2,
+          "敏捷": 1
+        },
+        "core": "aquatic",
+        "support": [
+          "cold-resistance",
+          "darkvision"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:northern-dragonborn",
+        "name": "北境龙裔",
+        "group": "世界种族",
+        "attributes": {
+          "力量": 2,
+          "体质": 1
+        },
+        "core": "breath",
+        "support": [
+          "cold-resistance",
+          "darkvision"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "龙",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "寒冷",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:frost-giant",
+        "name": "霜巨人",
+        "group": "世界种族",
+        "attributes": {
+          "力量": 2,
+          "体质": 1
+        },
+        "core": "giant-form",
+        "support": [
+          "cold-resistance",
+          "powerful"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:fairy",
+        "name": "妖精",
+        "group": "世界种族",
+        "attributes": {
+          "魅力": 2,
+          "敏捷": 1
+        },
+        "core": "fey-step",
+        "support": [
+          "fey-mind",
+          "keen"
+        ],
+        "size": "小型",
+        "speed": 30,
+        "type": "妖精",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:sylph",
+        "name": "仙灵",
+        "group": "世界种族",
+        "attributes": {
+          "魅力": 2,
+          "感知": 1
+        },
+        "core": "flight",
+        "support": [
+          "glide",
+          "fey-mind"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "妖精",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:treant",
+        "name": "树人",
+        "group": "世界种族",
+        "attributes": {
+          "体质": 2,
+          "感知": 1
+        },
+        "core": "rooted",
+        "support": [
+          "powerful",
+          "sustenance"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "植物",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:goblin",
+        "name": "哥布林",
+        "group": "世界种族",
+        "attributes": {
+          "敏捷": 2,
+          "体质": 1
+        },
+        "core": "nimble",
+        "support": [
+          "darkvision",
+          "brave"
+        ],
+        "size": "小型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:troll",
+        "name": "巨魔",
+        "group": "世界种族",
+        "attributes": {
+          "体质": 2,
+          "力量": 1
+        },
+        "core": "regeneration",
+        "support": [
+          "darkvision",
+          "powerful"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:succubus",
+        "name": "魅魔",
+        "group": "世界种族",
+        "attributes": {
+          "魅力": 2,
+          "敏捷": 1
+        },
+        "core": "innate-magic",
+        "support": [
+          "fire-resistance",
+          "telepathy"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "邪魔",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:dragon-demon",
+        "name": "龙魔",
+        "group": "世界种族",
+        "attributes": {
+          "力量": 2,
+          "魅力": 1
+        },
+        "core": "breath",
+        "support": [
+          "fire-resistance",
+          "darkvision"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "邪魔",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:shadow-demon",
+        "name": "影魔",
+        "group": "世界种族",
+        "attributes": {
+          "敏捷": 2,
+          "魅力": 1
+        },
+        "core": "fey-step",
+        "support": [
+          "darkvision",
+          "necrotic-resistance"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "邪魔",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:flame-demon",
+        "name": "炎魔",
+        "group": "世界种族",
+        "attributes": {
+          "体质": 2,
+          "魅力": 1
+        },
+        "core": "breath",
+        "support": [
+          "fire-resistance",
+          "darkvision"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "邪魔",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:fallen-wing",
+        "name": "堕翼民",
+        "group": "世界种族",
+        "attributes": {
+          "魅力": 2,
+          "敏捷": 1
+        },
+        "core": "flight",
+        "support": [
+          "darkvision",
+          "necrotic-resistance"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "邪魔",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:beast-demon",
+        "name": "兽魔",
+        "group": "世界种族",
+        "attributes": {
+          "力量": 2,
+          "敏捷": 1
+        },
+        "core": "claws",
+        "support": [
+          "keen",
+          "darkvision"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "邪魔",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:slime-girl",
+        "name": "史莱姆娘",
+        "group": "世界种族",
+        "attributes": {
+          "体质": 2,
+          "魅力": 1
+        },
+        "core": "fluid",
+        "support": [
+          "acid-resistance",
+          "amorphous"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:insect-girl",
+        "name": "虫娘",
+        "group": "世界种族",
+        "attributes": {
+          "敏捷": 2,
+          "体质": 1
+        },
+        "core": "natural-armor",
+        "support": [
+          "climb",
+          "keen"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      },
+      {
+        "id": "world:construct",
+        "name": "构装体",
+        "group": "特殊形态",
+        "attributes": {
+          "体质": 2,
+          "智力": 1
+        },
+        "core": "crafted",
+        "support": [
+          "poison-resistance",
+          "brave"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "构装体",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "本包为有智慧、可参与冒险的受限形态；巨龙/古龙等完整怪物不按本包低级PC处理，应采用相应CR数据块。低智个体仅用于NPC，主角必须明确已经觉醒智慧。",
+        "physiology": ""
+      },
+      {
+        "id": "world:object-soul",
+        "name": "物魂",
+        "group": "特殊形态",
+        "attributes": {
+          "魅力": 2,
+          "智力": 1
+        },
+        "core": "innate-magic",
+        "support": [
+          "necrotic-resistance",
+          "sustenance"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "mage-hand",
+          "spell1": "unseen-servant",
+          "spell2": "levitate",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "本包为有智慧、可参与冒险的受限形态；巨龙/古龙等完整怪物不按本包低级PC处理，应采用相应CR数据块。低智个体仅用于NPC，主角必须明确已经觉醒智慧。",
+        "physiology": ""
+      },
+      {
+        "id": "world:undead",
+        "name": "不死生物",
+        "group": "特殊形态",
+        "attributes": {
+          "体质": 2,
+          "感知": 1
+        },
+        "core": "undead-tenacity",
+        "support": [
+          "necrotic-resistance",
+          "poison-resistance"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "不死生物",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "本包为有智慧、可参与冒险的受限形态；巨龙/古龙等完整怪物不按本包低级PC处理，应采用相应CR数据块。低智个体仅用于NPC，主角必须明确已经觉醒智慧。",
+        "physiology": ""
+      },
+      {
+        "id": "world:elemental",
+        "name": "元素生物",
+        "group": "特殊形态",
+        "attributes": {
+          "体质": 2,
+          "智力": 1
+        },
+        "core": "breath",
+        "support": [
+          "fire-resistance",
+          "sustenance"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "元素",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "本包为有智慧、可参与冒险的受限形态；巨龙/古龙等完整怪物不按本包低级PC处理，应采用相应CR数据块。低智个体仅用于NPC，主角必须明确已经觉醒智慧。",
+        "physiology": ""
+      },
+      {
+        "id": "world:plant",
+        "name": "植物生物",
+        "group": "特殊形态",
+        "attributes": {
+          "体质": 2,
+          "感知": 1
+        },
+        "core": "rooted",
+        "support": [
+          "poison-resistance",
+          "sustenance"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "植物",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "本包为有智慧、可参与冒险的受限形态；巨龙/古龙等完整怪物不按本包低级PC处理，应采用相应CR数据块。低智个体仅用于NPC，主角必须明确已经觉醒智慧。",
+        "physiology": ""
+      },
+      {
+        "id": "world:outsider",
+        "name": "异域生物",
+        "group": "特殊形态",
+        "attributes": {
+          "魅力": 2,
+          "智力": 1
+        },
+        "core": "fey-step",
+        "support": [
+          "darkvision",
+          "telepathy"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "本包为有智慧、可参与冒险的受限形态；巨龙/古龙等完整怪物不按本包低级PC处理，应采用相应CR数据块。低智个体仅用于NPC，主角必须明确已经觉醒智慧。",
+        "physiology": ""
+      },
+      {
+        "id": "world:dragon",
+        "name": "巨龙",
+        "group": "特殊形态",
+        "attributes": {
+          "力量": 2,
+          "魅力": 1
+        },
+        "core": "breath",
+        "support": [
+          "darkvision",
+          "powerful"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "龙",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "本包为有智慧、可参与冒险的受限形态；巨龙/古龙等完整怪物不按本包低级PC处理，应采用相应CR数据块。低智个体仅用于NPC，主角必须明确已经觉醒智慧。",
+        "physiology": ""
+      },
+      {
+        "id": "world:ancient-dragon",
+        "name": "古龙",
+        "group": "特殊形态",
+        "attributes": {
+          "体质": 2,
+          "力量": 1
+        },
+        "core": "breath",
+        "support": [
+          "fire-resistance",
+          "brave"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "龙",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "本包为有智慧、可参与冒险的受限形态；巨龙/古龙等完整怪物不按本包低级PC处理，应采用相应CR数据块。低智个体仅用于NPC，主角必须明确已经觉醒智慧。",
+        "physiology": ""
+      },
+      {
+        "id": "world:lesser-dragon",
+        "name": "亚龙",
+        "group": "特殊形态",
+        "attributes": {
+          "力量": 2,
+          "敏捷": 1
+        },
+        "core": "claws",
+        "support": [
+          "climb",
+          "darkvision"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "龙",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "本包为有智慧、可参与冒险的受限形态；巨龙/古龙等完整怪物不按本包低级PC处理，应采用相应CR数据块。低智个体仅用于NPC，主角必须明确已经觉醒智慧。",
+        "physiology": ""
+      },
+      {
+        "id": "world:slime",
+        "name": "史莱姆",
+        "group": "特殊形态",
+        "attributes": {
+          "体质": 2,
+          "敏捷": 1
+        },
+        "core": "fluid",
+        "support": [
+          "acid-resistance",
+          "amorphous"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "本包为有智慧、可参与冒险的受限形态；巨龙/古龙等完整怪物不按本包低级PC处理，应采用相应CR数据块。低智个体仅用于NPC，主角必须明确已经觉醒智慧。",
+        "physiology": ""
+      },
+      {
+        "id": "world:awakened-monster",
+        "name": "低智魔物",
+        "group": "特殊形态",
+        "attributes": {
+          "力量": 2,
+          "体质": 1
+        },
+        "core": "claws",
+        "support": [
+          "keen",
+          "brave"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "本包为有智慧、可参与冒险的受限形态；巨龙/古龙等完整怪物不按本包低级PC处理，应采用相应CR数据块。低智个体仅用于NPC，主角必须明确已经觉醒智慧。",
+        "physiology": ""
+      },
+      {
+        "id": "world:half-elf",
+        "name": "半精灵",
+        "group": "世界种族",
+        "attributes": {
+          "魅力": 2,
+          "智力": 1
+        },
+        "core": "versatile",
+        "support": [
+          "fey-mind",
+          "keen"
+        ],
+        "size": "中型",
+        "speed": 30,
+        "type": "类人",
+        "options": {
+          "cantrip": "minor-illusion",
+          "spell1": "charm-person",
+          "spell2": "suggestion",
+          "attribute": "魅力",
+          "skill": "察觉",
+          "element": "火焰",
+          "tool": "书法工具"
+        },
+        "note": "",
+        "physiology": ""
+      }
+    ]
+  }
 }
 const VERSION = 'DND2024'
 const ATTRIBUTES = ['力量', '敏捷', '体质', '智力', '感知', '魅力']
@@ -20099,6 +21794,7 @@ const con = abilityModifier(actor?.属性?.体质 ?? 10);
   if (hasFeature(actor,/\bTough\b|强壮|健壮/u)) hp += totalLevel*2
   if (hasFeature(actor,/Dwarven Toughness|矮人体魄|矮人坚韧/u)) hp += totalLevel
   if (hasFeature(actor,/Draconic Resilience|龙族韧性|龙族体魄/u)) hp += classLevel(actor,'sorcerer')
+  if(worldTraits(actor).includes('vitality'))hp+=totalLevel
   return Math.max(1,hp+int(actor?.构筑加值?.生命值上限))
 }
 function normalSpellSlots(actor) {
@@ -20176,6 +21872,7 @@ const cha=abilityModifier(actor.属性?.魅力??10);
   else if (mode==='mage-armor') ac=13+dex
   else if (mode==='draconic') ac=10+dex+cha
   else if (mode==='dance') {if(shield)throw Error('舞蹈学院无甲公式不能使用盾牌');ac=10+dex+cha}
+  if(!armor&&worldTraits(actor).includes('natural-armor'))ac=Math.max(ac,13+dex)
   return ac+(shield?2:0)+Number(bonus||0)
 }
 function skillBonus(actor,skill,attribute=SKILL_ATTRIBUTES[skill]) {
@@ -20246,7 +21943,7 @@ function longRest(actor) {
   for(const record of [out.法术位,out.职业资源,out.生命骰])
   for(const resource of Object.values(record||{}))resource.当前=resource.上限
   if(out.契约法术位)out.契约法术位.当前=out.契约法术位.上限
-  if(out.规则种族==='human')out.英雄激励=true
+  if(out.规则种族==='human'||worldTraits(out).includes('resourceful'))out.英雄激励=true
   return out
 }
 function consumeSpellSlot(actor,level,{pact=false,turn={}}={}) {
@@ -20273,7 +21970,7 @@ function buildActor({classId='fighter',level=1,subclass='',attributes,background
   const meta=classOf(classId);
 const n=Math.max(0,Math.min(20,int(level,1)));
   if(n&&!meta)throw Error('请选择有效的2024职业')
-  const actor={规则版本:VERSION,姓名:name,性别:gender,种族:race,生物类型:'类人',施法等级:n,构筑类型:n?type:'NPC数据块',挑战等级:cr,等级:n,生命层级:tierForLevel(n),属性:attributes||Object.fromEntries(ATTRIBUTES.map(a=>[a,10])),
+  const actor={规则版本:VERSION,种族构筑:{规则版本:"",种族ID:"",属性提升:{},核心特质:"",辅助特质:[],选项:{}},游泳速度:0,攀爬速度:0,飞行速度:0,姓名:name,性别:gender,种族:race,生物类型:'类人',施法等级:n,构筑类型:n?type:'NPC数据块',挑战等级:cr,等级:n,生命层级:tierForLevel(n),属性:attributes||Object.fromEntries(ATTRIBUTES.map(a=>[a,10])),
     职业:n?[meta.name]:[],职业等级:n?{[meta.id]:{等级:n,子职:subclass}}:{},职业设计:{},升级待选:{目标等级:0,职业ID:'',说明:'',选项:[],依据:''},升级记录:{},登场状态:'已登场',登场条件:'',熟练项:skills||[],专精项:[],豁免熟练:n?meta.saves:[],
     武器熟练:n?[meta.weaponTraining]:[],护甲受训:n?meta.armorTraining:[],工具熟练:[],语言:['通用语'],武器掌握:[],构筑选择:{},职业能力:{},专长:{},
     起源:background||{},法术:{},法术位:{},契约法术位:{环阶:0,当前:0,上限:0},职业资源:{},生命骰:{},临时生命值:0,速度:30,力竭:0,
@@ -20355,7 +22052,76 @@ const meta=DATA.classOptions?.find(o=>o.id===id&&o.class==='sorcerer');if(meta&&
  const meta=DATA.classOptions.find(o=>o.id===id&&o.kind==='战技');if(meta)actor.职业能力[meta.name]={规则ID:id,来源:'战斗大师',获得等级:3,动作:'按2024战技触发',消耗:meta.cost,描述:'每次攻击至多一种战技；按同名2024选项确定骰、豁免与动作。'}}
   return actor
 }
+function worldSpeciesProfile(id,choices={}) {
+  const data=DATA.worldSpecies
+  if(!data||!String(id||'').startsWith('world:'))return null
+  const custom=id==='world:custom'
+  const meta=custom?{id,name:'自定义种族',speed:30,size:'中型',type:'类人',options:{...data.custom.options},attributes:{}}:data.species.find(s=>s.id===id)
+  if(!meta)throw Error('未知世界种族：'+id)
+  const direct=Object.fromEntries(Object.entries(choices).filter(([k,v])=>typeof v==='string'&&!['核心特质','种族ID','规则版本'].includes(k)))
+  const options={...meta.options,...(choices.选项||{}),...direct}
+  const core=custom?choices.核心特质||'innate-magic':meta.core
+  const support=custom?choices.辅助特质||['darkvision','keen']:meta.support
+  const main=options.主属性||'力量',secondary=options.副属性||'体质'
+  const boosts=custom?{[main]:2,[secondary]:1}:{...meta.attributes}
+  return {meta,custom,options,core,support,boosts,traits:[core,...support]}
+}
+function worldTraits(actor){return worldSpeciesProfile(actor?.规则种族,actor?.种族构筑||{})?.traits||[]}
+function worldSpeciesProblems(id,choices={}) {
+  const result=[]
+  let profile
+  try{profile=worldSpeciesProfile(id,choices)}catch(e){return [e.message]}
+  if(!profile)return result
+  const {core,support,boosts,traits,options}=profile,defs=DATA.worldSpecies.traits
+  if(!defs[core]||defs[core].kind!=='core')result.push('请选择一项核心种族特质')
+  if(!Array.isArray(support)||support.length!==2||new Set(support).size!==2||support.some(id=>defs[id]?.kind!=='support'))result.push('请选择两项不同的辅助种族特质')
+  if(Object.keys(boosts).length!==2||!Object.keys(boosts).every(k=>ATTRIBUTES.includes(k))||!Object.values(boosts).includes(2)||!Object.values(boosts).includes(1))result.push('种族属性应是两项不同属性，分别+2和+1')
+  if(traits.includes('innate-magic'))for(const [key,ring,fallback] of [['cantrip',0,'minor-illusion'],['spell1',1,'charm-person'],['spell2',2,'suggestion']]){
+    const spell=DATA.spells.find(s=>s.id===(options[key]||fallback));if(!spell||spell.level!==ring)result.push('种族法术必须是对应的0/1/2环PHB法术')
+  }
+  if(traits.includes('breath')&&!['火焰','寒冷','强酸','闪电','毒素'].includes(options.element||'火焰'))result.push('吐息元素不在可选范围')
+  return result
+}
+function applyWorldSpecies(actor,id,choices={}) {
+  const previous=actor.种族构筑?.种族ID===id?actor.种族构筑:{}
+  const config={...previous,...choices,选项:{...(previous.选项||{}),...(choices.选项||{})}}
+  const errors=worldSpeciesProblems(id,config);if(errors.length)throw Error(errors.join('；'))
+  const profile=worldSpeciesProfile(id,config)
+  const {meta,traits,options}=profile
+  const level=Number(actor.等级),pb=proficiencyBonus(level),attribute=['智力','感知','魅力'].includes(options.attribute)?options.attribute:'魅力'
+  actor.规则种族=id;actor.种族构筑={规则版本:DATA.worldSpecies.version,种族ID:id,属性提升:profile.boosts,核心特质:profile.core,辅助特质:[...profile.support],选项:{...options}}
+  actor.速度=meta.speed;actor.体型=options.size==='小型'?'小型':meta.size;actor.生物类型=profile.custom&&['类人','妖精','邪魔','龙','植物','构装体','不死生物','元素','异怪'].includes(options.creatureType)?options.creatureType:meta.type
+  actor.构筑选择.种族施法属性=[attribute]
+  for(const traitId of traits){
+    const trait=DATA.worldSpecies.traits[traitId],effect=trait.effects
+    if(level>=(effect.minLevel||0))actor.职业能力[trait.name]={规则ID:'species:'+trait.id,来源:meta.name,获得等级:effect.minLevel||0,动作:'依特质说明',消耗:effect.pool?effect.pool+'1次':'依特质说明',描述:trait.description,效果:{}}
+    if(effect.darkvision)actor.黑暗视觉=Math.max(actor.黑暗视觉||0,effect.darkvision)
+    if(effect.resistance)actor.伤害抗性=[...new Set([...actor.伤害抗性,effect.resistance])]
+    if(effect.swim)actor.游泳速度=actor.速度
+    if(effect.climb)actor.攀爬速度=actor.速度
+    if(effect.skill){
+      const allowed=effect.skill==='any'?DATA.skills:effect.skill
+      let skill=allowed.includes(options.skill)?options.skill:allowed[0]
+      if(actor.熟练项.includes(skill)&&!(previous.种族ID===id&&previous.选项?.skill===skill))skill=allowed.find(k=>!actor.熟练项.includes(k))||DATA.skills.find(k=>!actor.熟练项.includes(k))||skill
+      actor.熟练项=[...new Set([...actor.熟练项,skill])];actor.种族构筑.选项.skill=skill
+    }
+    if(effect.tool)actor.工具熟练=[...new Set([...actor.工具熟练,options.tool||'书法工具'])]
+    if(effect.inspiration)actor.英雄激励=true
+    if(effect.pool&&level>=(effect.minLevel||0)){
+      const max=effect.uses==='PB'?pb:effect.uses
+      actor.职业资源[effect.pool]={当前:max,上限:max,恢复:effect.recovery||'长休',描述:'种族特质：'+trait.name}
+    }
+    if(effect.magic)for(const [key,min,fallback] of [['cantrip',1,'minor-illusion'],['spell1',3,'charm-person'],['spell2',5,'suggestion']])if(level>=min){
+      const spellId=options[key]||fallback
+      if(!Object.values(actor.法术||{}).some(s=>s.规则ID===spellId))addSpell(actor,spellId,{attribute,source:meta.name+'天生施法'})
+      if(key!=='cantrip')actor.职业资源['免费施法·'+spellId]={当前:1,上限:1,恢复:'长休',描述:meta.name+'天生施法；依原动作、成分与专注。'}
+    }
+  }
+  actor.生命值上限=hitPointMaximum(actor);actor.生命值=actor.生命值上限;actor.AC=equippedAC(actor)
+  return actor
+}
 function applySpecies(actor,id,choices={}) {
+  if(String(id).startsWith('world:'))return applyWorldSpecies(actor,id,choices)
   const species=DATA.species.find(s=>s.id===id||s.name===id)
   if(!species)throw Error('请选择有效规则种族')
   actor.规则种族=species.id;actor.速度=species.speed;actor.体型=['gnome','halfling'].includes(species.id)?'小型':choices.size||'中型'
@@ -20449,12 +22215,12 @@ const finesse=/灵巧/u.test(w.properties);
 const martialDie='1d'+(monk>=17?12:monk>=11?10:monk>=5?8:6);if(averageDice(martialDie)>averageDice(die))die=martialDie}
   return {weapon:w,trained,ability:mod,abilityAttribute:pact?'魅力':(finesse||martial)&&dex>str||ranged?'敏捷':'力量',attack:mod+(trained?proficiencyBonus(actor.等级,actor.构筑类型==='NPC数据块'?actor.挑战等级:undefined):0)+magic+(ranged&&owns('archery')?2:0),damage:die+(damageMod<0?'':'+')+damageMod,damageType:w.damageType,mastery:(actor.武器掌握||[]).some(k=>k===w.id||k===w.name)?w.mastery:''}
 }
-return {DATA,VERSION,ATTRIBUTES,SKILL_ATTRIBUTES,isDnd,abilityModifier,tierForLevel,proficiencyBonus,classOf,classLevels,classLevel,pointBuy,backgroundBoost,hitPointMaximum,normalSpellSlots,pactMagic,spellAllowance,classResources,extraAttacks,armorClass,equippedAC,weaponProfile,skillBonus,spellDC,savingThrowBonus,rollTest,diceTerms,rollDice,averageDice,applyDamage,concentrationDC,deathSave,shortRest,longRest,consumeSpellSlot,featEligible,buildActor,addSpell,applySpecies,applyClassChoices};
+return {worldSpeciesProfile,worldSpeciesProblems,worldTraits,applyWorldSpecies,DATA,VERSION,ATTRIBUTES,SKILL_ATTRIBUTES,isDnd,abilityModifier,tierForLevel,proficiencyBonus,classOf,classLevels,classLevel,pointBuy,backgroundBoost,hitPointMaximum,normalSpellSlots,pactMagic,spellAllowance,classResources,extraAttacks,armorClass,equippedAC,weaponProfile,skillBonus,spellDC,savingThrowBonus,rollTest,diceTerms,rollDice,averageDice,applyDamage,concentrationDC,deathSave,shortRest,longRest,consumeSpellSlot,featEligible,buildActor,addSpell,applySpecies,applyClassChoices};
 })();
 // DELPHIAN_DND_RUNTIME_END
 await waitGlobalInitialized("Mvu");
 if (DelphianDnd.isDnd(Mvu.getMvuData({type:"message",message_id:getCurrentMessageId()})?.stat_data)) {
-const style=document.createElement("style");style.textContent=":root{color-scheme:light;--paper:#f5efdf;--card:#fffdf6;--ink:#3b3228;--muted:#84745e;--gold:#a8803e;--line:#d8c8a8;--soft:#ede3ce;font-family:\"Noto Serif SC\",\"Microsoft YaHei\",serif;color:var(--ink);background:transparent}\n*{box-sizing:border-box}body{margin:0;padding:16px}button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:default}button,input,select,textarea{border:1px solid var(--line);border-radius:7px;background:var(--card);padding:10px}button:hover{border-color:var(--gold)}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}input,select,textarea{width:100%}input[type=checkbox]{width:auto}textarea{resize:vertical;min-height:80px;line-height:1.75}h1,h2,h3,p{margin:0 0 14px}h1{font-size:27px;color:#73542c}h2{font-size:22px}h3{font-size:17px}small,.muted{color:var(--muted);line-height:1.6}a{color:#89602b}.creator-app{max-width:1120px;margin:auto;padding:28px;background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px #5c482414}.masthead{text-align:center;border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:22px}.steps{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px}.step{flex:1;min-width:90px;background:transparent;border:0;border-bottom:2px solid var(--line);border-radius:0;color:var(--muted);padding:10px 5px}.step.active{color:#765021;border-color:var(--gold);font-weight:bold}.creator-page-heading{display:flex;align-items:baseline;gap:16px;margin-bottom:22px}.creator-page-number{font-size:32px;color:#b8a17a}.creator-page-heading h2{margin:0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.field{display:flex;flex-direction:column;gap:7px}.wide{grid-column:1/-1}.panel,.background-card,.choice-card{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:20px;margin-bottom:16px}.choice-card,.background-card{text-align:left;position:relative;transition:border-color .15s,box-shadow .15s}.choice-card.selected,.background-card.selected{border:2px solid var(--gold);padding:19px;box-shadow:0 2px 10px #a8803e22}.choice-card h3,.background-card h3{color:#805e31}.choice-card p,.background-card p{font-size:14px;line-height:1.8;color:#6c5b44}.badge{display:inline-block;border:1px solid var(--line);padding:2px 8px;border-radius:12px;font-size:12px;color:#8c6936;margin:0 5px 7px 0}.chips{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}.chip{padding:6px 12px;border-radius:20px;font-size:13px}.chip.selected{background:#af874c;color:white;border-color:#af874c}.navigation{display:flex;justify-content:space-between;gap:12px;margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}.primary{background:#94713f;color:white;border-color:#94713f}.primary:hover{background:#805f33}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}.toolbar>*{flex:1;min-width:130px}.summary{background:#eee3cc;border-left:3px solid var(--gold);padding:16px;line-height:1.8;margin:16px 0}.error{color:#984630;background:#fff0e5;border-radius:8px;padding:13px;line-height:1.7}.success{color:#41613c}.attr-table{width:100%;border-collapse:collapse;margin:16px 0}.attr-table th,.attr-table td{padding:10px;text-align:center;border-bottom:1px solid var(--line)}.attr-table input,.attr-table select{max-width:95px}.check-row{display:flex;align-items:center;gap:9px;padding:8px 0}.spell-row,.item-row{display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:12px;padding:12px;border-bottom:1px solid var(--line)}.spell-row label{cursor:pointer;line-height:1.7}.spell-row p{font-size:12px;color:var(--muted);margin:4px 0 0}.list-scroll{max-height:540px;overflow:auto}.spell-details{padding:10px 0;line-height:1.75;white-space:pre-line}.bookstop{border-left:3px solid #9a7c58;background:#eee4d5;padding:14px;line-height:1.8}details{margin:10px 0}summary{cursor:pointer;line-height:1.8;color:#74582e}details p{line-height:1.9;margin:12px 0}.empty{text-align:center;padding:35px;color:var(--muted)}.dse-card{border:1px solid var(--line);border-radius:8px;padding:14px;margin:12px 0;background:var(--card)}.dse-heading{font-weight:bold;margin-bottom:10px}.dse-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:14px;align-items:center}.dse-row textarea{min-height:42px}.dse-field{padding:7px 0}.dse-actions{display:flex;gap:5px;margin:6px 0}.dse-actions button,.dse-actions select{font-size:12px;padding:3px 6px;width:auto}.dse-children{margin-left:16px;padding-left:12px;border-left:1px solid var(--line)}.dse-add{display:flex;gap:7px;margin:12px 0}.dse-add select{width:auto}.footer-note{text-align:center;font-size:12px;color:var(--muted);margin:18px 0 0}.world-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px}.world-tabs button.active{background:#af874c;color:#fff}.world-card details{border-top:1px solid var(--line);padding-top:10px}.stats-strip{display:flex;gap:20px;flex-wrap:wrap;padding:12px 0;color:#805e31}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}\n@media(max-width:600px){body{padding:5px}.creator-app{padding:17px 12px}.form-grid{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.step{min-width:54px;font-size:12px;padding:10px 2px}.dse-row{grid-template-columns:95px minmax(0,1fr);gap:8px}.dse-children{margin-left:5px;padding-left:7px}.attr-table th,.attr-table td{padding:7px 3px;font-size:13px}.creator-page-number{font-size:24px}.toolbar{gap:6px}.toolbar>*{min-width:100px}.panel,.background-card,.choice-card{padding:16px}.choice-card.selected,.background-card.selected{padding:15px}}\n\n.dnd-read-row{display:grid;grid-template-columns:130px minmax(0,1fr);gap:14px;padding:10px 0;border-bottom:1px solid var(--line);line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}.dnd-status .panel .panel{padding:12px;margin:10px 0}.dnd-status .stats-strip{justify-content:center}.dnd-status .world-tabs{position:sticky;top:0;background:var(--paper);z-index:2;padding:6px 0}";document.head.append(style);
+const style=document.createElement("style");style.textContent=":root{color-scheme:light;--paper:#f5efdf;--card:#fffdf6;--ink:#3b3228;--muted:#84745e;--gold:#a8803e;--line:#d8c8a8;--soft:#ede3ce;font-family:system-ui,-apple-system,\"Segoe UI\",\"Microsoft YaHei\",\"PingFang SC\",\"Noto Sans CJK SC\",sans-serif;font-size:15px;line-height:1.65;color:var(--ink);background:transparent}\n*{box-sizing:border-box}body{margin:0;padding:16px}button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:default}button,input,select,textarea{border:1px solid var(--line);border-radius:7px;background:var(--card);padding:10px}button:hover{border-color:var(--gold)}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}input,select,textarea{width:100%}input[type=checkbox]{width:auto}textarea{resize:vertical;min-height:80px;line-height:1.75}h1,h2,h3,p{margin:0 0 14px}h1{font-size:27px;color:#73542c}h2{font-size:22px}h3{font-size:17px}small,.muted{color:var(--muted);line-height:1.6}a{color:#89602b}.creator-app{max-width:1120px;margin:auto;padding:28px;background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px #5c482414}.masthead{text-align:center;border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:22px}.steps{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px}.step{flex:1;min-width:90px;background:transparent;border:0;border-bottom:2px solid var(--line);border-radius:0;color:var(--muted);padding:10px 5px}.step.active{color:#765021;border-color:var(--gold);font-weight:bold}.creator-page-heading{display:flex;align-items:baseline;gap:16px;margin-bottom:22px}.creator-page-number{font-size:32px;color:#b8a17a}.creator-page-heading h2{margin:0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.field{display:flex;flex-direction:column;gap:7px}.wide{grid-column:1/-1}.panel,.background-card,.choice-card{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:20px;margin-bottom:16px}.choice-card,.background-card{text-align:left;position:relative;transition:border-color .15s,box-shadow .15s}.choice-card.selected,.background-card.selected{border:2px solid var(--gold);padding:19px;box-shadow:0 2px 10px #a8803e22}.choice-card h3,.background-card h3{color:#805e31}.choice-card p,.background-card p{font-size:14px;line-height:1.8;color:#6c5b44}.badge{display:inline-block;border:1px solid var(--line);padding:2px 8px;border-radius:12px;font-size:12px;color:#8c6936;margin:0 5px 7px 0}.chips{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}.chip{padding:6px 12px;border-radius:20px;font-size:13px}.chip.selected{background:#af874c;color:white;border-color:#af874c}.navigation{display:flex;justify-content:space-between;gap:12px;margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}.primary{background:#94713f;color:white;border-color:#94713f}.primary:hover{background:#805f33}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}.toolbar>*{flex:1;min-width:130px}.summary{background:#eee3cc;border-left:3px solid var(--gold);padding:16px;line-height:1.8;margin:16px 0}.error{color:#984630;background:#fff0e5;border-radius:8px;padding:13px;line-height:1.7}.success{color:#41613c}.attr-table{width:100%;border-collapse:collapse;margin:16px 0}.attr-table th,.attr-table td{padding:10px;text-align:center;border-bottom:1px solid var(--line)}.attr-table input,.attr-table select{max-width:95px}.check-row{display:flex;align-items:center;gap:9px;padding:8px 0}.spell-row,.item-row{display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:12px;padding:12px;border-bottom:1px solid var(--line)}.spell-row label{cursor:pointer;line-height:1.7}.spell-row p{font-size:12px;color:var(--muted);margin:4px 0 0}.list-scroll{max-height:540px;overflow:auto}.spell-details{padding:10px 0;line-height:1.75;white-space:pre-line}.bookstop{border-left:3px solid #9a7c58;background:#eee4d5;padding:14px;line-height:1.8}details{margin:10px 0}summary{cursor:pointer;line-height:1.8;color:#74582e}details p{line-height:1.9;margin:12px 0}.empty{text-align:center;padding:35px;color:var(--muted)}.dse-card{border:1px solid var(--line);border-radius:8px;padding:14px;margin:12px 0;background:var(--card)}.dse-heading{font-weight:bold;margin-bottom:10px}.dse-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:14px;align-items:center}.dse-row textarea{min-height:42px}.dse-field{padding:7px 0}.dse-actions{display:flex;gap:5px;margin:6px 0}.dse-actions button,.dse-actions select{font-size:12px;padding:3px 6px;width:auto}.dse-children{margin-left:16px;padding-left:12px;border-left:1px solid var(--line)}.dse-add{display:flex;gap:7px;margin:12px 0}.dse-add select{width:auto}.footer-note{text-align:center;font-size:12px;color:var(--muted);margin:18px 0 0}.world-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px}.world-tabs button.active{background:#af874c;color:#fff}.world-card details{border-top:1px solid var(--line);padding-top:10px}.stats-strip{display:flex;gap:20px;flex-wrap:wrap;padding:12px 0;color:#805e31}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}\n@media(max-width:600px){body{padding:5px}.creator-app{padding:17px 12px}.form-grid{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.step{min-width:54px;font-size:12px;padding:10px 2px}.dse-row{grid-template-columns:95px minmax(0,1fr);gap:8px}.dse-children{margin-left:5px;padding-left:7px}.attr-table th,.attr-table td{padding:7px 3px;font-size:13px}.creator-page-number{font-size:24px}.toolbar{gap:6px}.toolbar>*{min-width:100px}.panel,.background-card,.choice-card{padding:16px}.choice-card.selected,.background-card.selected{padding:15px}}\n\n\n.creator-tools{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px}.creator-tools button{padding:8px 14px}.creator-import-note{min-height:0;margin:8px 0 0;font-size:13px}.selection-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.selection-tile{display:flex;align-items:center;gap:8px;min-width:0;padding:12px;border:1px solid var(--line);border-radius:6px;background:var(--card);cursor:pointer}.selection-tile.selected{border-color:var(--gold);background:#eadebf;box-shadow:inset 0 0 0 1px var(--gold)}.selection-tile input{flex:none;width:auto;margin:0;accent-color:#94713f}.selection-tile span{overflow-wrap:anywhere}.selection-tile small{display:block;font-size:12px}.class-options{margin:14px 0 18px}.catalog-filters{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.catalog-filters>*{flex:1;min-width:115px}.catalog-filters input{flex:2;min-width:170px}.catalog-scroll{max-height:430px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}.background-list{display:flex;flex-direction:column;gap:10px;padding:10px;border:1px solid var(--line);border-radius:8px;background:#ede4d5}.background-list .background-card{flex:none;margin:0;padding:12px;border:2px solid #cdbb9e;border-radius:8px;background:#fffcf5;cursor:default}.background-list .background-card.selected{border-color:#b18b35;border-left-width:4px;background:#f2e4c5;box-shadow:0 2px 6px #5c482418}.card-header,.section-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}.section-heading h3{margin:0}.background-name{flex:1;border:0;background:none;text-align:left;padding:0;color:#765021;font-size:16px;font-weight:600;line-height:1.5}.expand-btn,.text-button{flex:none;border:1px solid var(--line);padding:4px 8px;background:transparent;font-size:12px;white-space:nowrap}.requirements{display:flex;flex-direction:column;gap:3px;padding:5px 8px;margin:8px 0;border-left:3px solid #b18b35;background:#f3ecdf;font-size:12px;color:#79674d}.background-list .background-summary{font-size:13px;line-height:1.65;margin:0;color:var(--ink)}.opening-details{border-top:1px dashed var(--line);padding-top:10px;margin-top:10px}.opening-details p{font-size:14px;line-height:1.8}.opening-editor{margin-top:18px}.opening-editor .field{margin:12px 0}.catalog-count{font-size:13px;color:var(--muted);margin:8px 0}.feat-options{grid-template-columns:repeat(3,minmax(0,1fr));padding:4px;max-height:350px}.feat-tile{justify-content:space-between;padding:9px;gap:5px}.feat-tile label{display:flex;align-items:center;gap:7px;cursor:pointer;min-width:0}.feat-tile .text-button{font-size:11px;padding:3px 5px}.selected-feats{margin-top:14px}.selected-feat{padding:12px;margin-bottom:10px}.selected-feat .field{font-size:13px}.selected-feat select{padding:7px}.rule-dialog{width:min(590px,calc(100% - 24px));max-height:min(620px,82dvh);overflow:auto;padding:20px;background:var(--card);color:var(--ink);border:1px solid var(--gold);border-radius:10px;font:inherit;box-shadow:0 12px 40px #34281840}.rule-dialog::backdrop{background:#30271975}.rule-description{white-space:pre-wrap;line-height:1.9;padding-top:8px}.rule-dialog .section-heading{position:sticky;top:-20px;background:var(--card);padding:8px 0;border-bottom:1px solid var(--line)}\n@media(max-width:600px){.selection-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.selection-tile{font-size:13px;padding:9px 6px;gap:5px}.feat-options{grid-template-columns:repeat(2,minmax(0,1fr));max-height:360px}.feat-tile{gap:3px}.feat-tile label{font-size:12px;gap:4px}.feat-tile .text-button{font-size:10px;padding:3px}.catalog-filters{gap:6px}.catalog-filters>*{min-width:100px;font-size:13px}.catalog-filters input{min-width:160px}.catalog-scroll{max-height:390px}.class-options{gap:6px}.rule-dialog{padding:14px}.creator-tools{gap:7px}.creator-tools button{font-size:13px}.steps{gap:3px;margin-bottom:16px}.step{min-width:22%;flex:1;font-size:12px}.background-list .background-card{padding:10px}.background-name{font-size:15px}.background-list .background-summary{font-size:13px}}\n\n.species-options{max-height:240px;margin:12px 0;grid-template-columns:repeat(4,minmax(0,1fr))}.species-traits{grid-template-columns:repeat(2,minmax(0,1fr));max-height:250px}.species-traits .selection-tile{justify-content:space-between;font-size:13px}.species-traits label{display:flex;align-items:center;gap:5px;min-width:0}.species-trait-summary{margin:14px 0}.species-trait-summary details{padding:7px 0;border-top:1px solid var(--line)}.species-trait-summary p{font-size:13px;margin:8px 0}@media(max-width:600px){.species-options{grid-template-columns:repeat(3,minmax(0,1fr))}.species-traits{grid-template-columns:repeat(2,minmax(0,1fr))}.species-traits .selection-tile{font-size:12px;padding:8px 5px}}\n\n.dnd-read-row{display:grid;grid-template-columns:130px minmax(0,1fr);gap:14px;padding:10px 0;border-bottom:1px solid var(--line);line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}.dnd-status .panel .panel{padding:12px;margin:10px 0}.dnd-status .stats-strip{justify-content:center}.dnd-status .world-tabs{position:sticky;top:0;background:var(--paper);z-index:2;padding:6px 0}";document.head.append(style);
 // The legacy UI is loaded only for legacy chats. This view reads the new actor
 // directly; no old-resource normalisation or tier multiplier is run here.
 const D=DelphianDnd;
@@ -20462,7 +22228,7 @@ const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<
 const root=document.querySelector('#app');
 let active='主角信息',editing=false,partner='',mounted=null;
 const read=()=>Mvu.getMvuData({type:'message',message_id:getCurrentMessageId()})?.stat_data||{};
-const sections={主角信息:['姓名','昵称','口癖','性别','年龄','种族','规则种族','身份','生命层级','等级','累计经验值','升级所需经验','性格','喜爱','外貌','着装','背景故事','心里话','核心','堕落度','侵蚀度','堕落六维','堕落节点','当前认知','xp','特殊项目'],属性熟练:['属性','熟练项','专精项','豁免熟练','武器熟练','护甲受训','工具熟练','语言','武器掌握','速度','体型','黑暗视觉','伤害抗性','伤害免疫','伤害易伤','状态免疫'],职业能力:['职业','职业等级','职业设计','升级待选','升级记录','职业设计','升级待选','升级记录','起源','职业能力','职业资源','生命骰','壮举','专长','奇遇','构筑选择','构筑加值'],法术:['法术','法术位','契约法术位','专注'],装备物品:['金钱','装备','背包','同调'],状态:['生命值','生命值上限','临时生命值','AC','死亡豁免','力竭','英雄激励','状态效果','攻击']};
+const sections={主角信息:['姓名','昵称','口癖','性别','年龄','种族','规则种族','身份','生命层级','等级','累计经验值','升级所需经验','性格','喜爱','外貌','着装','背景故事','心里话','核心','堕落度','侵蚀度','堕落六维','堕落节点','当前认知','xp','特殊项目'],属性熟练:['属性','熟练项','专精项','豁免熟练','武器熟练','护甲受训','工具熟练','语言','武器掌握','速度','游泳速度','攀爬速度','飞行速度','体型','黑暗视觉','伤害抗性','伤害免疫','伤害易伤','状态免疫'],职业能力:['职业','职业等级','职业设计','升级待选','升级记录','职业设计','升级待选','升级记录','种族构筑','起源','职业能力','职业资源','生命骰','壮举','专长','奇遇','构筑选择','构筑加值'],法术:['法术','法术位','契约法术位','专注'],装备物品:['金钱','装备','背包','同调'],状态:['生命值','生命值上限','临时生命值','AC','死亡豁免','力竭','英雄激励','状态效果','攻击']};
 const tabs=[...Object.keys(sections),'伙伴','事件','情报','世界','设置'];
 const object=value=>value!==null&&typeof value==='object';
 function detail(value,label,depth=0){
