@@ -19291,8 +19291,6 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
                   row("冒险者等级", p?.冒险者等级 ?? ""),
                   row("金钱", p?.金钱 != null ? p.金钱 + " G" : ""),
                   row("关系标签", Array.isArray(p?.关系标签) && p.关系标签.length ? p.关系标签.join(" / ") : ""),
-                  row("壮举", p?.壮举?.名称 ? `${p.壮举.名称}（${p.壮举.类型 || "未分类"}｜${p.壮举.状态 || "未标记"}）` : ""),
-                  row("壮举来源", p?.壮举?.来源 ?? ""),
                   row("当前认知", p?.当前认知 ?? ""),
                 ],
               }),
@@ -19306,7 +19304,6 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
                   row("熟练项", Array.isArray(p?.熟练项) && p.熟练项.length ? p.熟练项.join(" / ") : ""),
                   row("装备", cnt(p?.装备) ? cnt(p.装备) + " 件" : "无"),
                   row("技能", cnt(p?.技能) ? cnt(p.技能) + " 个" : "无"),
-                  row("专长", cnt(p?.专长) ? cnt(p.专长) + " 个" : "无"),
                   row("背包", cnt(p?.背包) ? cnt(p.背包) + " 种" : "无"),
                   row("状态效果", cnt(p?.状态效果) ? cnt(p.状态效果) + " 个" : "无"),
                 ],
@@ -19383,6 +19380,45 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
             ),
           });
         };
+        const renderProgression = (p) => {
+          const deed = p?.壮举 ?? {};
+          const feats = p?.专长 ?? {};
+          const xp = p?.xp ?? {};
+          const specials = p?.特殊项目 ?? {};
+          const details = (value, fields) => fields
+            .map(([label, key]) => value?.[key] != null && value[key] !== "" ? label + "：" + (Array.isArray(value[key]) ? value[key].join("、") : value[key]) : "")
+            .filter(Boolean).join("；");
+          const recordGroup = (title, items, fields) => (0, i.jsxs)("div", {
+            className: "partner-asset-group",
+            children: [
+              (0, i.jsx)("div", { className: "partner-section-label", children: title + " (" + cnt(items) + ")" }),
+              cnt(items) ? Object.entries(items).map(([name, value]) =>
+                (0, i.jsxs)("details", {
+                  className: "partner-asset",
+                  children: [
+                    (0, i.jsx)("summary", { children: (0, i.jsx)("span", { className: "partner-asset-name", children: name }) }),
+                    (0, i.jsx)("div", { className: "partner-asset-body", children: details(value, fields) || "暂无说明" }),
+                  ],
+                }),
+              ) : (0, i.jsx)("div", { className: "placeholder", children: "暂无记录" }),
+            ],
+          });
+          return (0, i.jsxs)("div", {
+            className: "partner-detail",
+            children: [
+              (0, i.jsx)("div", { className: "partner-section-label", children: "代表性壮举" }),
+              deed?.名称
+                ? (0, i.jsxs)("details", { className: "partner-asset", open: true, children: [
+                    (0, i.jsx)("summary", { children: (0, i.jsx)("span", { className: "partner-asset-name", children: deed.名称 }) }),
+                    (0, i.jsx)("div", { className: "partner-asset-body", children: details(deed, [["类型", "类型"], ["层级", "层级"], ["描述", "描述"], ["完成等级", "完成等级"], ["获得专长", "获得专长"], ["获得技能", "获得技能"], ["来源", "来源"], ["状态", "状态"]]) }),
+                  ] })
+                : (0, i.jsx)("div", { className: "placeholder", children: "暂无壮举" }),
+              recordGroup("专长", feats, [["描述", "描述"], ["来源", "来源"], ["获得等级", "获得等级"]]),
+              recordGroup("XP／欲望结构", xp, [["名字", "名字"], ["开发程度", "开发程度"], ["描述", "描述"], ["对堕落的影响", "对堕落的影响"], ["对好感度的影响", "对好感度的影响"]]),
+              recordGroup("特殊项目", specials, [["名字", "名字"], ["类型", "类型"], ["状态", "状态"], ["描述", "描述"], ["对堕落的影响", "对堕落的影响"], ["对好感度的影响", "对好感度的影响"]]),
+            ],
+          });
+        };
         const renderCorruption = (p) =>
           (0, i.jsxs)("div", {
             className: "partner-detail",
@@ -19416,34 +19452,6 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
                       className: "partner-rows",
                       children: Object.entries(p.堕落节点).map(([n, nd]) =>
                         row(n, (nd?.名称 || n) + (nd?.是否激活 ? "（已激活）" : "（阈值 " + (nd?.阈值 ?? "?") + "）")),
-                      ),
-                    }),
-                  ]
-                : []),
-              ...(p?.xp && cnt(p.xp)
-                ? [
-                    (0, i.jsx)("div", { className: "partner-section-label", children: "xp（经验触发点）" }),
-                    (0, i.jsxs)("div", {
-                      className: "partner-rows",
-                      children: Object.entries(p.xp).map(([n, x]) =>
-                        (0, i.jsxs)("div", {
-                          className: "partner-xp",
-                          children: [
-                            (0, i.jsx)("b", { children: n }),
-                            (0, i.jsx)("span", { children: x?.描述 || "" }),
-                          ],
-                        }),
-                      ),
-                    }),
-                  ]
-                : []),
-              ...(p?.特殊项目 && cnt(p.特殊项目)
-                ? [
-                    (0, i.jsx)("div", { className: "partner-section-label", children: "特殊项目" }),
-                    (0, i.jsxs)("div", {
-                      className: "partner-rows",
-                      children: Object.entries(p.特殊项目).map(([n, sp]) =>
-                        row(n, typeof sp === "string" ? sp : JSON.stringify(sp)),
                       ),
                     }),
                   ]
@@ -19598,13 +19606,13 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
                           (0, i.jsxs)("div", {
                             className: "partner-detail-nav",
                             children: [
-                              ["overview", "assets", "corruption", "background"].map((k) =>
+                              ["overview", "assets", "progression", "corruption", "background"].map((k) =>
                                 (0, i.jsx)(
                                   "button",
                                   {
                                     className: "partner-detail-tab" + (section === k ? " active" : ""),
                                     onClick: () => setSection(k),
-                                    children: { overview: "概览", assets: "装备技能背包", corruption: "堕落", background: "背景" }[k],
+                                    children: { overview: "概览", assets: "装备技能背包", progression: "成长档案", corruption: "堕落", background: "背景" }[k],
                                   },
                                 ),
                               ),
@@ -19614,9 +19622,11 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
                             ? renderOverview(cur[1])
                             : "assets" === section
                               ? renderAssets(cur[1])
-                              : "corruption" === section
-                                ? renderCorruption(cur[1])
-                                : renderBackground(cur[1]),
+                              : "progression" === section
+                                ? renderProgression(cur[1])
+                                : "corruption" === section
+                                  ? renderCorruption(cur[1])
+                                  : renderBackground(cur[1]),
                         ],
                       }),
                   ],
