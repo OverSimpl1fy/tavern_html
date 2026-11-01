@@ -21975,7 +21975,7 @@ const n=Math.max(0,Math.min(20,int(level,1)));
     武器熟练:n?[meta.weaponTraining]:[],护甲受训:n?meta.armorTraining:[],工具熟练:[],语言:['通用语'],武器掌握:[],构筑选择:{},职业能力:{},专长:{},
     起源:background||{},法术:{},法术位:{},契约法术位:{环阶:0,当前:0,上限:0},职业资源:{},生命骰:{},临时生命值:0,速度:30,力竭:0,
     专注:{法术:'',剩余时间:''},死亡豁免:{成功:0,失败:0},英雄激励:false,同调:[],构筑加值:{},体型:'中型',黑暗视觉:0,伤害抗性:[],伤害免疫:[],伤害易伤:[],状态免疫:[],攻击:{},累计经验值:n?DATA.advancement[n-1].xp:0,
-    升级所需经验:n>=20?'MAX':n?DATA.advancement[n].xp:0,金钱:0,背包:{},装备:{},状态效果:{},壮举:{},奇遇:{}}
+    升级所需经验:n>=20?'MAX':n?DATA.advancement[n].xp:0,金钱:0,背包:{},装备:{},状态效果:{},壮举:{},奇遇:{},xp:{},特殊项目:{}}
   for(const id of feats){
 const f=DATA.feats.find(x=>x.id===id||x.name===id);if(f){
 const key=Object.hasOwn(actor.专长,f.name)?f.name+'·'+(Object.keys(actor.专长).length+1):f.name;actor.专长[key]={规则ID:f.id,描述:f.benefits.join('；'),来源:f.category,获得等级:n}}}
@@ -22242,7 +22242,7 @@ function draw(){if(document.querySelector('[data-dirty="true"]'))return;const da
  root.innerHTML='<main class="creator-app dnd-status"><header class="masthead"><h1>'+escapeHtml(actor.姓名||'德尔菲安')+'</h1><p>'+escapeHtml(actor.生命层级)+' · Lv'+Number(actor.等级||0)+' · '+escapeHtml((actor.职业||[]).join(' / '))+'</p><div class="stats-strip"><span>HP '+Number(actor.生命值||0)+'／'+Number(actor.生命值上限||0)+'</span><span>临时HP '+Number(actor.临时生命值||0)+'</span><span>AC '+Number(actor.AC||10)+'</span><span>PB +'+D.proficiencyBonus(actor.等级,actor.构筑类型==='NPC数据块'?actor.挑战等级:undefined)+'</span></div></header><nav class="world-tabs">'+tabs.map(t=>'<button data-tab="'+t+'" class="'+(t===active?'active':'')+'">'+t+'</button>').join('')+'</nav><section id="dnd-status-body"></section></main>';
  const body=root.querySelector('#dnd-status-body');
  if(active==='设置')body.innerHTML='<label class="check-row"><input type="checkbox" id="dnd-status-edit"'+(editing?' checked':'')+'>允许编辑数据</label><small>启用后，各页原位修改全部数据；保存到当前楼层。</small><div id="dnd-status-extra"></div>';
- else if(active==='伙伴'&&!partner&&!editing){body.innerHTML='<div class="grid">'+Object.entries(data.关系列表||{}).map(([name,a])=>'<button class="background-card" data-partner="'+escapeHtml(name)+'"><h3>'+escapeHtml(name)+'</h3><p>'+escapeHtml(a.种族)+' · '+escapeHtml(a.生命层级)+' · '+escapeHtml(a.登场状态==='未出场'?'未出场':a.在场?'同行':'离场')+' · '+escapeHtml(a.登场状态==='未出场'?'未出场':a.在场?'同行':'离场')+'</p><p>HP '+a.生命值+'/'+a.生命值上限+' · AC '+a.AC+'</p></button>').join('')+'</div>';if(!Object.keys(data.关系列表||{}).length)body.innerHTML='<p class="empty">暂无已记录伙伴</p>';}
+ else if(active==='伙伴'&&!partner&&!editing){body.innerHTML='<div class="grid">'+Object.entries(data.关系列表||{}).map(([name,a])=>'<button class="background-card" data-partner="'+escapeHtml(name)+'"><h3>'+escapeHtml(name)+'</h3><p>'+escapeHtml(a.种族)+' · '+escapeHtml(a.生命层级)+' · '+escapeHtml(a.登场状态==='未出场'?'未出场':a.在场?'同行':'离场')+'</p><p>HP '+a.生命值+'/'+a.生命值上限+' · AC '+a.AC+'</p><p>壮举 '+Object.keys(a.壮举||{}).length+' · 专长 '+Object.keys(a.专长||{}).length+' · XP '+Object.keys(a.xp||{}).length+' · 特殊项目 '+Object.keys(a.特殊项目||{}).length+'</p></button>').join('')+'</div>';if(!Object.keys(data.关系列表||{}).length)body.innerHTML='<p class="empty">暂无已记录伙伴</p>';}
  else if(active==='伙伴'&&partner)body.innerHTML='<button id="dnd-partner-back">返回伙伴列表</button><h2>'+escapeHtml(partner)+'</h2><div id="dnd-partner-body"></div>';
  const target=active==='设置'?root.querySelector('#dnd-status-extra'):active==='伙伴'&&partner?root.querySelector('#dnd-partner-body'):body;
  const specs=groups(data);
