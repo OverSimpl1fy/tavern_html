@@ -224,7 +224,8 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
     var tags = Array.isArray(data.关系标签) ? data.关系标签.slice(0, 3) : [];
     var present = data.在场 === true;
     var corrupt = num(data.侵蚀度) > 0 || num(data.堕落度) >= 40;
-    var meta = [textOf(data.身份), textOf(data.生命层级), textOf(data.职业)].filter(Boolean).join(" · ");
+    var faith = textOf(data.信仰对象) ? textOf(data.信仰对象) + (textOf(data.信仰程度) ? "（" + textOf(data.信仰程度) + "）" : "") : "";
+    var meta = [textOf(data.身份), textOf(data.生命层级), textOf(data.职业), faith].filter(Boolean).join(" · ");
     return '<div class="yd-card' + (state.selected === name ? " on" : "") + '" data-name="' + esc(name) + '">'
       + '<div class="yd-card-hd">'
       + '<span class="yd-card-name">' + esc(name) + '</span>'
@@ -244,6 +245,7 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
   /* ── 详情 ──────────────────────────────────────────────────────── */
   function detail(name, data) {
     var corruption = num(data.堕落度);
+    var faith = textOf(data.信仰对象) ? textOf(data.信仰对象) + (textOf(data.信仰程度) ? "（" + textOf(data.信仰程度) + "）" : "") : "";
     var head = '<div class="yd-detail-head">'
       + '<button class="yd-back" data-back="1">‹ 返回</button>'
       + '<span class="yd-detail-name">' + esc(name) + '</span>'
@@ -270,6 +272,7 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
         + row("生命层级", textOf(data.生命层级) + (textOf(data.等级) ? " · Lv" + textOf(data.等级) : ""))
         + row("职业", textOf(data.职业))
         + row("身份", textOf(data.身份))
+        + row("信仰", faith)
         + row("口癖", textOf(data.口癖))
         + '</dl>';
       var attrs = has(data.属性) ? '<div class="yd-attrs">' + ["力量", "敏捷", "体质", "智力", "感知", "魅力"].map(function (k) {
@@ -13315,6 +13318,8 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
           .array(z.string())
           .prefault([])
           .transform((e) => _.uniq(e)),
+        信仰对象: z.string().prefault(""),
+        信仰程度: z.string().prefault(""),
         属性: T,
         熟练项: z.array(z.string()).prefault([]).transform((e) => _.uniq(e)),
         装备: z.record(z.string(), w).prefault({}),
@@ -13407,6 +13412,8 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
             "年龄",
             "身份",
             "职业",
+            "信仰对象",
+            "信仰程度",
             "生命层级",
             "等级",
             "累计经验值",
@@ -13502,6 +13509,8 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
                 "种族",
                 "身份",
                 "职业",
+                "信仰对象",
+                "信仰程度",
                 "生命层级",
                 "性格",
                 "喜爱",
@@ -19286,6 +19295,7 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
                   row("年龄", p?.年龄 != null ? p.年龄 + " 岁" : ""),
                   row("身份", Array.isArray(p?.身份) ? p.身份.join(" / ") : (p?.身份 ?? "")),
                   row("职业", Array.isArray(p?.职业) ? p.职业.join(" / ") : (p?.职业 ?? "")),
+                  row("信仰", p?.信仰对象 ? p.信仰对象 + (p?.信仰程度 ? "（" + p.信仰程度 + "）" : "") : ""),
                   row("生命层级", p?.生命层级 ?? ""),
                   row("等级", p?.等级 != null ? "Lv." + p.等级 : ""),
                   row("冒险者等级", p?.冒险者等级 ?? ""),
