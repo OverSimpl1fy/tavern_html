@@ -273,6 +273,7 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
         + row("职业", textOf(data.职业))
         + row("身份", textOf(data.身份))
         + row("信仰", faith)
+        + row("人设", Array.isArray(data.人设) && data.人设.length ? data.人设.join("；") : "")
         + row("口癖", textOf(data.口癖))
         + '</dl>';
       var attrs = has(data.属性) ? '<div class="yd-attrs">' + ["力量", "敏捷", "体质", "智力", "感知", "魅力"].map(function (k) {
@@ -13320,6 +13321,7 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
           .transform((e) => _.uniq(e)),
         信仰对象: z.string().prefault(""),
         信仰程度: z.string().prefault(""),
+        人设: z.array(z.string()).prefault([]).transform((e) => _.uniq(e)),
         属性: T,
         熟练项: z.array(z.string()).prefault([]).transform((e) => _.uniq(e)),
         装备: z.record(z.string(), w).prefault({}),
@@ -13414,6 +13416,7 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
             "职业",
             "信仰对象",
             "信仰程度",
+            "人设",
             "生命层级",
             "等级",
             "累计经验值",
@@ -13511,6 +13514,7 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
                 "职业",
                 "信仰对象",
                 "信仰程度",
+                "人设",
                 "生命层级",
                 "性格",
                 "喜爱",
@@ -19296,6 +19300,7 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
                   row("身份", Array.isArray(p?.身份) ? p.身份.join(" / ") : (p?.身份 ?? "")),
                   row("职业", Array.isArray(p?.职业) ? p.职业.join(" / ") : (p?.职业 ?? "")),
                   row("信仰", p?.信仰对象 ? p.信仰对象 + (p?.信仰程度 ? "（" + p.信仰程度 + "）" : "") : ""),
+                  row("人设", Array.isArray(p?.人设) && p.人设.length ? p.人设.join("；") : ""),
                   row("生命层级", p?.生命层级 ?? ""),
                   row("等级", p?.等级 != null ? "Lv." + p.等级 : ""),
                   row("冒险者等级", p?.冒险者等级 ?? ""),
