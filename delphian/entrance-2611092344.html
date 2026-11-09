@@ -6338,7 +6338,7 @@ return { SKILL_TIERS, SKILL_QUALITIES, SKILL_SCALES, skillTier, skillQuality, sk
               ...options,
             });
             const character = _.cloneDeep(l.value);
-            character.name = /^(男|男性|male)$/i.test(String(character.gender === "自定义" ? character.customGender : character.gender).trim()) ? "卡诺" : "克菈普忒";
+            if (!String(character.name || "").trim()) character.name = /^(男|男性|male)$/i.test(String(character.gender === "自定义" ? character.customGender : character.gender).trim()) ? "卡诺" : "克菈普忒";
             character.preset = buildStartPreset((0, c.unref)(presetMetaRef)?.name || "当前开局", journeyStore, t);
             character.preset.首轮约束 = ["以玩家最终确认的开局名称、正文与人物状态为准，不沿用与之冲突的预设开场信息。", ...(Array.isArray(character.preset.首轮约束) ? character.preset.首轮约束 : character.preset.首轮约束 ? [String(character.preset.首轮约束)] : [])];
             const customDescription = (0, c.unref)(t.customBackgroundDescription) ?? e.selectedBackground?.description ?? "";
