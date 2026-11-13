@@ -1,0 +1,17 @@
+{
+  "id": "f6ac9525-3e08-446c-b10c-d4a8608957c5",
+  "scriptName": "delphian-frontend-status-2611140421",
+  "disabled": false,
+  "runOnEdit": true,
+  "findRegex": "<StatusPlaceHolderImpl/>",
+  "trimStrings": [],
+  "replaceString": "```\n<body>\n<script>\n$('body').load('https://cdn.jsdelivr.net/gh/OverSimpl1fy/tavern_html@main/delphian/status-2611140421.html')\n</script>\n</body>\n```",
+  "placement": [
+    2
+  ],
+  "substituteRegex": 0,
+  "minDepth": null,
+  "maxDepth": null,
+  "markdownOnly": true,
+  "promptOnly": false
+}
