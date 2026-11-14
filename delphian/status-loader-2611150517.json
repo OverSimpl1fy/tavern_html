@@ -1,0 +1,17 @@
+{
+  "id": "f6ac9525-3e08-446c-b10c-d4a8608957c5",
+  "scriptName": "delphian-frontend-status-2611150517",
+  "disabled": false,
+  "runOnEdit": true,
+  "findRegex": "<StatusPlaceHolderImpl/>",
+  "trimStrings": [],
+  "replaceString": "```\n<body>\n<div role=\"status\" style=\"min-height:100px;padding:16px;color:#443220;background:#f1e8dc\">正在下载状态栏…</div>\n<script>\n(function () {\n  const url = \"https://cdn.jsdelivr.net/gh/OverSimpl1fy/tavern_html@main/delphian/status-2611150517.html\", backup = url.replace('cdn.jsdelivr.net', 'testingcf.jsdelivr.net');\n  $.ajaxPrefilter(function (options) { if (options.url === url || options.url === backup) options.timeout = 15000; });\n  function load(target, retry) {\n    $('body').load(target, function (_, state, xhr) {\n      if (state === 'error') {\n        if (retry) load(backup, false);\n        else $('body').html('<div role=\"alert\" style=\"min-height:120px;padding:16px;color:#443220;background:#f1e8dc\">状态栏下载失败（HTTP ' + xhr.status + '）。请检查 CDN 网络后重载本条消息。<br><button onclick=\"location.reload()\">重新加载</button></div>');\n      }\n    });\n  }\n  load(url, true);\n})();\n</script>\n</body>\n```",
+  "placement": [
+    2
+  ],
+  "substituteRegex": 0,
+  "minDepth": null,
+  "maxDepth": null,
+  "markdownOnly": true,
+  "promptOnly": false
+}
