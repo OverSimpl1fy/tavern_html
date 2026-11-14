@@ -1,0 +1,17 @@
+{
+  "id": "fae262bd-fc05-4938-966a-0655fcdff7ba",
+  "scriptName": "status-分层诊断-2611150536",
+  "disabled": false,
+  "runOnEdit": true,
+  "findRegex": "/<StatusPlaceHolderImpl\\s*\\/?\\s*>/gi",
+  "trimStrings": [],
+  "replaceString": "\n\n**① STATUS诊断：正则已命中 2611150536**\n\n```html\n<body>\n<div style=\"min-height:150px;padding:16px;color:#162c43;background:#e7f2ff;border:2px solid #32619b;font:14px/1.7 sans-serif\">\n<strong>② iframe 正文已显示</strong><pre id=\"status-probe-report\" style=\"white-space:pre-wrap\">③ 等待脚本执行</pre>\n</div>\n<script>\n(function () {\n  var report=document.getElementById('status-probe-report');\n  var lines=['③ 脚本已执行'];\n  var paint=function(){report.textContent=lines.join('\\n');};\n  ['jQuery','z','getVariables','getCurrentMessageId'].forEach(function(key){lines.push(key+': '+typeof window[key]);});\n  try {var f=window.frameElement;if(f){var r=f.getBoundingClientRect(),s=parent.getComputedStyle(f),p=parent.getComputedStyle(f.parentElement);lines.push('iframe: '+Math.round(r.width)+'×'+Math.round(r.height));lines.push('frame display/visibility: '+s.display+'/'+s.visibility);lines.push('container display/visibility: '+p.display+'/'+p.visibility);}} catch(e){lines.push('frame信息: '+e.message);}\n  paint();\n  var control=new AbortController();var timer=setTimeout(function(){control.abort();},12000);\n  fetch('https://cdn.jsdelivr.net/gh/OverSimpl1fy/tavern_html@main/delphian/status-2611150517.html',{signal:control.signal}).then(function(response){lines.push('④ CDN HTTP '+response.status);paint();return response.text();}).then(function(text){lines.push('页面字符数: '+text.length);lines.push('页面运行包: '+(text.indexOf('DelphianStatusRuntime')>=0));paint();}).catch(function(error){lines.push('④ CDN失败: '+error.message);paint();}).finally(function(){clearTimeout(timer);});\n})();\n</script>\n</body>\n```",
+  "placement": [
+    2
+  ],
+  "substituteRegex": 0,
+  "minDepth": null,
+  "maxDepth": null,
+  "markdownOnly": true,
+  "promptOnly": false
+}
